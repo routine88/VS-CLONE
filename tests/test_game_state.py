@@ -21,14 +21,20 @@ def test_tick_resolves_environment_hazards():
     state = GameState(environment_director=EnvironmentDirector(rng))
     starting_health = state.player.health
 
-    events = []
-    for _ in range(3):
-        events.extend(state.tick(30.0))
+    salvaged = 0
+    weather_seen = False
+    for _ in range(8):
+        result = state.tick(30.0)
+        salvaged += sum(event.salvage_reward for event in result.barricades)
+        salvaged += sum(event.amount for event in result.resource_drops)
+        weather_seen = weather_seen or any(not event.ended for event in result.weather_events)
 
     assert state.player.health < starting_health
     assert state.active_hazards
     assert any("Hazard triggered" in event.message for event in state.event_log)
     assert all(event.damage > 0 for event in state.active_hazards)
+    assert state.player.salvage >= salvaged
+    assert weather_seen or any("Weather shift" in event.message for event in state.event_log)
 
 
 def test_grant_experience_creates_events():
@@ -92,7 +98,7 @@ def test_final_encounter_triggers_final_boss_flow():
     state.player.glyph_counts[GlyphFamily.STORM] = 4
     state.player.glyph_counts[GlyphFamily.BLOOD] = 4
     state.player.glyph_sets_awarded[GlyphFamily.BLOOD] = 1
-https://github.com/routine88/VS-CLONE/pull/5/conflict?name=tests%252Ftest_game_state.py&base_oid=c6ad3aa1ea7565b44090d9a2f7366fd447a26635&head_oid=3d9dff8ba382d5f8a17646f194d6ac59c1391efd
+
     encounter = state.final_encounter()
     assert encounter.kind == "final_boss"
     summary = state.resolve_encounter(encounter)

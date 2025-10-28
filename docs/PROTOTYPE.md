@@ -58,3 +58,22 @@ variety:
 
 Prototype transcripts enumerate these pulls so designers can verify cadence and
 encounter composition before assets land in-engine.
+
+## Challenge Builder
+
+Community runs can now be curated with the challenge builder CLI:
+
+```bash
+python -m game.challenges --seed 777 --modifier torment --ban weapon_umbra_lash
+```
+
+The command prints a shareable code (prefixed with `NSC1-`) alongside a human
+readable summary. Anyone can replay the same conditions by decoding the string:
+
+```bash
+python -m game.challenges --decode NSC1-...
+```
+
+Codes capture run seeds, optional duration overrides, difficulty labels,
+modifiers, and curated reward or restriction lists so designers can circulate
+weekly challenge briefs before the Unity client is playable.

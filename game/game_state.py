@@ -8,7 +8,12 @@ from typing import List, Sequence
 from . import config
 from .combat import CombatResolver, CombatSummary
 from .entities import GlyphFamily, Player, UpgradeCard, UpgradeType
-from .environment import EnvironmentDirector, HazardEvent
+from .environment import (
+    EnvironmentDirector,
+    EnvironmentTickResult,
+    HazardEvent,
+    WeatherEvent,
+)
 from .systems import EncounterDirector, SpawnDirector, UpgradeDeck, resolve_experience_gain
 
 
@@ -33,8 +38,9 @@ class GameState:
     combat_resolver: CombatResolver = field(default_factory=CombatResolver)
     event_log: List[GameEvent] = field(default_factory=list)
     active_hazards: List[HazardEvent] = field(default_factory=list)
+    active_weather: WeatherEvent | None = None
 
-    def tick(self, delta_time: float) -> List[HazardEvent]:
+    def tick(self, delta_time: float) -> EnvironmentTickResult:
         """Advance the simulation clock and update phase transitions."""
 
         if delta_time <= 0:
@@ -46,7 +52,8 @@ class GameState:
             self.current_phase = phase
             self.event_log.append(GameEvent(f"Phase advanced to {phase}."))
 
-        hazards = self.environment_director.update(self.current_phase, delta_time)
+        environment_changes = self.environment_director.update(self.current_phase, delta_time)
+        hazards = environment_changes.hazards
         if hazards:
             self.active_hazards.extend(hazards)
             for hazard in hazards:
@@ -67,7 +74,45 @@ class GameState:
                     self.event_log.append(GameEvent("The hunter is overwhelmed by the environment."))
                     break
 
-        return hazards
+        if environment_changes.barricades:
+            for barricade in environment_changes.barricades:
+                self.player.add_salvage(barricade.salvage_reward)
+                self.event_log.append(
+                    GameEvent(
+                        f"Barricade cleared: {barricade.name} yielded {barricade.salvage_reward} salvage."
+                    )
+                )
+
+        if environment_changes.resource_drops:
+            for cache in environment_changes.resource_drops:
+                self.player.add_salvage(cache.amount)
+                self.event_log.append(
+                    GameEvent(
+                        f"Collected {cache.name} for {cache.amount} salvage."
+                    )
+                )
+
+        if environment_changes.weather_events:
+            for weather_event in environment_changes.weather_events:
+                if weather_event.ended:
+                    self.active_weather = None
+                    self.event_log.append(
+                        GameEvent(
+                            "Weather shift: conditions normalize and movement returns to baseline."
+                        )
+                    )
+                else:
+                    self.active_weather = weather_event
+                    move_percent = int(weather_event.movement_modifier * 100)
+                    vision_percent = int(weather_event.vision_modifier * 100)
+                    descriptor = weather_event.description
+                    self.event_log.append(
+                        GameEvent(
+                            f"Weather shift: {weather_event.name} ({descriptor}) movement {move_percent:+d}% vision {vision_percent:+d}%"
+                        )
+                    )
+
+        return environment_changes
 
     def grant_experience(self, amount: int) -> List[GameEvent]:
         """Grant experience and log resulting events."""

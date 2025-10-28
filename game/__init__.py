@@ -1,5 +1,12 @@
 """Core package for Nightfall Survivors prototype logic."""
 
+from .challenges import (  # noqa: F401
+    ChallengeConfig,
+    build_config,
+    decode_challenge,
+    describe_challenge,
+    encode_challenge,
+)
 from .environment import EnvironmentDirector  # noqa: F401
 from .game_state import GameState  # noqa: F401
 from .meta import (  # noqa: F401

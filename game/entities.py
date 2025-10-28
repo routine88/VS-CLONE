@@ -50,6 +50,7 @@ class Player:
     glyph_sets_awarded: Dict[GlyphFamily, int] = field(default_factory=_glyph_dict)
     unlocked_weapons: Dict[str, int] = field(default_factory=lambda: {"Dusk Repeater": 1})
     relics: List[str] = field(default_factory=list)
+    salvage: int = 0
 
     def add_glyph(self, family: GlyphFamily) -> None:
         """Increase glyph count for the given family."""
@@ -90,6 +91,13 @@ class Player:
                     # Placeholder for future stat hooks.
                     pass
         return completed
+
+    def add_salvage(self, amount: int) -> None:
+        """Grant salvage resources collected from the environment."""
+
+        if amount < 0:
+            raise ValueError("salvage cannot be negative")
+        self.salvage += amount
 
 
 @dataclass
