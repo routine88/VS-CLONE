@@ -92,7 +92,7 @@ def test_final_encounter_triggers_final_boss_flow():
     state.player.glyph_counts[GlyphFamily.STORM] = 4
     state.player.glyph_counts[GlyphFamily.BLOOD] = 4
     state.player.glyph_sets_awarded[GlyphFamily.BLOOD] = 1
-
+https://github.com/routine88/VS-CLONE/pull/5/conflict?name=tests%252Ftest_game_state.py&base_oid=c6ad3aa1ea7565b44090d9a2f7366fd447a26635&head_oid=3d9dff8ba382d5f8a17646f194d6ac59c1391efd
     encounter = state.final_encounter()
     assert encounter.kind == "final_boss"
     summary = state.resolve_encounter(encounter)
