@@ -90,6 +90,24 @@ _WEAPON_LIBRARY: WeaponLibrary = {
 }
 
 
+def weapon_tier(weapon: str, tier: int) -> WeaponTier | None:
+    """Return the :class:`WeaponTier` stats for the supplied weapon/tier."""
+
+    return _WEAPON_LIBRARY.get(weapon, {}).get(tier)
+
+
+def weapon_library() -> WeaponLibrary:
+    """Expose the full weapon library for downstream systems."""
+
+    return _WEAPON_LIBRARY
+
+
+def glyph_damage_multiplier(player: Player) -> float:
+    """Return the damage multiplier applied from glyph ownership."""
+
+    return _glyph_damage_multiplier(player)
+
+
 @dataclass(frozen=True)
 class CombatSummary:
     """Outcome of a resolved encounter."""

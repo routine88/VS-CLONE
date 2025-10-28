@@ -321,6 +321,9 @@ class EnvironmentDirector:
         }
         self._weather_durations = {phase: 0.0 for phase in config.WEATHER_PHASES}
         self._active_weather: Dict[int, WeatherEvent | None] = {phase: None for phase in config.WEATHER_PHASES}
+        self._hazard_damage_scale = 1.0
+        self._salvage_scale = 1.0
+        self._resource_scale = 1.0
 
     def update(self, phase: int, delta_time: float) -> EnvironmentTickResult:
         """Advance timers and emit any environment outputs that should trigger."""
@@ -332,6 +335,7 @@ class EnvironmentDirector:
         while self._cooldowns[phase] <= 0:
             blueprint = self._rng.choice(tuple(hazards_for_phase(phase)))
             damage = schedule.scale_damage(blueprint.base_damage, phase)
+            damage = max(1, int(round(damage * self._hazard_damage_scale)))
             biome = config.PHASE_BIOMES[phase]
             hazards.append(
                 HazardEvent(
@@ -353,6 +357,7 @@ class EnvironmentDirector:
         while self._barricade_cooldowns[phase] <= 0:
             blueprint = self._rng.choice(tuple(_BIOME_BARRICADES[biome]))
             salvage = barricade_schedule.scale_reward(blueprint.salvage_reward, phase)
+            salvage = max(1, int(round(salvage * self._salvage_scale)))
             barricades.append(
                 BarricadeEvent(
                     biome=biome,
@@ -371,6 +376,7 @@ class EnvironmentDirector:
         while self._resource_cooldowns[phase] <= 0:
             cache = self._rng.choice(tuple(_RESOURCE_CACHES[biome]))
             amount = resource_schedule.scale_amount(cache.base_amount, phase)
+            amount = max(1, int(round(amount * self._resource_scale)))
             resource_drops.append(
                 ResourceDropEvent(
                     biome=biome,
@@ -423,4 +429,26 @@ class EnvironmentDirector:
             resource_drops=resource_drops,
             weather_events=weather_events,
         )
+
+    def apply_event_modifiers(
+        self,
+        *,
+        hazard_damage_scale: float | None = None,
+        salvage_scale: float | None = None,
+        resource_scale: float | None = None,
+    ) -> None:
+        """Adjust environment outputs for seasonal live-ops modifiers."""
+
+        if hazard_damage_scale is not None:
+            if hazard_damage_scale <= 0:
+                raise ValueError("hazard_damage_scale must be positive")
+            self._hazard_damage_scale = hazard_damage_scale
+        if salvage_scale is not None:
+            if salvage_scale <= 0:
+                raise ValueError("salvage_scale must be positive")
+            self._salvage_scale = salvage_scale
+        if resource_scale is not None:
+            if resource_scale <= 0:
+                raise ValueError("resource_scale must be positive")
+            self._resource_scale = resource_scale
 

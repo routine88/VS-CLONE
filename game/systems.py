@@ -15,15 +15,28 @@ class SpawnDirector:
 
     def __init__(self) -> None:
         self.wave_counters = {phase: 0 for phase in config.SPAWN_PHASES}
+        self._interval_scale = 1.0
+        self._density_scale = 1.0
 
     def next_interval(self, phase: int) -> float:
         schedule = config.SPAWN_PHASES[phase]
         index = self.wave_counters[phase]
         self.wave_counters[phase] += 1
-        return schedule.interval_for_wave(index)
+        interval = schedule.interval_for_wave(index) * self._interval_scale
+        return max(0.5, interval)
 
     def max_density(self, phase: int) -> int:
-        return config.SPAWN_PHASES[phase].max_density
+        base = config.SPAWN_PHASES[phase].max_density
+        scaled = int(round(base * self._density_scale))
+        return max(1, scaled)
+
+    def apply_event_modifiers(self, *, density_multiplier: float = 1.0) -> None:
+        """Adjust spawn pacing in response to seasonal events."""
+
+        if density_multiplier <= 0:
+            raise ValueError("density_multiplier must be positive")
+        self._density_scale = max(0.25, density_multiplier)
+        self._interval_scale = 1.0 / max(0.25, density_multiplier)
 
 
 class UpgradeDeck:

@@ -10,8 +10,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence
 
+from .distribution import (
+    DemoRestrictions,
+    apply_demo_restrictions,
+    configure_simulator_for_demo,
+    default_demo_restrictions,
+)
 from .environment import EnvironmentDirector
 from .game_state import GameState
+from .live_ops import SeasonalEvent, activate_event, find_event, seasonal_schedule
 from .profile import PlayerProfile
 from .session import RunResult, RunSimulator
 from .systems import EncounterDirector
@@ -46,19 +53,29 @@ class PrototypeSession:
         seed: Optional[int] = None,
         total_duration: Optional[float] = None,
         tick_step: Optional[float] = None,
+        demo_restrictions: Optional[DemoRestrictions] = None,
+        seasonal_event: Optional[SeasonalEvent] = None,
     ) -> PrototypeTranscript:
         """Execute a single simulated run and return a transcript."""
+
+        restrictions = demo_restrictions
+        if restrictions:
+            apply_demo_restrictions(self.profile, restrictions)
 
         if hunter_id:
             self.profile.set_active_hunter(hunter_id)
 
         run_seed = seed if seed is not None else secrets.randbelow(2**32)
         state = self._prepare_state(run_seed)
+        if seasonal_event is not None:
+            activate_event(state, seasonal_event)
         simulator = RunSimulator(
             state,
             total_duration=total_duration or simulator_default_duration(),
             tick_step=tick_step or 5.0,
         )
+        if restrictions:
+            configure_simulator_for_demo(simulator, restrictions)
         result = simulator.run()
         earned = self.profile.record_run(result)
         hunter = self.profile.hunters[self.profile.active_hunter]
@@ -212,6 +229,21 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Simulation tick granularity in seconds.",
     )
     parser.add_argument(
+        "--demo",
+        action="store_true",
+        help="Apply demo restrictions (10 minute cap, starter hunters only).",
+    )
+    parser.add_argument(
+        "--event-id",
+        type=str,
+        help="Apply a seasonal live event by identifier.",
+    )
+    parser.add_argument(
+        "--event-year",
+        type=int,
+        help="Year to evaluate the seasonal schedule when using --event-id.",
+    )
+    parser.add_argument(
         "--profile-path",
         type=str,
         help="Load an encrypted profile before running the simulation.",
@@ -225,11 +257,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parser.parse_args(argv)
     profile = _build_profile_from_args(args)
     session = PrototypeSession(profile)
+    restrictions = default_demo_restrictions() if args.demo else None
+    seasonal = None
+    if args.event_id:
+        events = seasonal_schedule(args.event_year)
+        seasonal = find_event(args.event_id, events)
     transcript = session.run(
         hunter_id=args.hunter_id,
         seed=args.seed,
         total_duration=args.duration,
         tick_step=args.tick_step,
+        demo_restrictions=restrictions,
+        seasonal_event=seasonal,
     )
     print(format_transcript(transcript))
     return 0
