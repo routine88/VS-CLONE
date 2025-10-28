@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import json
 import random
 import secrets
 from dataclasses import dataclass
-from typing import Optional, Sequence
+from pathlib import Path
+from typing import Any, Dict, Optional, Sequence
 
 from .environment import EnvironmentDirector
 from .game_state import GameState
@@ -133,6 +135,53 @@ def format_transcript(transcript: PrototypeTranscript) -> str:
             lines.append(f"    - {note}")
 
     return "\n".join(lines)
+
+
+def transcript_to_dict(transcript: PrototypeTranscript) -> Dict[str, Any]:
+    """Convert a transcript into a JSON-serialisable dictionary."""
+
+    result = transcript.run_result
+    summary_payload: Dict[str, Any] | None = None
+    if result.final_summary is not None:
+        summary = result.final_summary
+        summary_payload = {
+            "kind": summary.kind,
+            "duration": summary.duration,
+            "damage_taken": summary.damage_taken,
+            "healing_received": summary.healing_received,
+            "souls_gained": summary.souls_gained,
+            "notes": list(summary.notes),
+        }
+
+    return {
+        "seed": transcript.seed,
+        "hunter_id": transcript.hunter_id,
+        "hunter_name": transcript.hunter_name,
+        "survived": transcript.survived,
+        "duration": transcript.duration,
+        "encounters_resolved": transcript.encounters_resolved,
+        "relics_collected": list(transcript.relics_collected),
+        "sigils_earned": transcript.sigils_earned,
+        "events": list(transcript.events),
+        "run_result": {
+            "survived": result.survived,
+            "duration": result.duration,
+            "encounters_resolved": result.encounters_resolved,
+            "relics_collected": list(result.relics_collected),
+            "sigils_earned": result.sigils_earned,
+            "events": [{"message": event.message} for event in result.events],
+            "final_summary": summary_payload,
+        },
+    }
+
+
+def save_transcript(transcript: PrototypeTranscript, path: Path | str) -> Path:
+    """Persist a transcript to disk as formatted JSON."""
+
+    target = Path(path)
+    payload = transcript_to_dict(transcript)
+    target.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return target
 
 
 def _build_profile_from_args(args: argparse.Namespace) -> PlayerProfile:

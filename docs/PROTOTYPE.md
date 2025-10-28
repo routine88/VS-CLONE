@@ -77,3 +77,27 @@ python -m game.challenges --decode NSC1-...
 Codes capture run seeds, optional duration overrides, difficulty labels,
 modifiers, and curated reward or restriction lists so designers can circulate
 weekly challenge briefs before the Unity client is playable.
+
+## Transcript Export & Analytics
+
+Designers can persist simulated runs to JSON for deeper telemetry analysis. After
+executing a run, serialise the transcript and feed it to the analytics CLI:
+
+```python
+from game.prototype import PrototypeSession, save_transcript
+
+session = PrototypeSession()
+transcript = session.run(seed=4242, total_duration=600, tick_step=10)
+save_transcript(transcript, "runs/nightfall_run.json")
+```
+
+Multiple transcripts can be analysed together to generate KPI-aligned reports:
+
+```bash
+python -m game.analytics runs/nightfall_run.json runs/elite_test.json
+```
+
+Add `--json` to emit machine-readable aggregates that plug into dashboards or
+spreadsheet tooling. Metrics include survival rate, upgrade diversity, salvage
+flow, and phase reach distributions to keep the project aligned with the PRD's
+success criteria.

@@ -1,5 +1,14 @@
 """Core package for Nightfall Survivors prototype logic."""
 
+from .analytics import (  # noqa: F401
+    AggregateMetrics,
+    RunMetrics,
+    aggregate_metrics,
+    derive_metrics,
+    from_transcripts,
+    kpi_snapshot,
+    render_report,
+)
 from .challenges import (  # noqa: F401
     ChallengeConfig,
     build_config,
@@ -21,7 +30,9 @@ from .prototype import (  # noqa: F401
     PrototypeSession,
     PrototypeTranscript,
     format_transcript,
+    save_transcript,
     simulator_default_duration,
+    transcript_to_dict,
 )
 from .session import RunResult, RunSimulator, score_run  # noqa: F401
 from .storage import decrypt_data, encrypt_data, load_profile, save_profile  # noqa: F401
