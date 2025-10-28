@@ -115,8 +115,9 @@ class WaveDescriptor:
 class Encounter:
     """Represents the next combat beat delivered to the player."""
 
-    kind: Literal["wave", "miniboss"]
+    kind: Literal["wave", "miniboss", "final_boss"]
     wave: Optional[WaveDescriptor] = None
     miniboss: Optional[Enemy] = None
+    boss_phases: Optional[List[Enemy]] = None
     relic_reward: Optional[str] = None
 

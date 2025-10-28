@@ -47,6 +47,16 @@ _RELIC_LIBRARY: Sequence[str] = (
 )
 
 
+_FINAL_BOSS_BLUEPRINT = {
+    "name": "Dawn Revenant",
+    "phases": (
+        {"health": 640, "damage": 42, "speed": 1.05},
+        {"health": 520, "damage": 50, "speed": 1.18},
+        {"health": 460, "damage": 60, "speed": 1.3},
+    ),
+}
+
+
 def enemy_archetypes_for_phase(phase: int) -> List[str]:
     """Return the list of archetypes available for the requested phase."""
 
@@ -108,4 +118,22 @@ def draw_relic(rng: random.Random) -> str:
     """Return a relic reward name."""
 
     return rng.choice(_RELIC_LIBRARY)
+
+
+def final_boss_phases() -> List[Enemy]:
+    """Return the phase descriptors for the final boss encounter."""
+
+    phases: List[Enemy] = []
+    blueprint = _FINAL_BOSS_BLUEPRINT
+    name = str(blueprint["name"])
+    for index, phase in enumerate(blueprint["phases"], start=1):
+        phases.append(
+            Enemy(
+                name=f"{name} (Phase {index})",
+                health=int(phase["health"]),
+                damage=int(phase["damage"]),
+                speed=float(phase["speed"]),
+            )
+        )
+    return phases
 

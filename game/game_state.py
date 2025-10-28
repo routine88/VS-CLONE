@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import List, Sequence
 
 from . import config
+from .combat import CombatResolver, CombatSummary
 from .entities import GlyphFamily, Player, UpgradeCard, UpgradeType
 from .environment import EnvironmentDirector, HazardEvent
 from .systems import EncounterDirector, SpawnDirector, UpgradeDeck, resolve_experience_gain
@@ -29,6 +30,7 @@ class GameState:
     upgrade_deck: UpgradeDeck = field(default_factory=lambda: UpgradeDeck(_default_cards()))
     encounter_director: EncounterDirector = field(default_factory=EncounterDirector)
     environment_director: EnvironmentDirector = field(default_factory=EnvironmentDirector)
+    combat_resolver: CombatResolver = field(default_factory=CombatResolver)
     event_log: List[GameEvent] = field(default_factory=list)
     active_hazards: List[HazardEvent] = field(default_factory=list)
 
@@ -110,6 +112,60 @@ class GameState:
                 self.event_log.append(GameEvent(f"Relic acquired: {encounter.relic_reward}"))
         return encounter
 
+    def final_encounter(self) -> "Encounter":
+        """Summon the final boss encounter once dawn is near."""
+
+        encounter = self.encounter_director.final_encounter()
+        if encounter.boss_phases:
+            base_name = encounter.boss_phases[0].name.split(" (")[0]
+            self.event_log.append(
+                GameEvent(f"The final boss {base_name} descends for the last stand.")
+            )
+        else:
+            self.event_log.append(GameEvent("The final confrontation begins."))
+        return encounter
+
+    def resolve_encounter(self, encounter: "Encounter") -> CombatSummary:
+        """Resolve combat for the provided encounter and update the run state."""
+
+        if encounter.kind == "wave" and encounter.wave:
+            summary = self.combat_resolver.resolve_wave(self.player, encounter.wave)
+        elif encounter.kind == "miniboss" and encounter.miniboss:
+            summary = self.combat_resolver.resolve_miniboss(self.player, encounter.miniboss)
+        elif encounter.kind == "final_boss" and encounter.boss_phases:
+            summary = self.combat_resolver.resolve_final_boss(self.player, encounter.boss_phases)
+        else:
+            raise ValueError("Encounter missing data for resolution")
+
+        self.player.health = max(0, self.player.health - summary.damage_taken)
+        if summary.healing_received:
+            self.player.health = min(self.player.max_health, self.player.health + summary.healing_received)
+
+        if summary.souls_gained:
+            self.grant_experience(summary.souls_gained)
+
+        label = summary.kind.replace("_", " ")
+        self.event_log.append(
+            GameEvent(
+                f"Resolved {label} defeating {summary.enemies_defeated} foes in {summary.duration:.1f}s."
+            )
+        )
+        if summary.damage_taken or summary.healing_received:
+            self.event_log.append(
+                GameEvent(
+                    f"Combat aftermath: -{summary.damage_taken} HP, +{summary.healing_received} HP."
+                )
+            )
+        for note in summary.notes:
+            self.event_log.append(GameEvent(note))
+
+        if self.player.health == 0:
+            self.event_log.append(GameEvent("The hunter succumbs to the onslaught."))
+        elif encounter.kind == "final_boss":
+            self.event_log.append(GameEvent("Dawn breaks! The hunter endures the night."))
+
+        return summary
+
 
 def _default_cards() -> List[UpgradeCard]:
     return [
@@ -126,6 +182,18 @@ def _default_cards() -> List[UpgradeCard]:
             glyph_family=GlyphFamily.STORM,
         ),
         UpgradeCard(
+            name="Frost Sigil",
+            description="Add a frost glyph, bolstering damage mitigation.",
+            type=UpgradeType.GLYPH,
+            glyph_family=GlyphFamily.FROST,
+        ),
+        UpgradeCard(
+            name="Inferno Sigil",
+            description="Add an inferno glyph, empowering damage output.",
+            type=UpgradeType.GLYPH,
+            glyph_family=GlyphFamily.INFERNO,
+        ),
+        UpgradeCard(
             name="Reinforced Plating",
             description="Increase max health by 20.",
             type=UpgradeType.SURVIVAL,
@@ -136,6 +204,18 @@ def _default_cards() -> List[UpgradeCard]:
             description="Upgrade the Dusk Repeater to tier 2, firing extra bolts.",
             type=UpgradeType.WEAPON,
             weapon_tier=2,
+        ),
+        UpgradeCard(
+            name="Gloom Chakram",
+            description="Unlock the Gloom Chakram, a bouncing blade of shadow.",
+            type=UpgradeType.WEAPON,
+            weapon_tier=1,
+        ),
+        UpgradeCard(
+            name="Storm Siphon",
+            description="Harness the Storm Siphon to unleash piercing beams.",
+            type=UpgradeType.WEAPON,
+            weapon_tier=1,
         ),
     ]
 

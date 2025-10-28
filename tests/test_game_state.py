@@ -63,3 +63,40 @@ def test_next_encounter_logs_and_awards_relic():
     assert miniboss_encounter.kind == "miniboss"
     assert state.player.relics
     assert any("Relic acquired" in event.message for event in state.event_log)
+
+
+def test_resolve_encounter_updates_state():
+    state = GameState()
+    state.player.health = 80
+    encounter = state.next_encounter()
+    assert encounter.kind == "wave"
+
+    summary = state.resolve_encounter(encounter)
+
+    assert summary.souls_gained > 0
+    assert state.player.health <= state.player.max_health
+    assert any("Resolved wave" in event.message for event in state.event_log)
+
+
+def test_final_encounter_triggers_final_boss_flow():
+    rng = random.Random(5)
+    state = GameState(
+        encounter_director=EncounterDirector(rng),
+        environment_director=EnvironmentDirector(random.Random(2)),
+    )
+    state.player.max_health = 420
+    state.player.health = 420
+    state.player.unlocked_weapons["Dusk Repeater"] = 3
+    state.player.unlocked_weapons["Storm Siphon"] = 3
+    state.player.glyph_counts[GlyphFamily.FROST] = 4
+    state.player.glyph_counts[GlyphFamily.STORM] = 4
+    state.player.glyph_counts[GlyphFamily.BLOOD] = 4
+    state.player.glyph_sets_awarded[GlyphFamily.BLOOD] = 1
+
+    encounter = state.final_encounter()
+    assert encounter.kind == "final_boss"
+    summary = state.resolve_encounter(encounter)
+
+    assert summary.kind == "final_boss"
+    assert any("final boss" in event.message.lower() for event in state.event_log)
+    assert any("Dawn breaks" in event.message for event in state.event_log)

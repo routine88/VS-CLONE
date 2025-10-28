@@ -6,7 +6,7 @@ import random
 from typing import Iterable, List, Optional
 
 from . import config
-from .content import build_wave_descriptor, draw_relic, pick_miniboss
+from .content import build_wave_descriptor, draw_relic, final_boss_phases, pick_miniboss
 from .entities import Encounter, GlyphFamily, Player, UpgradeCard
 
 
@@ -88,4 +88,10 @@ class EncounterDirector:
         """Expose the next wave index for inspection (useful for tests)."""
 
         return self._wave_indices[phase]
+
+    def final_encounter(self) -> Encounter:
+        """Return the climactic final boss encounter."""
+
+        phases = final_boss_phases()
+        return Encounter(kind="final_boss", boss_phases=phases)
 
