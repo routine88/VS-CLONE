@@ -1,7 +1,7 @@
 import pytest
 
 from game.combat import CombatSummary
-from game.entities import GlyphFamily
+from game.entities import GlyphFamily, UpgradeType
 from game.meta import default_unlocks
 from game.profile import PlayerProfile
 from game.session import RunResult
@@ -80,3 +80,23 @@ def test_claim_unlock_validates_requirements():
     profile.claim_unlock(final_boss_unlock.id, run_result=final_run)
     cards = {card.name for card in profile.available_upgrade_cards()}
     assert final_boss_unlock.name in cards
+
+
+def test_profile_exposes_full_weapon_roster_by_default():
+    profile = PlayerProfile()
+    cards = profile.available_upgrade_cards()
+    weapon_names = {card.name for card in cards if card.type is UpgradeType.WEAPON}
+
+    expected = {
+        "Dusk Repeater",
+        "Gloom Chakram",
+        "Storm Siphon",
+        "Bloodthorn Lance",
+        "Gravebloom Staff",
+        "Tempest Gauntlet",
+        "Frostbrand Edge",
+        "Inferno Lantern",
+        "Umbral Coil",
+    }
+
+    assert expected.issubset(weapon_names)

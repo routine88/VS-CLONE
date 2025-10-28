@@ -105,6 +105,12 @@ class PlayerProfile:
             "Dusk Repeater",
             "Gloom Chakram",
             "Storm Siphon",
+            "Bloodthorn Lance",
+            "Gravebloom Staff",
+            "Tempest Gauntlet",
+            "Frostbrand Edge",
+            "Inferno Lantern",
+            "Umbral Coil",
         }
         self.available_weapon_cards: Set[str] = set(base_weapon_cards)
 

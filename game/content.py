@@ -3,29 +3,53 @@
 from __future__ import annotations
 
 import random
-from typing import Dict, List, Sequence
+from typing import Dict, Iterable, List, Sequence
 
 from . import config
 from .entities import Enemy, WaveDescriptor
 
 # Enemy archetype blueprints roughly aligned with the PRD's enemy list.
-_ENEMY_ARCHETYPES: Dict[str, Dict[str, float]] = {
+_BASE_ENEMY_ARCHETYPES: Dict[str, Dict[str, float]] = {
     "Swarm Thrall": {"health": 24, "damage": 4, "speed": 1.6},
     "Grave Bat": {"health": 18, "damage": 5, "speed": 2.0},
+    "Blight Crawler": {"health": 30, "damage": 6, "speed": 1.5},
     "Bone Stalker": {"health": 55, "damage": 10, "speed": 1.1},
     "Occultist": {"health": 32, "damage": 8, "speed": 1.2},
+    "Hollow Archer": {"health": 42, "damage": 9, "speed": 1.3},
     "Crypt Bruiser": {"health": 110, "damage": 16, "speed": 0.75},
     "Howling Shade": {"health": 40, "damage": 12, "speed": 1.4},
+    "Wailing Siren": {"health": 58, "damage": 13, "speed": 1.1},
     "Dread Pyre": {"health": 65, "damage": 14, "speed": 1.0},
     "Night Reaper": {"health": 48, "damage": 20, "speed": 1.35},
+    "Ashen Rider": {"health": 90, "damage": 18, "speed": 1.05},
 }
 
 
-_PHASE_ARCHETYPES: Dict[int, Sequence[str]] = {
-    1: ("Swarm Thrall", "Grave Bat"),
-    2: ("Bone Stalker", "Occultist"),
-    3: ("Crypt Bruiser", "Howling Shade"),
-    4: ("Dread Pyre", "Night Reaper"),
+_ELITE_ENEMY_ARCHETYPES: Dict[str, Dict[str, float]] = {
+    "Crypt Juggernaut": {"health": 180, "damage": 28, "speed": 0.8},
+    "Storm Revenant": {"health": 140, "damage": 24, "speed": 1.35},
+    "Grave Titan": {"health": 220, "damage": 32, "speed": 0.7},
+    "Infernal Sovereign": {"health": 190, "damage": 34, "speed": 1.0},
+}
+
+
+_PHASE_BASE_ARCHETYPES: Dict[int, Sequence[str]] = {
+    1: ("Swarm Thrall", "Grave Bat", "Blight Crawler"),
+    2: ("Bone Stalker", "Occultist", "Hollow Archer"),
+    3: ("Crypt Bruiser", "Howling Shade", "Wailing Siren"),
+    4: ("Dread Pyre", "Night Reaper", "Ashen Rider"),
+}
+
+
+_PHASE_ELITE_ARCHETYPES: Dict[int, Sequence[str]] = {
+    3: ("Crypt Juggernaut", "Storm Revenant"),
+    4: ("Crypt Juggernaut", "Storm Revenant", "Grave Titan", "Infernal Sovereign"),
+}
+
+
+_ELITE_SPAWN_CHANCE: Dict[int, float] = {
+    3: 0.12,
+    4: 0.2,
 }
 
 
@@ -44,6 +68,20 @@ _RELIC_LIBRARY: Sequence[str] = (
     "Gale Idols",
     "Iron Bark Totem",
     "Phoenix Ember",
+    "Gravemind Bloom",
+    "Astral Needle",
+    "Chillwyrm Scale",
+    "Inferno Brand",
+    "Verdant Heart",
+    "Clockwork Sigil",
+    "Duskwalker Boots",
+    "Siren's Locket",
+    "Juggernaut Core",
+    "Wraith Candle",
+    "Lantern of Dawn",
+    "Gauntlet Coil",
+    "Frostglass Rosary",
+    "Umbral Codex",
 )
 
 
@@ -58,25 +96,31 @@ _FINAL_BOSS_BLUEPRINT = {
 
 
 def enemy_archetypes_for_phase(phase: int) -> List[str]:
-    """Return the list of archetypes available for the requested phase."""
+    """Return the list of base archetypes available for the requested phase."""
 
     archetypes: List[str] = []
     for step in range(1, phase + 1):
-        archetypes.extend(_PHASE_ARCHETYPES.get(step, ()))
-    # Preserve order while removing duplicates.
-    seen: Dict[str, None] = {}
-    for name in archetypes:
-        seen.setdefault(name, None)
-    return list(seen.keys())
+        archetypes.extend(_PHASE_BASE_ARCHETYPES.get(step, ()))
+    return _dedupe(archetypes)
+
+
+def elite_archetypes_for_phase(phase: int) -> List[str]:
+    """Return elite archetypes unlocked by the requested phase."""
+
+    elites: List[str] = []
+    for step in range(1, phase + 1):
+        elites.extend(_PHASE_ELITE_ARCHETYPES.get(step, ()))
+    return _dedupe(elites)
 
 
 def instantiate_enemy(name: str, scale: float) -> Enemy:
     """Return a scaled instance of the given enemy archetype."""
 
-    try:
-        blueprint = _ENEMY_ARCHETYPES[name]
-    except KeyError as exc:  # pragma: no cover - defensive guard
-        raise ValueError(f"unknown enemy archetype: {name}") from exc
+    blueprint = _BASE_ENEMY_ARCHETYPES.get(name)
+    if blueprint is None:
+        blueprint = _ELITE_ENEMY_ARCHETYPES.get(name)
+    if blueprint is None:
+        raise ValueError(f"unknown enemy archetype: {name}")
     health = max(1, int(blueprint["health"] * scale))
     damage = max(1, int(blueprint["damage"] * scale))
     return Enemy(name=name, health=health, damage=damage, speed=float(blueprint["speed"]))
@@ -100,6 +144,14 @@ def build_wave_descriptor(
 
     pool = enemy_archetypes_for_phase(phase)
     enemies = [instantiate_enemy(rng.choice(pool), scale) for _ in range(enemy_count)]
+
+    elite_chance = _ELITE_SPAWN_CHANCE.get(phase, 0.0)
+    elite_pool = elite_archetypes_for_phase(phase)
+    if elite_pool and elite_chance > 0:
+        for index in range(len(enemies)):
+            if rng.random() < elite_chance:
+                elite_name = rng.choice(elite_pool)
+                enemies[index] = instantiate_enemy(elite_name, scale * 1.15)
     return WaveDescriptor(phase=phase, wave_index=wave_index, enemies=enemies)
 
 
@@ -118,6 +170,21 @@ def draw_relic(rng: random.Random) -> str:
     """Return a relic reward name."""
 
     return rng.choice(_RELIC_LIBRARY)
+
+
+def relic_catalog() -> Sequence[str]:
+    """Expose the full relic catalog for validation and tooling."""
+
+    return list(_RELIC_LIBRARY)
+
+
+def _dedupe(items: Iterable[str]) -> List[str]:
+    """Preserve order while removing duplicates."""
+
+    seen: Dict[str, None] = {}
+    for name in items:
+        seen.setdefault(name, None)
+    return list(seen.keys())
 
 
 def final_boss_phases() -> List[Enemy]:

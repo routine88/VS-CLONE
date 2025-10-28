@@ -43,3 +43,18 @@ Event Log:
 Event logs mirror the order recorded on the `GameState`, making it easier to
 validate encounter pacing, hazard cadence, and reward flow while more of the PRD
 feature set is implemented.
+
+## Content Coverage Checkpoints
+
+The current sandbox reflects the PRD's vertical-slice expectations for combat
+variety:
+
+- **Enemies:** 12 core archetypes roll out over the four phases, while elite
+  variants inject during late waves to pressure builds.
+- **Weapons:** Ten weapons with full four-tier progressions are represented in
+  the upgrade deck, including the unlockable Nocturne Harp.
+- **Relics:** Twenty relic rewards rotate through miniboss drops to keep runs
+  varied and support meta progression hooks.
+
+Prototype transcripts enumerate these pulls so designers can verify cadence and
+encounter composition before assets land in-engine.

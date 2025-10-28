@@ -2,7 +2,7 @@ import random
 
 from game import config
 from game.entities import GlyphFamily, UpgradeCard, UpgradeType
-from game.game_state import GameEvent, GameState
+from game.game_state import GameEvent, GameState, default_upgrade_cards
 from game.environment import EnvironmentDirector
 from game.systems import EncounterDirector
 
@@ -92,7 +92,7 @@ def test_final_encounter_triggers_final_boss_flow():
     state.player.glyph_counts[GlyphFamily.STORM] = 4
     state.player.glyph_counts[GlyphFamily.BLOOD] = 4
     state.player.glyph_sets_awarded[GlyphFamily.BLOOD] = 1
-
+https://github.com/routine88/VS-CLONE/pull/5/conflict?name=tests%252Ftest_game_state.py&base_oid=c6ad3aa1ea7565b44090d9a2f7366fd447a26635&head_oid=3d9dff8ba382d5f8a17646f194d6ac59c1391efd
     encounter = state.final_encounter()
     assert encounter.kind == "final_boss"
     summary = state.resolve_encounter(encounter)
@@ -100,3 +100,21 @@ def test_final_encounter_triggers_final_boss_flow():
     assert summary.kind == "final_boss"
     assert any("final boss" in event.message.lower() for event in state.event_log)
     assert any("Dawn breaks" in event.message for event in state.event_log)
+
+
+def test_default_upgrade_cards_cover_weapon_roster():
+    cards = default_upgrade_cards()
+    weapon_cards = [card for card in cards if card.type is UpgradeType.WEAPON]
+
+    tiers_by_weapon = {}
+    for card in weapon_cards:
+        assert card.weapon_tier is not None
+        tiers_by_weapon.setdefault(card.name, set()).add(card.weapon_tier)
+
+    assert len(tiers_by_weapon) == 10
+    assert tiers_by_weapon["Dusk Repeater"] == {2, 3, 4}
+
+    for weapon, tiers in tiers_by_weapon.items():
+        if weapon == "Dusk Repeater":
+            continue
+        assert tiers == {1, 2, 3, 4}

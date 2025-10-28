@@ -167,8 +167,71 @@ class GameState:
         return summary
 
 
+_WEAPON_CARD_DEFINITIONS = {
+    "Dusk Repeater": {
+        2: "Upgrade the Dusk Repeater to tier 2, firing extra bolts.",
+        3: "Enhance the Dusk Repeater to tier 3, tightening spread and power.",
+        4: "Max out the Dusk Repeater at tier 4 for relentless triple volleys.",
+    },
+    "Gloom Chakram": {
+        1: "Unlock the Gloom Chakram, a bouncing blade of shadow.",
+        2: "Refine the Gloom Chakram to tier 2 for twin ricochets.",
+        3: "Empower the Gloom Chakram to tier 3, widening its spiral.",
+        4: "Ascend the Gloom Chakram to tier 4, unleashing a trio of blades.",
+    },
+    "Storm Siphon": {
+        1: "Harness the Storm Siphon to unleash piercing beams.",
+        2: "Amplify the Storm Siphon to tier 2 for chained arcs.",
+        3: "Elevate the Storm Siphon to tier 3, multiplying conduits.",
+        4: "Overcharge the Storm Siphon to tier 4, releasing tempest barrages.",
+    },
+    "Nocturne Harp": {
+        1: "Unlock the Nocturne Harp, summoning spectral chords.",
+        2: "Tune the Nocturne Harp to tier 2 for layered harmonics.",
+        3: "Resonate the Nocturne Harp to tier 3, echoing through crowds.",
+        4: "Master the Nocturne Harp at tier 4, conducting spirit choirs.",
+    },
+    "Bloodthorn Lance": {
+        1: "Claim the Bloodthorn Lance, a brutal piercing thrust.",
+        2: "Temper the Bloodthorn Lance to tier 2 for deeper impalements.",
+        3: "Enrage the Bloodthorn Lance to tier 3, draining foes swiftly.",
+        4: "Crown the Bloodthorn Lance at tier 4 with devastating reach.",
+    },
+    "Gravebloom Staff": {
+        1: "Channel the Gravebloom Staff, seeding necrotic blooms.",
+        2: "Empower the Gravebloom Staff to tier 2 for extra spores.",
+        3: "Envenom the Gravebloom Staff to tier 3, lingering longer.",
+        4: "Awaken the Gravebloom Staff at tier 4 to carpet the field.",
+    },
+    "Tempest Gauntlet": {
+        1: "Equip the Tempest Gauntlet for rapid shock strikes.",
+        2: "Stabilize the Tempest Gauntlet to tier 2 for dual jabs.",
+        3: "Ignite the Tempest Gauntlet to tier 3, chaining surges.",
+        4: "Ascend the Tempest Gauntlet at tier 4 with triple storms.",
+    },
+    "Frostbrand Edge": {
+        1: "Wield the Frostbrand Edge to cleave with chilling arcs.",
+        2: "Hone the Frostbrand Edge to tier 2, biting deeper.",
+        3: "Empower the Frostbrand Edge to tier 3 for twin slashes.",
+        4: "Crown the Frostbrand Edge at tier 4, freezing whole ranks.",
+    },
+    "Inferno Lantern": {
+        1: "Kindle the Inferno Lantern, scattering flame wisps.",
+        2: "Stoke the Inferno Lantern to tier 2 for denser embers.",
+        3: "Unleash the Inferno Lantern at tier 3, prolonging burns.",
+        4: "Overheat the Inferno Lantern to tier 4, flooding fire spirits.",
+    },
+    "Umbral Coil": {
+        1: "Bind the Umbral Coil to lash erratic shadows.",
+        2: "Tighten the Umbral Coil to tier 2, splitting lashes.",
+        3: "Empower the Umbral Coil to tier 3 for triple snaps.",
+        4: "Unfurl the Umbral Coil at tier 4, saturating every lane.",
+    },
+}
+
+
 def default_upgrade_cards() -> List[UpgradeCard]:
-    return [
+    cards = [
         UpgradeCard(
             name="Blood Sigil",
             description="Add a blood glyph, increasing life steal potential.",
@@ -211,29 +274,17 @@ def default_upgrade_cards() -> List[UpgradeCard]:
             type=UpgradeType.SURVIVAL,
             modifiers={"max_health": 20},
         ),
-        UpgradeCard(
-            name="Dusk Repeater",
-            description="Upgrade the Dusk Repeater to tier 2, firing extra bolts.",
-            type=UpgradeType.WEAPON,
-            weapon_tier=2,
-        ),
-        UpgradeCard(
-            name="Gloom Chakram",
-            description="Unlock the Gloom Chakram, a bouncing blade of shadow.",
-            type=UpgradeType.WEAPON,
-            weapon_tier=1,
-        ),
-        UpgradeCard(
-            name="Storm Siphon",
-            description="Harness the Storm Siphon to unleash piercing beams.",
-            type=UpgradeType.WEAPON,
-            weapon_tier=1,
-        ),
-        UpgradeCard(
-            name="Nocturne Harp",
-            description="Unlock the Nocturne Harp, summoning spectral chords.",
-            type=UpgradeType.WEAPON,
-            weapon_tier=1,
-        ),
     ]
+
+    for weapon, tiers in _WEAPON_CARD_DEFINITIONS.items():
+        for tier in sorted(tiers):
+            cards.append(
+                UpgradeCard(
+                    name=weapon,
+                    description=tiers[tier],
+                    type=UpgradeType.WEAPON,
+                    weapon_tier=tier,
+                )
+            )
+    return cards
 

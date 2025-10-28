@@ -31,16 +31,61 @@ _WEAPON_LIBRARY: WeaponLibrary = {
         1: WeaponTier(damage=18, cooldown=0.9, projectiles=1),
         2: WeaponTier(damage=22, cooldown=0.85, projectiles=2),
         3: WeaponTier(damage=28, cooldown=0.8, projectiles=2),
+        4: WeaponTier(damage=34, cooldown=0.75, projectiles=3),
     },
     "Gloom Chakram": {
         1: WeaponTier(damage=26, cooldown=1.2, projectiles=1),
         2: WeaponTier(damage=32, cooldown=1.1, projectiles=2),
         3: WeaponTier(damage=40, cooldown=1.0, projectiles=2),
+        4: WeaponTier(damage=50, cooldown=0.9, projectiles=3),
     },
     "Storm Siphon": {
         1: WeaponTier(damage=14, cooldown=0.6, projectiles=1),
         2: WeaponTier(damage=17, cooldown=0.55, projectiles=2),
         3: WeaponTier(damage=21, cooldown=0.5, projectiles=3),
+        4: WeaponTier(damage=26, cooldown=0.45, projectiles=4),
+    },
+    "Nocturne Harp": {
+        1: WeaponTier(damage=24, cooldown=1.4, projectiles=1),
+        2: WeaponTier(damage=30, cooldown=1.25, projectiles=2),
+        3: WeaponTier(damage=38, cooldown=1.1, projectiles=2),
+        4: WeaponTier(damage=48, cooldown=1.0, projectiles=3),
+    },
+    "Bloodthorn Lance": {
+        1: WeaponTier(damage=36, cooldown=1.5, projectiles=1),
+        2: WeaponTier(damage=44, cooldown=1.35, projectiles=1),
+        3: WeaponTier(damage=56, cooldown=1.2, projectiles=1),
+        4: WeaponTier(damage=72, cooldown=1.05, projectiles=1),
+    },
+    "Gravebloom Staff": {
+        1: WeaponTier(damage=20, cooldown=1.3, projectiles=2),
+        2: WeaponTier(damage=26, cooldown=1.2, projectiles=3),
+        3: WeaponTier(damage=32, cooldown=1.1, projectiles=3),
+        4: WeaponTier(damage=40, cooldown=1.0, projectiles=4),
+    },
+    "Tempest Gauntlet": {
+        1: WeaponTier(damage=16, cooldown=0.7, projectiles=1),
+        2: WeaponTier(damage=20, cooldown=0.65, projectiles=2),
+        3: WeaponTier(damage=25, cooldown=0.6, projectiles=3),
+        4: WeaponTier(damage=32, cooldown=0.55, projectiles=3),
+    },
+    "Frostbrand Edge": {
+        1: WeaponTier(damage=28, cooldown=1.1, projectiles=1),
+        2: WeaponTier(damage=34, cooldown=1.0, projectiles=1),
+        3: WeaponTier(damage=42, cooldown=0.95, projectiles=2),
+        4: WeaponTier(damage=52, cooldown=0.9, projectiles=2),
+    },
+    "Inferno Lantern": {
+        1: WeaponTier(damage=18, cooldown=1.6, projectiles=3),
+        2: WeaponTier(damage=24, cooldown=1.45, projectiles=3),
+        3: WeaponTier(damage=30, cooldown=1.3, projectiles=4),
+        4: WeaponTier(damage=38, cooldown=1.15, projectiles=4),
+    },
+    "Umbral Coil": {
+        1: WeaponTier(damage=22, cooldown=1.0, projectiles=1),
+        2: WeaponTier(damage=28, cooldown=0.95, projectiles=2),
+        3: WeaponTier(damage=34, cooldown=0.9, projectiles=3),
+        4: WeaponTier(damage=42, cooldown=0.85, projectiles=3),
     },
 }
 
