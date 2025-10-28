@@ -9,4 +9,5 @@ from .meta import (  # noqa: F401
     Unlockable,
     default_unlocks,
 )
+from .profile import HunterDefinition, PlayerProfile, default_hunters  # noqa: F401
 from .session import RunResult, RunSimulator, score_run  # noqa: F401

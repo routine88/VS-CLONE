@@ -27,7 +27,7 @@ class GameState:
     time_elapsed: float = 0.0
     current_phase: int = 1
     spawn_director: SpawnDirector = field(default_factory=SpawnDirector)
-    upgrade_deck: UpgradeDeck = field(default_factory=lambda: UpgradeDeck(_default_cards()))
+    upgrade_deck: UpgradeDeck = field(default_factory=lambda: UpgradeDeck(default_upgrade_cards()))
     encounter_director: EncounterDirector = field(default_factory=EncounterDirector)
     environment_director: EnvironmentDirector = field(default_factory=EnvironmentDirector)
     combat_resolver: CombatResolver = field(default_factory=CombatResolver)
@@ -167,7 +167,7 @@ class GameState:
         return summary
 
 
-def _default_cards() -> List[UpgradeCard]:
+def default_upgrade_cards() -> List[UpgradeCard]:
     return [
         UpgradeCard(
             name="Blood Sigil",
@@ -194,6 +194,18 @@ def _default_cards() -> List[UpgradeCard]:
             glyph_family=GlyphFamily.INFERNO,
         ),
         UpgradeCard(
+            name="Clockwork Sigil",
+            description="Add a clockwork glyph, enhancing cooldown reduction.",
+            type=UpgradeType.GLYPH,
+            glyph_family=GlyphFamily.CLOCKWORK,
+        ),
+        UpgradeCard(
+            name="Verdant Sigil",
+            description="Add a verdant glyph, amplifying regeneration.",
+            type=UpgradeType.GLYPH,
+            glyph_family=GlyphFamily.VERDANT,
+        ),
+        UpgradeCard(
             name="Reinforced Plating",
             description="Increase max health by 20.",
             type=UpgradeType.SURVIVAL,
@@ -214,6 +226,12 @@ def _default_cards() -> List[UpgradeCard]:
         UpgradeCard(
             name="Storm Siphon",
             description="Harness the Storm Siphon to unleash piercing beams.",
+            type=UpgradeType.WEAPON,
+            weapon_tier=1,
+        ),
+        UpgradeCard(
+            name="Nocturne Harp",
+            description="Unlock the Nocturne Harp, summoning spectral chords.",
             type=UpgradeType.WEAPON,
             weapon_tier=1,
         ),
