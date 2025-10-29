@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Tuple
 
 
 class GlyphFamily(str, Enum):
@@ -20,6 +20,14 @@ class UpgradeType(Enum):
     WEAPON = auto()
     GLYPH = auto()
     SURVIVAL = auto()
+
+
+class EnemyLane(str, Enum):
+    """Spatial lane an enemy prefers when engaging the player."""
+
+    GROUND = "ground"
+    AIR = "air"
+    CEILING = "ceiling"
 
 
 @dataclass
@@ -108,6 +116,8 @@ class Enemy:
     health: int
     damage: int
     speed: float
+    lane: EnemyLane = EnemyLane.GROUND
+    behaviors: Tuple[str, ...] = field(default_factory=tuple)
 
 
 @dataclass

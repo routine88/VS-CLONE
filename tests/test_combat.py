@@ -2,7 +2,7 @@ import random
 
 from game.combat import CombatResolver
 from game.content import build_wave_descriptor, final_boss_phases, pick_miniboss
-from game.entities import GlyphFamily, Player
+from game.entities import Enemy, EnemyLane, GlyphFamily, Player, WaveDescriptor
 
 
 def test_combat_resolver_wave_scaling():
@@ -56,3 +56,30 @@ def test_combat_resolver_final_boss_multiphase():
     assert summary.enemies_defeated == len(phases)
     assert summary.damage_taken > 0
     assert any("Phase 1" in note for note in summary.notes)
+
+
+def test_lane_and_behavior_modifiers_surface_in_summary_notes():
+    player = Player()
+    enemies = [
+        Enemy(
+            name="Air Striker",
+            health=45,
+            damage=6,
+            speed=1.4,
+            lane=EnemyLane.AIR,
+            behaviors=("ranged",),
+        ),
+        Enemy(
+            name="Ceiling Lurker",
+            health=60,
+            damage=8,
+            speed=1.1,
+            lane=EnemyLane.CEILING,
+            behaviors=("clinger",),
+        ),
+    ]
+    wave = WaveDescriptor(phase=3, wave_index=0, enemies=enemies)
+    summary = CombatResolver().resolve_wave(player, wave)
+
+    assert any("Lane modifier" in note for note in summary.notes)
+    assert any("Behavior modifier" in note for note in summary.notes)

@@ -1,5 +1,6 @@
 """Core package for Nightfall Survivors prototype logic."""
 
+from .accessibility import AccessibilitySettings  # noqa: F401
 from .analytics import (  # noqa: F401
     AggregateMetrics,
     RunMetrics,
@@ -27,7 +28,19 @@ from .distribution import (  # noqa: F401
     demo_duration,
     validate_build_targets,
 )
+from .cloud import CloudSlot, CloudSync, run_cli as cloud_cli  # noqa: F401
 from .environment import EnvironmentDirector  # noqa: F401
+from .graphics import (  # noqa: F401
+    AnimationClip,
+    AnimationFrame,
+    Camera,
+    GraphicsEngine,
+    LayerSettings,
+    RenderFrame,
+    RenderInstruction,
+    SceneNode,
+    Sprite,
+)
 from .game_state import GameState  # noqa: F401
 from .live_ops import (  # noqa: F401
     SeasonalEvent,
@@ -42,6 +55,15 @@ from .meta import (  # noqa: F401
     SigilLedger,
     Unlockable,
     default_unlocks,
+)
+from .monetization import (  # noqa: F401
+    CosmeticInventory,
+    CosmeticItem,
+    CurrencyWallet,
+    DlcPack,
+    Storefront,
+    default_cosmetics,
+    default_dlc_packs,
 )
 from .profile import HunterDefinition, PlayerProfile, default_hunters  # noqa: F401
 from .prototype import (  # noqa: F401
@@ -64,5 +86,6 @@ from .localization import (  # noqa: F401
     default_catalog,
     get_translator,
 )
+from .entities import EnemyLane  # noqa: F401
 from .session import RunResult, RunSimulator, score_run  # noqa: F401
 from .storage import decrypt_data, encrypt_data, load_profile, save_profile  # noqa: F401

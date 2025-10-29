@@ -118,6 +118,12 @@ def _build_default_catalog() -> LocalizationCatalog:
         "cli.help.duration": "Session duration in seconds",
         "cli.help.fps": "Target frames per second",
         "cli.help.language": "Language code for UI text",
+        "cli.help.assist_radius": "Auto-aim radius modifier for projectiles",
+        "cli.help.damage_multiplier": "Incoming damage multiplier (lower for assist)",
+        "cli.help.speed_scale": "Game speed multiplier (<1 slows the action)",
+        "cli.help.projectile_speed": "Projectile speed multiplier",
+        "cli.help.high_contrast": "Enable high-contrast rendering",
+        "cli.help.message_log": "Number of messages to keep visible",
     }
 
     spanish_strings: Dict[str, str] = {
@@ -157,6 +163,12 @@ def _build_default_catalog() -> LocalizationCatalog:
         "cli.help.duration": "Duración de la sesión en segundos",
         "cli.help.fps": "Objetivo de fotogramas por segundo",
         "cli.help.language": "Código de idioma para la interfaz",
+        "cli.help.assist_radius": "Modificador de autoapuntado para proyectiles",
+        "cli.help.damage_multiplier": "Multiplicador de daño recibido (menor para asistencia)",
+        "cli.help.speed_scale": "Multiplicador de velocidad del juego (<1 lo desacelera)",
+        "cli.help.projectile_speed": "Multiplicador de velocidad de proyectiles",
+        "cli.help.high_contrast": "Activa representación de alto contraste",
+        "cli.help.message_log": "Cantidad de mensajes visibles en pantalla",
     }
 
     catalog.register_language("en", english_strings)

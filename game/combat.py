@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from typing import Iterable, List, Literal, Mapping
 
-from .entities import Enemy, GlyphFamily, Player, WaveDescriptor
+from .entities import Enemy, EnemyLane, GlyphFamily, Player, WaveDescriptor
 
 
 @dataclass(frozen=True)
@@ -161,6 +162,45 @@ def _souls_from_enemies(enemies: Iterable[Enemy]) -> int:
     return max(5, int(total_health * 0.35))
 
 
+_BEHAVIOR_PRESSURE: Mapping[str, float] = {
+    "ranged": 0.12,
+    "kamikaze": 0.2,
+    "clinger": 0.16,
+    "dash": 0.1,
+    "pounce": 0.1,
+    "shockwave": 0.14,
+    "wail": 0.08,
+    "slow": 0.05,
+    "shield": 0.06,
+    "stagger": 0.04,
+    "burrow": 0.05,
+    "swoop": 0.06,
+}
+
+
+def _lane_pressure_multiplier(enemies: Iterable[Enemy]) -> float:
+    counts: Counter[EnemyLane] = Counter(enemy.lane for enemy in enemies)
+    multiplier = 1.0
+    if counts[EnemyLane.AIR]:
+        multiplier += 0.05 * counts[EnemyLane.AIR]
+    if counts[EnemyLane.CEILING]:
+        multiplier += 0.1 + 0.03 * max(0, counts[EnemyLane.CEILING] - 1)
+    return multiplier
+
+
+def _behavior_pressure_multiplier(enemies: Iterable[Enemy]) -> float:
+    total_bonus = 0.0
+    enemy_count = 0
+    for enemy in enemies:
+        enemy_count += 1
+        for tag in enemy.behaviors:
+            total_bonus += _BEHAVIOR_PRESSURE.get(tag, 0.0)
+    if enemy_count == 0:
+        return 1.0
+    averaged = total_bonus / enemy_count
+    return max(0.8, 1.0 + averaged)
+
+
 class CombatResolver:
     """Resolves encounters into high level combat summaries."""
 
@@ -188,6 +228,9 @@ class CombatResolver:
             phase_health = phase.health
             duration = phase_health / player_dps
             pressure = phase.damage * (1.25 + 0.12 * phase.speed)
+            lane_multiplier = _lane_pressure_multiplier([phase])
+            behavior_multiplier = _behavior_pressure_multiplier([phase])
+            pressure *= lane_multiplier * behavior_multiplier
             expected_damage = pressure * (duration / (duration + mitigation))
             damage_taken = int(expected_damage)
 
@@ -195,8 +238,20 @@ class CombatResolver:
             total_duration += duration
             total_damage_taken += damage_taken
             notes.append(
-                f"Phase {index} endured {duration:.1f}s with pressure {pressure:.1f}, costing approximately {damage_taken} health."
+                "Phase {index} endured {duration:.1f}s with pressure {pressure:.1f}, costing approximately {damage_taken} "
+                "health while attacking from the {lane} lane.".format(
+                    index=index,
+                    duration=duration,
+                    pressure=pressure,
+                    damage_taken=damage_taken,
+                    lane=phase.lane.value,
+                )
             )
+
+            if lane_multiplier != 1.0 or behavior_multiplier != 1.0:
+                notes.append(
+                    f"    Modifiers applied -> lane x{lane_multiplier:.2f}, behaviors x{behavior_multiplier:.2f}."
+                )
 
         souls = max(50, int(total_health * 0.55))
         healing = int(total_health * lifesteal_ratio)
@@ -231,6 +286,9 @@ class CombatResolver:
         duration = total_health / player_dps
 
         pressure = total_damage * (1.0 + 0.15 * total_speed)
+        lane_multiplier = _lane_pressure_multiplier(enemy_list)
+        behavior_multiplier = _behavior_pressure_multiplier(enemy_list)
+        pressure *= lane_multiplier * behavior_multiplier
         mitigation = _defense_factor(player)
         expected_damage = pressure * (duration / (duration + mitigation))
         damage_taken = int(expected_damage)
@@ -247,6 +305,11 @@ class CombatResolver:
             f"Encounter duration: {duration:.1f}s",
             f"Incoming pressure: {pressure:.1f}",
         ]
+
+        if lane_multiplier != 1.0:
+            notes.append(f"Lane modifier applied: x{lane_multiplier:.2f}")
+        if behavior_multiplier != 1.0:
+            notes.append(f"Behavior modifier applied: x{behavior_multiplier:.2f}")
 
         if lifesteal_ratio > 0:
             notes.append(f"Life steal restored {healing} health.")

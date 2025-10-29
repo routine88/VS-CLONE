@@ -1,5 +1,9 @@
+import pytest
+
 from game import content
-from game.interactive import ArcadeEngine, InputFrame
+from game.entities import Enemy, EnemyLane
+from game.accessibility import AccessibilitySettings
+from game.interactive import ActiveEnemy, ArcadeEngine, InputFrame, Projectile
 from game.localization import default_catalog, get_translator
 
 
@@ -53,3 +57,82 @@ def test_arcade_engine_messages_follow_translator():
     engine.choose_upgrade(0)
     frame = engine.step(0.1, InputFrame())
     assert any(message.startswith("Elegido") for message in frame.messages)
+
+
+def test_spawn_enemy_positions_respect_lane(monkeypatch):
+    engine = ArcadeEngine(spawn_interval=10.0, target_duration=30.0)
+    engine._rng.uniform = lambda lower, upper: lower  # type: ignore[assignment]
+
+    def spawn_for(lane: EnemyLane) -> float:
+        template = Enemy(name=f"{lane.value} foe", health=20, damage=5, speed=1.0, lane=lane)
+
+        monkeypatch.setattr(content, "enemy_archetypes_for_phase", lambda phase: [template.name])
+
+        def _instantiate(name: str, scale: float) -> Enemy:
+            return Enemy(
+                name=template.name,
+                health=template.health,
+                damage=template.damage,
+                speed=template.speed,
+                lane=template.lane,
+                behaviors=template.behaviors,
+            )
+
+        monkeypatch.setattr(content, "instantiate_enemy", _instantiate)
+        engine._enemies.clear()
+        engine._spawn_enemy()
+        return engine._enemies[-1].y
+
+    ground_y = spawn_for(EnemyLane.GROUND)
+    air_y = spawn_for(EnemyLane.AIR)
+    ceiling_y = spawn_for(EnemyLane.CEILING)
+
+    assert ground_y == pytest.approx(engine._ground)
+    assert engine._ceiling + 2.5 <= air_y <= engine._ground - 2.0
+    assert ceiling_y == pytest.approx(engine._ceiling + 0.5)
+
+
+def test_damage_multiplier_scales_collision_damage():
+    settings = AccessibilitySettings(damage_taken_multiplier=0.5)
+    engine = ArcadeEngine(spawn_interval=10.0, target_duration=30.0, accessibility=settings)
+    template = Enemy(name="Bruiser", health=50, damage=20, speed=1.0)
+    foe = ActiveEnemy(template=template, x=1.0, y=engine._ground, speed=0.0, health=50.0)
+    starting_health = engine.state.player.health
+    engine._handle_collision(foe)  # type: ignore[attr-defined]
+    assert engine.state.player.health == starting_health - 10
+
+
+def test_auto_aim_radius_expands_hits():
+    enemy_template = Enemy(name="Hover", health=20, damage=5, speed=1.0, lane=EnemyLane.AIR)
+    projectile = Projectile(x=10.0, y=5.0, speed=0.0, damage=12.0)
+
+    base_engine = ArcadeEngine(spawn_interval=10.0, target_duration=30.0)
+    boosted_engine = ArcadeEngine(
+        spawn_interval=10.0,
+        target_duration=30.0,
+        accessibility=AccessibilitySettings(auto_aim_radius=2.5),
+    )
+
+    base_enemy = ActiveEnemy(template=enemy_template, x=9.5, y=6.3, speed=0.0, health=20.0)
+    boosted_enemy = ActiveEnemy(template=enemy_template, x=9.5, y=6.3, speed=0.0, health=20.0)
+
+    base_engine._enemies = [base_enemy]
+    base_engine._projectiles = [projectile]
+    base_engine._update_projectiles(0.1)  # type: ignore[attr-defined]
+
+    boosted_engine._enemies = [boosted_enemy]
+    boosted_engine._projectiles = [Projectile(x=10.0, y=5.0, speed=0.0, damage=12.0)]
+    boosted_engine._update_projectiles(0.1)  # type: ignore[attr-defined]
+
+    assert base_enemy.health == 20.0
+    assert boosted_enemy.health < 20.0
+
+
+def test_message_log_respects_accessibility_limit():
+    settings = AccessibilitySettings(message_log_size=2)
+    engine = ArcadeEngine(spawn_interval=10.0, target_duration=30.0, accessibility=settings)
+    engine._push_message("First")  # type: ignore[attr-defined]
+    engine._push_message("Second")  # type: ignore[attr-defined]
+    engine._push_message("Third")  # type: ignore[attr-defined]
+    frame = engine.step(0.1, InputFrame())
+    assert frame.messages == ["Second", "Third"]

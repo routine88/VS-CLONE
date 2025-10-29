@@ -4,15 +4,18 @@ from __future__ import annotations
 
 import argparse
 import curses
+import math
 import random
 import time
 from dataclasses import dataclass, field
 from typing import List, Optional, Sequence
 
 from . import content
+from .accessibility import AccessibilitySettings
 from .combat import glyph_damage_multiplier, weapon_tier
-from .entities import Enemy, UpgradeCard
+from .entities import Enemy, EnemyLane, UpgradeCard
 from .game_state import GameState
+from .graphics import Camera, GraphicsEngine, SceneNode
 from .localization import Translator, get_translator
 
 
@@ -73,6 +76,8 @@ class FrameSnapshot:
     upgrade_options: Sequence[UpgradeCard] = field(default_factory=list)
     survived: bool = False
     defeated: bool = False
+    high_contrast: bool = False
+    message_log_size: int = 8
 
 
 class ArcadeEngine:
@@ -87,6 +92,7 @@ class ArcadeEngine:
         spawn_interval: float = 2.0,
         target_duration: float = 300.0,
         translator: Translator | None = None,
+        accessibility: AccessibilitySettings | None = None,
     ) -> None:
         if width < 40 or height < 10:
             raise ValueError("playfield too small for interaction")
@@ -101,6 +107,7 @@ class ArcadeEngine:
         else:
             self._state = state
             self._translator = translator or state.translator
+        self._accessibility = (accessibility or AccessibilitySettings()).normalized()
         self._player_position = [5.0, self.height / 2.0]
         self._player_velocity = [0.0, 0.0]
         self._dash_cooldown = 0.0
@@ -118,6 +125,7 @@ class ArcadeEngine:
         self._target_duration = target_duration
         self._defeated = False
         self._rng = random.Random()
+        self._last_snapshot: FrameSnapshot | None = None
 
         self._refresh_weapon_cache()
 
@@ -141,11 +149,17 @@ class ArcadeEngine:
     def translator(self) -> Translator:
         return self._translator
 
+    @property
+    def accessibility(self) -> AccessibilitySettings:
+        return self._accessibility
+
     def step(self, delta_time: float, inputs: InputFrame) -> FrameSnapshot:
         """Advance the engine and return a snapshot for presentation."""
 
         if delta_time <= 0:
             raise ValueError("delta_time must be positive")
+
+        delta_time *= self._accessibility.game_speed_multiplier
 
         if self._defeated or self._elapsed >= self._target_duration:
             return self._snapshot()
@@ -181,11 +195,17 @@ class ArcadeEngine:
 
         card = self._upgrade_options[index]
         self._state.apply_upgrade(card)
-        self._messages.append(self._translate("ui.upgrade_selected", name=card.name))
+        self._push_message(self._translate("ui.upgrade_selected", name=card.name))
         self._awaiting_upgrade = False
         self._upgrade_options = []
         self._refresh_weapon_cache()
         return card
+
+    def _push_message(self, message: str) -> None:
+        self._messages.append(message)
+        limit = max(1, int(self._accessibility.message_log_size))
+        if len(self._messages) > limit:
+            self._messages = self._messages[-limit:]
 
     def _apply_movement(self, delta_time: float, inputs: InputFrame) -> None:
         speed = 14.0
@@ -235,7 +255,7 @@ class ArcadeEngine:
             proj = Projectile(
                 x=self._player_position[0] + 1.5,
                 y=max(self._ceiling, min(self._ground, base_y + offset)),
-                speed=28.0,
+                speed=28.0 * self._accessibility.projectile_speed_multiplier,
                 damage=stats.damage * multiplier,
             )
             self._projectiles.append(proj)
@@ -252,7 +272,10 @@ class ArcadeEngine:
             for enemy in self._enemies:
                 if not enemy.alive:
                     continue
-                if abs(enemy.y - projectile.y) <= 0.8 and projectile.x >= enemy.x:
+                if (
+                    abs(enemy.y - projectile.y) <= self._accessibility.auto_aim_radius
+                    and projectile.x >= enemy.x
+                ):
                     hit_enemy = enemy
                     break
 
@@ -270,7 +293,7 @@ class ArcadeEngine:
         xp = max(4, enemy.health // 2)
         notifications = self._state.grant_experience(xp)
         for event in notifications:
-            self._messages.append(event.message)
+            self._push_message(event.message)
         if any(event.message.startswith("Level up!") for event in notifications):
             self._upgrade_options = list(self._state.draw_upgrades())
             self._awaiting_upgrade = True
@@ -282,14 +305,28 @@ class ArcadeEngine:
         name = self._rng.choice(archetypes)
         scale = 1.0 + 0.05 * self._state.current_phase
         enemy = content.instantiate_enemy(name, scale)
+        if enemy.lane is EnemyLane.GROUND:
+            y = self._ground
+        elif enemy.lane is EnemyLane.AIR:
+            lower = self._ceiling + 2.5
+            upper = self._ground - 2.0
+            y = self._rng.uniform(lower, upper)
+        else:
+            y = self._ceiling + 0.5
+
+        base_speed = 3.5 + enemy.speed * 1.8
+        if "dash" in enemy.behaviors or "pounce" in enemy.behaviors:
+            base_speed += 1.6
+        if "kamikaze" in enemy.behaviors:
+            base_speed += 2.4
+        if "slow" in enemy.behaviors:
+            base_speed -= 0.8
+
         active = ActiveEnemy(
             template=enemy,
             x=self.width - 2.0,
-            y=max(
-                self._ceiling,
-                min(self._ground, 1.5 + self._rng.random() * (self._ground - 2.0)),
-            ),
-            speed=5.0 + 0.5 * self._state.current_phase,
+            y=y,
+            speed=max(1.5, base_speed),
             health=float(enemy.health),
         )
         self._enemies.append(active)
@@ -300,6 +337,21 @@ class ArcadeEngine:
             if not enemy.alive:
                 continue
             enemy.x -= enemy.speed * delta_time
+            if enemy.template.lane is EnemyLane.GROUND:
+                enemy.y = max(self._ground - 0.2, min(self._ground, enemy.y + delta_time * 6.0))
+            elif enemy.template.lane is EnemyLane.AIR:
+                if "swoop" in enemy.template.behaviors or "pounce" in enemy.template.behaviors:
+                    target = self._player_position[1]
+                    enemy.y += (target - enemy.y) * min(1.0, delta_time * 1.8)
+                else:
+                    wave = math.sin(self._elapsed * 2.2 + enemy.x * 0.08)
+                    enemy.y += wave * delta_time * 6.0
+                enemy.y = max(self._ceiling + 0.5, min(self._ground - 1.0, enemy.y))
+            else:
+                if "clinger" in enemy.template.behaviors and enemy.x < self.width * 0.55:
+                    enemy.y = min(self._ground - 0.6, enemy.y + delta_time * 9.0)
+                else:
+                    enemy.y = max(self._ceiling + 0.3, enemy.y - delta_time * 6.5)
             if enemy.x <= 1.5:
                 self._handle_collision(enemy)
                 continue
@@ -308,9 +360,16 @@ class ArcadeEngine:
 
     def _handle_collision(self, enemy: ActiveEnemy) -> None:
         damage = max(1, enemy.template.damage)
-        self._state.player.health = max(0, self._state.player.health - damage)
-        self._messages.append(
-            self._translate("ui.damage_taken", enemy=enemy.template.name, damage=damage)
+        if "kamikaze" in enemy.template.behaviors:
+            damage = int(damage * 1.5)
+        scaled_damage = max(
+            1, int(round(damage * self._accessibility.damage_taken_multiplier))
+        )
+        self._state.player.health = max(0, self._state.player.health - scaled_damage)
+        self._push_message(
+            self._translate(
+                "ui.damage_taken", enemy=enemy.template.name, damage=scaled_damage
+            )
         )
         if self._state.player.health == 0:
             self._defeated = True
@@ -332,7 +391,7 @@ class ArcadeEngine:
                 hits += 1
                 self._reward_enemy(enemy.template)
         if hits:
-            self._messages.append(self._translate("ui.ultimate_ready"))
+            self._push_message(self._translate("ui.ultimate_ready"))
             self._ultimate_cooldown = 18.0
 
     def _snapshot(self) -> FrameSnapshot:
@@ -358,8 +417,10 @@ class ArcadeEngine:
             upgrade_options=list(self._upgrade_options),
             survived=self._elapsed >= self._target_duration and not self._defeated,
             defeated=self._defeated,
+            high_contrast=self._accessibility.high_contrast,
+            message_log_size=self._accessibility.message_log_size,
         )
-        self._messages.clear()
+        self._last_snapshot = snapshot
         return snapshot
 
     def _refresh_weapon_cache(self) -> None:
@@ -368,6 +429,92 @@ class ArcadeEngine:
 
     def _translate(self, key: str, **params) -> str:
         return self._translator.translate(key, **params)
+
+    @property
+    def last_snapshot(self) -> FrameSnapshot | None:
+        """Expose the most recent frame snapshot for external systems."""
+
+        return self._last_snapshot
+
+    def build_scene_nodes(self, snapshot: FrameSnapshot | None = None) -> Sequence[SceneNode]:
+        """Convert gameplay state into a scene graph for the graphics engine."""
+
+        snap = snapshot or self._last_snapshot
+        if snap is None:
+            raise RuntimeError("no snapshot available to convert into scene nodes")
+
+        nodes: List[SceneNode] = []
+        nodes.append(
+            SceneNode(
+                id="player",
+                position=(snap.player_x, snap.player_y),
+                layer="actors",
+                sprite_id="actors/player",
+                metadata={"kind": "player", "health": snap.health, "max_health": snap.max_health},
+            )
+        )
+
+        nodes.append(
+            SceneNode(
+                id="background",
+                position=(snap.player_x, self.height / 2.0),
+                layer="background",
+                sprite_id="environment/dusk",  # allows art swaps per biome later
+                parallax=0.25,
+                metadata={"kind": "background", "phase": snap.phase},
+            )
+        )
+
+        for index, enemy in enumerate(snap.enemies):
+            if not enemy.alive:
+                continue
+            lane = enemy.template.lane.value
+            nodes.append(
+                SceneNode(
+                    id=f"enemy-{index}",
+                    position=(enemy.x, enemy.y),
+                    layer=f"actors.enemies.{lane}",
+                    sprite_id=f"enemies/{enemy.template.name}",
+                    metadata={
+                        "kind": "enemy",
+                        "name": enemy.template.name,
+                        "lane": lane,
+                        "behaviors": tuple(enemy.template.behaviors),
+                    },
+                )
+            )
+
+        for index, projectile in enumerate(snap.projectiles):
+            nodes.append(
+                SceneNode(
+                    id=f"projectile-{index}",
+                    position=(projectile.x, projectile.y),
+                    layer="projectiles",
+                    sprite_id="projectiles/basic",
+                    metadata={"kind": "projectile", "damage": projectile.damage},
+                )
+            )
+
+        return nodes
+
+    def render_frame(
+        self,
+        graphics: GraphicsEngine,
+        *,
+        snapshot: FrameSnapshot | None = None,
+        camera: Camera | None = None,
+        time_override: float | None = None,
+    ) -> "RenderFrame":
+        """Build a renderable frame using the provided graphics engine."""
+
+        snap = snapshot or self._last_snapshot
+        if snap is None:
+            raise RuntimeError("render_frame requires a snapshot; call step() first")
+
+        nodes = self.build_scene_nodes(snap)
+        camera = camera or Camera(position=(snap.player_x, self.height / 2.0), viewport=graphics.viewport)
+        timestamp = time_override if time_override is not None else snap.elapsed
+        return graphics.build_frame(nodes, camera=camera, time=timestamp, messages=snap.messages)
 
 
 def _run_curses_loop(
@@ -447,24 +594,37 @@ def _render(
     )
     stdscr.addstr(0, 0, status[: int(width)])
 
-    for y in range(int(height)):
-        stdscr.addstr(y, 0, "|")
-        stdscr.addstr(y, int(width) - 1, "|")
-    for x in range(int(width)):
-        stdscr.addstr(int(height) - 1, x, "-")
+    vertical_border = "|" if not snapshot.high_contrast else "#"
+    horizontal_border = "-" if not snapshot.high_contrast else "#"
+    player_char = "@" if not snapshot.high_contrast else "█"
+    enemy_char = "E" if not snapshot.high_contrast else "▓"
+    projectile_char = "-" if not snapshot.high_contrast else "━"
 
-    stdscr.addstr(int(snapshot.player_y), int(snapshot.player_x), "@")
+    for y in range(int(height)):
+        stdscr.addstr(y, 0, vertical_border)
+        stdscr.addstr(y, int(width) - 1, vertical_border)
+    for x in range(int(width)):
+        stdscr.addstr(int(height) - 1, x, horizontal_border)
+
+    stdscr.addstr(int(snapshot.player_y), int(snapshot.player_x), player_char)
 
     for enemy in snapshot.enemies:
         if not enemy.alive:
             continue
-        stdscr.addstr(int(enemy.y), max(1, int(enemy.x)), "E")
+        stdscr.addstr(int(enemy.y), max(1, int(enemy.x)), enemy_char)
 
     for projectile in snapshot.projectiles:
-        stdscr.addstr(int(projectile.y), min(int(width) - 2, int(projectile.x)), "-")
+        stdscr.addstr(
+            int(projectile.y),
+            min(int(width) - 2, int(projectile.x)),
+            projectile_char,
+        )
 
     row = 1
-    for message in snapshot.messages[-(int(height) - 2) :]:
+    visible_messages = snapshot.messages[-min(
+        max(1, int(snapshot.message_log_size)), max(1, int(height) - 2)
+    ) :]
+    for message in visible_messages:
         stdscr.addstr(row, int(width) // 2, message[: int(width / 2) - 2])
         row += 1
 
@@ -492,12 +652,20 @@ def _render(
 
 
 def launch_playable(
-    duration: float = 300.0, fps: float = 30.0, *, language: str = "en"
+    duration: float = 300.0,
+    fps: float = 30.0,
+    *,
+    language: str = "en",
+    accessibility: AccessibilitySettings | None = None,
 ) -> None:
     """Entry point that spins up the curses loop."""
 
     translator = get_translator(language)
-    engine = ArcadeEngine(target_duration=duration, translator=translator)
+    engine = ArcadeEngine(
+        target_duration=duration,
+        translator=translator,
+        accessibility=accessibility,
+    )
     curses.wrapper(_run_curses_loop, engine, fps)
 
 
@@ -522,9 +690,62 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         default="en",
         help=translator.translate("cli.help.language"),
     )
+    parser.add_argument(
+        "--assist-radius",
+        type=float,
+        help=translator.translate("cli.help.assist_radius"),
+    )
+    parser.add_argument(
+        "--damage-multiplier",
+        type=float,
+        help=translator.translate("cli.help.damage_multiplier"),
+    )
+    parser.add_argument(
+        "--speed-scale",
+        type=float,
+        help=translator.translate("cli.help.speed_scale"),
+    )
+    parser.add_argument(
+        "--projectile-speed",
+        type=float,
+        help=translator.translate("cli.help.projectile_speed"),
+    )
+    parser.add_argument(
+        "--high-contrast",
+        action="store_true",
+        help=translator.translate("cli.help.high_contrast"),
+    )
+    parser.add_argument(
+        "--message-log",
+        type=int,
+        help=translator.translate("cli.help.message_log"),
+    )
     args = parser.parse_args(argv)
 
-    launch_playable(duration=args.duration, fps=args.fps, language=args.language)
+    settings_kwargs = {}
+    if args.assist_radius is not None:
+        settings_kwargs["auto_aim_radius"] = args.assist_radius
+    if args.damage_multiplier is not None:
+        settings_kwargs["damage_taken_multiplier"] = args.damage_multiplier
+    if args.speed_scale is not None:
+        settings_kwargs["game_speed_multiplier"] = args.speed_scale
+    if args.projectile_speed is not None:
+        settings_kwargs["projectile_speed_multiplier"] = args.projectile_speed
+    if args.high_contrast:
+        settings_kwargs["high_contrast"] = True
+    if args.message_log is not None:
+        settings_kwargs["message_log_size"] = args.message_log
+
+    accessibility = (
+        AccessibilitySettings(**settings_kwargs) if settings_kwargs else None
+    )
+
+    launch_playable(
+        duration=args.duration,
+        fps=args.fps,
+        language=args.language,
+        accessibility=accessibility,
+    )
 
 
 if __name__ == "__main__":  # pragma: no cover

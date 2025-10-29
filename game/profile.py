@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Optional, Sequence, Set
+from typing import Dict, Iterable, List, Optional, Sequence, Set, TYPE_CHECKING
 
 from .entities import GlyphFamily, Player, UpgradeCard, UpgradeType
 from .game_state import GameState, default_upgrade_cards
 from .meta import MetaProgressionSystem, SigilLedger, Unlockable
 from .session import RunResult
 from .systems import UpgradeDeck
+
+if TYPE_CHECKING:  # pragma: no cover - used for type checking only
+    from .monetization import CosmeticInventory
 
 
 @dataclass(frozen=True)
@@ -88,6 +91,7 @@ class PlayerProfile:
         owned_hunters: Optional[Iterable[str]] = None,
         weapon_cards: Optional[Iterable[str]] = None,
         glyph_families: Optional[Iterable[GlyphFamily]] = None,
+        cosmetic_inventory: Optional["CosmeticInventory"] = None,
     ) -> None:
         roster = hunters or default_hunters()
         if not roster:
@@ -124,6 +128,13 @@ class PlayerProfile:
         self.available_glyph_families: Set[GlyphFamily] = set(base_glyphs)
 
         self.meta = meta or MetaProgressionSystem()
+
+        if cosmetic_inventory is None:
+            from .monetization import CosmeticInventory
+
+            self.cosmetics = CosmeticInventory()
+        else:
+            self.cosmetics = cosmetic_inventory
 
     @property
     def hunters(self) -> Dict[str, HunterDefinition]:
