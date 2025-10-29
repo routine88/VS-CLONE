@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Sequence
 
 from . import content
+from .audio import AudioEngine, AudioFrame
 from .accessibility import AccessibilitySettings
 from .combat import glyph_damage_multiplier, weapon_tier
 from .entities import Enemy, EnemyLane, UpgradeCard
@@ -72,6 +73,7 @@ class FrameSnapshot:
     projectiles: Sequence[Projectile]
     enemies: Sequence[ActiveEnemy]
     messages: Sequence[str] = field(default_factory=list)
+    audio_events: Sequence[str] = field(default_factory=list)
     awaiting_upgrade: bool = False
     upgrade_options: Sequence[UpgradeCard] = field(default_factory=list)
     survived: bool = False
@@ -116,6 +118,7 @@ class ArcadeEngine:
         self._projectiles: List[Projectile] = []
         self._enemies: List[ActiveEnemy] = []
         self._messages: List[str] = []
+        self._audio_events: List[str] = []
         self._spawn_timer = spawn_interval
         self._base_spawn_interval = spawn_interval
         self._elapsed = 0.0
@@ -124,6 +127,9 @@ class ArcadeEngine:
         self._upgrade_options: List[UpgradeCard] = []
         self._target_duration = target_duration
         self._defeated = False
+        self._music_started = False
+        self._victory_announced = False
+        self._defeat_announced = False
         self._rng = random.Random()
         self._last_snapshot: FrameSnapshot | None = None
 
@@ -196,6 +202,7 @@ class ArcadeEngine:
         card = self._upgrade_options[index]
         self._state.apply_upgrade(card)
         self._push_message(self._translate("ui.upgrade_selected", name=card.name))
+        self._push_audio("ui.upgrade_selected")
         self._awaiting_upgrade = False
         self._upgrade_options = []
         self._refresh_weapon_cache()
@@ -206,6 +213,9 @@ class ArcadeEngine:
         limit = max(1, int(self._accessibility.message_log_size))
         if len(self._messages) > limit:
             self._messages = self._messages[-limit:]
+
+    def _push_audio(self, event: str) -> None:
+        self._audio_events.append(event)
 
     def _apply_movement(self, delta_time: float, inputs: InputFrame) -> None:
         speed = 14.0
@@ -259,6 +269,7 @@ class ArcadeEngine:
                 damage=stats.damage * multiplier,
             )
             self._projectiles.append(proj)
+            self._push_audio("combat.weapon_fire")
 
     def _update_projectiles(self, delta_time: float) -> None:
         updated: List[Projectile] = []
@@ -291,12 +302,15 @@ class ArcadeEngine:
     def _reward_enemy(self, enemy: Enemy) -> None:
         self._score += enemy.health * 4
         xp = max(4, enemy.health // 2)
+        self._push_audio("combat.enemy_down")
         notifications = self._state.grant_experience(xp)
         for event in notifications:
             self._push_message(event.message)
         if any(event.message.startswith("Level up!") for event in notifications):
             self._upgrade_options = list(self._state.draw_upgrades())
             self._awaiting_upgrade = True
+            self._push_audio("ui.level_up")
+            self._push_audio("ui.upgrade_presented")
 
     def _spawn_enemy(self) -> None:
         archetypes = content.enemy_archetypes_for_phase(self._state.current_phase)
@@ -330,6 +344,7 @@ class ArcadeEngine:
             health=float(enemy.health),
         )
         self._enemies.append(active)
+        self._push_audio("combat.enemy_spawn")
 
     def _advance_enemies(self, delta_time: float) -> None:
         surviving: List[ActiveEnemy] = []
@@ -371,8 +386,12 @@ class ArcadeEngine:
                 "ui.damage_taken", enemy=enemy.template.name, damage=scaled_damage
             )
         )
+        self._push_audio("player.damage")
         if self._state.player.health == 0:
             self._defeated = True
+            if not self._defeat_announced:
+                self._push_audio("run.defeat")
+                self._defeat_announced = True
 
     def _trigger_ultimate(self) -> None:
         if self._ultimate_cooldown > 0:
@@ -393,11 +412,24 @@ class ArcadeEngine:
         if hits:
             self._push_message(self._translate("ui.ultimate_ready"))
             self._ultimate_cooldown = 18.0
+            self._push_audio("combat.ultimate")
 
     def _snapshot(self) -> FrameSnapshot:
         player = self._state.player
         next_level = player.level + 1
         from .config import LEVEL_CURVE
+
+        survived = self._elapsed >= self._target_duration and not self._defeated
+
+        if not self._music_started:
+            self._push_audio("music.start")
+            self._music_started = True
+        if survived and not self._victory_announced:
+            self._push_audio("run.victory")
+            self._victory_announced = True
+        if self._defeated and not self._defeat_announced:
+            self._push_audio("run.defeat")
+            self._defeat_announced = True
 
         snapshot = FrameSnapshot(
             elapsed=self._elapsed,
@@ -413,14 +445,16 @@ class ArcadeEngine:
             projectiles=list(self._projectiles),
             enemies=list(self._enemies),
             messages=list(self._messages),
+            audio_events=list(self._audio_events),
             awaiting_upgrade=self._awaiting_upgrade,
             upgrade_options=list(self._upgrade_options),
-            survived=self._elapsed >= self._target_duration and not self._defeated,
+            survived=survived,
             defeated=self._defeated,
             high_contrast=self._accessibility.high_contrast,
             message_log_size=self._accessibility.message_log_size,
         )
         self._last_snapshot = snapshot
+        self._audio_events = []
         return snapshot
 
     def _refresh_weapon_cache(self) -> None:
@@ -515,6 +549,22 @@ class ArcadeEngine:
         camera = camera or Camera(position=(snap.player_x, self.height / 2.0), viewport=graphics.viewport)
         timestamp = time_override if time_override is not None else snap.elapsed
         return graphics.build_frame(nodes, camera=camera, time=timestamp, messages=snap.messages)
+
+    def build_audio_frame(
+        self,
+        audio: AudioEngine,
+        *,
+        snapshot: FrameSnapshot | None = None,
+        time_override: float | None = None,
+    ) -> AudioFrame:
+        """Generate audio cues for the given snapshot using ``audio``."""
+
+        snap = snapshot or self._last_snapshot
+        if snap is None:
+            raise RuntimeError("build_audio_frame requires a snapshot; call step() first")
+
+        timestamp = time_override if time_override is not None else snap.elapsed
+        return audio.build_frame(snap.audio_events, time=timestamp)
 
 
 def _run_curses_loop(

@@ -10,6 +10,14 @@ from .analytics import (  # noqa: F401
     kpi_snapshot,
     render_report,
 )
+from .audio import (  # noqa: F401
+    AudioEngine,
+    AudioFrame,
+    MusicInstruction,
+    MusicTrack,
+    SoundClip,
+    SoundInstruction,
+)
 from .challenges import (  # noqa: F401
     ChallengeConfig,
     build_config,

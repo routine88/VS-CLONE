@@ -241,3 +241,28 @@ feedback on how mixed-lane waves tax the player.
 Enemy spawns escalate with time, use the full enemy library, and award souls to
 drive level-ups. The UI renders health, phase, XP, and upgrade prompts so
 playtesters can exercise the core loop before the Unity client lands.
+
+## Audio Routing Bridge
+
+`game.audio` mirrors the graphics bridge by emitting sound and music cues for
+each frame. The `AudioEngine` class ships with placeholder assets, event
+bindings, and a simple state tracker so downstream presenters (whether Pygame,
+Unity, or middleware like FMOD) can translate gameplay events into audible
+feedback:
+
+```python
+from game.audio import AudioEngine
+from game.interactive import ArcadeEngine, InputFrame
+
+engine = ArcadeEngine(target_duration=30.0)
+audio = AudioEngine()
+
+snapshot = engine.step(0.16, InputFrame(move_right=True))
+audio_frame = engine.build_audio_frame(audio, snapshot=snapshot)
+```
+
+`audio_frame.effects` lists the triggered sound effects (level-up stings,
+weapon fire, victory cues), while `audio_frame.music` surfaces play/refresh
+instructions for the looping dusk and boss themes. As the Unity client comes
+online, the same cues can be wired into actual assets without rewriting the
+gameplay loop.

@@ -1,6 +1,7 @@
 import pytest
 
 from game import content
+from game.audio import AudioEngine
 from game.entities import Enemy, EnemyLane
 from game.accessibility import AccessibilitySettings
 from game.interactive import ActiveEnemy, ArcadeEngine, InputFrame, Projectile
@@ -14,6 +15,7 @@ def test_arcade_engine_spawns_entities():
         frame = engine.step(0.1, InputFrame())
     assert frame is not None
     assert len(frame.enemies) > 0
+    assert frame.audio_events
 
 
 def test_arcade_engine_level_up_triggers_upgrade_options():
@@ -24,6 +26,7 @@ def test_arcade_engine_level_up_triggers_upgrade_options():
     snapshot = engine.step(0.1, InputFrame())
     assert snapshot.awaiting_upgrade
     assert len(snapshot.upgrade_options) >= 1
+    assert "ui.level_up" in snapshot.audio_events
 
 
 def test_choose_upgrade_applies_and_resumes():
@@ -36,6 +39,7 @@ def test_choose_upgrade_applies_and_resumes():
     assert card.name
     frame = engine.step(0.1, InputFrame())
     assert not frame.awaiting_upgrade
+    assert "ui.upgrade_selected" in frame.audio_events
 
 
 def test_arcade_engine_messages_follow_translator():
@@ -136,3 +140,16 @@ def test_message_log_respects_accessibility_limit():
     engine._push_message("Third")  # type: ignore[attr-defined]
     frame = engine.step(0.1, InputFrame())
     assert frame.messages == ["Second", "Third"]
+
+
+def test_build_audio_frame_emits_instructions():
+    engine = ArcadeEngine(spawn_interval=5.0, target_duration=60.0)
+    enemy = content.instantiate_enemy("Swarm Thrall", 1.0)
+    for _ in range(6):
+        engine._reward_enemy(enemy)  # type: ignore[attr-defined]
+    snapshot = engine.step(0.1, InputFrame())
+    audio = AudioEngine()
+    audio_frame = engine.build_audio_frame(audio, snapshot=snapshot)
+    effect_ids = [instruction.clip.id for instruction in audio_frame.effects]
+    assert "effects/ui.prompt" in effect_ids
+    assert any(instr.action in {"play", "refresh"} for instr in audio_frame.music)
