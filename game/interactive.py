@@ -13,6 +13,7 @@ from . import content
 from .combat import glyph_damage_multiplier, weapon_tier
 from .entities import Enemy, UpgradeCard
 from .game_state import GameState
+from .localization import Translator, get_translator
 
 
 @dataclass
@@ -85,6 +86,7 @@ class ArcadeEngine:
         state: Optional[GameState] = None,
         spawn_interval: float = 2.0,
         target_duration: float = 300.0,
+        translator: Translator | None = None,
     ) -> None:
         if width < 40 or height < 10:
             raise ValueError("playfield too small for interaction")
@@ -93,7 +95,12 @@ class ArcadeEngine:
         self.height = float(height)
         self._ground = self.height - 2.0
         self._ceiling = 1.0
-        self._state = state or GameState()
+        if state is None:
+            self._translator = translator or get_translator()
+            self._state = GameState(translator=self._translator)
+        else:
+            self._state = state
+            self._translator = translator or state.translator
         self._player_position = [5.0, self.height / 2.0]
         self._player_velocity = [0.0, 0.0]
         self._dash_cooldown = 0.0
@@ -129,6 +136,10 @@ class ArcadeEngine:
     @property
     def upgrade_options(self) -> Sequence[UpgradeCard]:
         return tuple(self._upgrade_options)
+
+    @property
+    def translator(self) -> Translator:
+        return self._translator
 
     def step(self, delta_time: float, inputs: InputFrame) -> FrameSnapshot:
         """Advance the engine and return a snapshot for presentation."""
@@ -170,7 +181,7 @@ class ArcadeEngine:
 
         card = self._upgrade_options[index]
         self._state.apply_upgrade(card)
-        self._messages.append(f"Upgrade chosen: {card.name}.")
+        self._messages.append(self._translate("ui.upgrade_selected", name=card.name))
         self._awaiting_upgrade = False
         self._upgrade_options = []
         self._refresh_weapon_cache()
@@ -298,7 +309,9 @@ class ArcadeEngine:
     def _handle_collision(self, enemy: ActiveEnemy) -> None:
         damage = max(1, enemy.template.damage)
         self._state.player.health = max(0, self._state.player.health - damage)
-        self._messages.append(f"Hit by {enemy.template.name} for {damage} damage!")
+        self._messages.append(
+            self._translate("ui.damage_taken", enemy=enemy.template.name, damage=damage)
+        )
         if self._state.player.health == 0:
             self._defeated = True
 
@@ -319,7 +332,7 @@ class ArcadeEngine:
                 hits += 1
                 self._reward_enemy(enemy.template)
         if hits:
-            self._messages.append("Ultimate unleashed, purging the horde!")
+            self._messages.append(self._translate("ui.ultimate_ready"))
             self._ultimate_cooldown = 18.0
 
     def _snapshot(self) -> FrameSnapshot:
@@ -353,8 +366,13 @@ class ArcadeEngine:
         for weapon in self._state.player.unlocked_weapons:
             self._weapons.setdefault(weapon, 0.0)
 
+    def _translate(self, key: str, **params) -> str:
+        return self._translator.translate(key, **params)
 
-def _run_curses_loop(stdscr: "curses._CursesWindow", engine: ArcadeEngine, fps: float) -> None:
+
+def _run_curses_loop(
+    stdscr: "curses._CursesWindow", engine: ArcadeEngine, fps: float
+) -> None:
     curses.curs_set(0)
     stdscr.nodelay(True)
     stdscr.timeout(0)
@@ -397,7 +415,7 @@ def _run_curses_loop(stdscr: "curses._CursesWindow", engine: ArcadeEngine, fps: 
         snapshot = engine.step(max(delta, tick), inputs)
 
         stdscr.erase()
-        _render(stdscr, snapshot, engine.width, engine.height)
+        _render(stdscr, snapshot, engine.width, engine.height, engine.translator)
         stdscr.refresh()
 
         if snapshot.defeated or snapshot.survived:
@@ -409,10 +427,23 @@ def _run_curses_loop(stdscr: "curses._CursesWindow", engine: ArcadeEngine, fps: 
             time.sleep(sleep_time)
 
 
-def _render(stdscr: "curses._CursesWindow", snapshot: FrameSnapshot, width: float, height: float) -> None:
-    status = (
-        f"Time {snapshot.elapsed:5.1f}s  Phase {snapshot.phase}  Level {snapshot.level}  "
-        f"XP {snapshot.experience}/{snapshot.next_level_xp}  HP {snapshot.health}/{snapshot.max_health}  Score {snapshot.score}"
+def _render(
+    stdscr: "curses._CursesWindow",
+    snapshot: FrameSnapshot,
+    width: float,
+    height: float,
+    translator: Translator,
+) -> None:
+    status = translator.translate(
+        "ui.arcade_status",
+        time=snapshot.elapsed,
+        phase=snapshot.phase,
+        level=snapshot.level,
+        xp=snapshot.experience,
+        next_xp=snapshot.next_level_xp,
+        hp=snapshot.health,
+        max_hp=snapshot.max_health,
+        score=snapshot.score,
     )
     stdscr.addstr(0, 0, status[: int(width)])
 
@@ -438,30 +469,62 @@ def _render(stdscr: "curses._CursesWindow", snapshot: FrameSnapshot, width: floa
         row += 1
 
     if snapshot.awaiting_upgrade:
-        stdscr.addstr(2, 2, "Choose Upgrade [1-3]:")
+        stdscr.addstr(2, 2, translator.translate("ui.upgrade_prompt"))
         for idx, option in enumerate(snapshot.upgrade_options, start=1):
-            stdscr.addstr(3 + idx, 4, f"{idx}. {option.name}")
+            stdscr.addstr(
+                3 + idx,
+                4,
+                translator.translate("ui.upgrade_option", index=idx, name=option.name),
+            )
 
     if snapshot.defeated:
-        stdscr.addstr(int(height) // 2, int(width) // 2 - 6, "RUN FAILED")
+        stdscr.addstr(
+            int(height) // 2,
+            int(width) // 2 - 6,
+            translator.translate("ui.run_failed"),
+        )
     elif snapshot.survived:
-        stdscr.addstr(int(height) // 2, int(width) // 2 - 6, "DAWN REACHED")
+        stdscr.addstr(
+            int(height) // 2,
+            int(width) // 2 - 6,
+            translator.translate("ui.run_survived"),
+        )
 
 
-def launch_playable(duration: float = 300.0, fps: float = 30.0) -> None:
+def launch_playable(
+    duration: float = 300.0, fps: float = 30.0, *, language: str = "en"
+) -> None:
     """Entry point that spins up the curses loop."""
 
-    engine = ArcadeEngine(target_duration=duration)
+    translator = get_translator(language)
+    engine = ArcadeEngine(target_duration=duration, translator=translator)
     curses.wrapper(_run_curses_loop, engine, fps)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
-    parser = argparse.ArgumentParser(description="Nightfall Survivors playable prototype")
-    parser.add_argument("--duration", type=float, default=300.0, help="Session duration in seconds")
-    parser.add_argument("--fps", type=float, default=30.0, help="Target frames per second")
+    translator = get_translator()
+    parser = argparse.ArgumentParser(description=translator.translate("cli.description"))
+    parser.add_argument(
+        "--duration",
+        type=float,
+        default=300.0,
+        help=translator.translate("cli.help.duration"),
+    )
+    parser.add_argument(
+        "--fps",
+        type=float,
+        default=30.0,
+        help=translator.translate("cli.help.fps"),
+    )
+    parser.add_argument(
+        "--language",
+        type=str,
+        default="en",
+        help=translator.translate("cli.help.language"),
+    )
     args = parser.parse_args(argv)
 
-    launch_playable(duration=args.duration, fps=args.fps)
+    launch_playable(duration=args.duration, fps=args.fps, language=args.language)
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -7,6 +7,7 @@ from typing import Iterable, List, Optional
 
 from . import config
 from .content import build_wave_descriptor, draw_relic, final_boss_phases, pick_miniboss
+from .localization import Translator, get_translator
 from .entities import Encounter, GlyphFamily, Player, UpgradeCard
 
 
@@ -52,7 +53,9 @@ class UpgradeDeck:
         return random.sample(self._pool, count)
 
 
-def resolve_experience_gain(player: Player, amount: int) -> List[str]:
+def resolve_experience_gain(
+    player: Player, amount: int, translator: Translator | None = None
+) -> List[str]:
     """Apply experience and return milestone notifications."""
 
     if amount < 0:
@@ -61,11 +64,15 @@ def resolve_experience_gain(player: Player, amount: int) -> List[str]:
     notifications: List[str] = []
     player.experience += amount
 
+    translator = translator or get_translator()
+
     while player.experience >= config.LEVEL_CURVE.xp_for_level(player.level + 1):
         player.level += 1
-        notifications.append(f"Level up! Reached level {player.level}.")
+        notifications.append(translator.translate("systems.level_up", level=player.level))
         for family in player.complete_glyph_sets():
-            notifications.append(f"Ultimate unlocked for {family.value} glyphs!")
+            notifications.append(
+                translator.translate("systems.ultimate_unlocked", family=family.value)
+            )
 
     return notifications
 

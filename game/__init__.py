@@ -58,5 +58,11 @@ from .interactive import (  # noqa: F401
     InputFrame,
     launch_playable,
 )
+from .localization import (  # noqa: F401
+    LocalizationCatalog,
+    Translator,
+    default_catalog,
+    get_translator,
+)
 from .session import RunResult, RunSimulator, score_run  # noqa: F401
 from .storage import decrypt_data, encrypt_data, load_profile, save_profile  # noqa: F401

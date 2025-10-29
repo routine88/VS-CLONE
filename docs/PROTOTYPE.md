@@ -131,8 +131,12 @@ The repo now includes a curses-powered arcade loop that surfaces an interactive
 it from a terminal window:
 
 ```bash
-python -m game.interactive --duration 180 --fps 45
+python -m game.interactive --duration 180 --fps 45 --language es
 ```
+
+Use the optional `--language` flag to localize the interface strings. The default
+catalog currently ships English (`en`) and Spanish (`es`) tables, and additional
+languages can be registered through `game.localization.default_catalog()`.
 
 Controls are intentionally lightweight so design can focus on pacing:
 

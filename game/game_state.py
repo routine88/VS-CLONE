@@ -14,6 +14,7 @@ from .environment import (
     HazardEvent,
     WeatherEvent,
 )
+from .localization import Translator, get_translator
 from .systems import EncounterDirector, SpawnDirector, UpgradeDeck, resolve_experience_gain
 
 
@@ -39,6 +40,10 @@ class GameState:
     event_log: List[GameEvent] = field(default_factory=list)
     active_hazards: List[HazardEvent] = field(default_factory=list)
     active_weather: WeatherEvent | None = None
+    translator: Translator = field(default_factory=get_translator)
+
+    def _log(self, key: str, **params) -> None:
+        self.event_log.append(GameEvent(self.translator.translate(key, **params)))
 
     def tick(self, delta_time: float) -> EnvironmentTickResult:
         """Advance the simulation clock and update phase transitions."""
@@ -50,7 +55,7 @@ class GameState:
         phase = min(4, int(self.time_elapsed // 300) + 1)
         if phase != self.current_phase:
             self.current_phase = phase
-            self.event_log.append(GameEvent(f"Phase advanced to {phase}."))
+            self._log("game.phase_advance", phase=phase)
 
         environment_changes = self.environment_director.update(self.current_phase, delta_time)
         hazards = environment_changes.hazards
@@ -58,58 +63,59 @@ class GameState:
             self.active_hazards.extend(hazards)
             for hazard in hazards:
                 self.player.health = max(0, self.player.health - hazard.damage)
-                self.event_log.append(
-                    GameEvent(
-                        f"Hazard triggered: {hazard.name} in the {hazard.biome} (-{hazard.damage} HP)."
-                    )
+                self._log(
+                    "game.hazard_trigger",
+                    name=hazard.name,
+                    biome=hazard.biome,
+                    damage=hazard.damage,
                 )
                 if hazard.slow > 0:
                     percent = int(hazard.slow * 100)
-                    self.event_log.append(
-                        GameEvent(
-                            f"Movement hindered by {hazard.name}: speed reduced by {percent}% for {hazard.duration:.0f}s."
-                        )
+                    duration = int(round(hazard.duration))
+                    self._log(
+                        "game.hazard_slow",
+                        name=hazard.name,
+                        percent=percent,
+                        duration=duration,
                     )
                 if self.player.health == 0:
-                    self.event_log.append(GameEvent("The hunter is overwhelmed by the environment."))
+                    self._log("game.environment_defeat")
                     break
 
         if environment_changes.barricades:
             for barricade in environment_changes.barricades:
                 self.player.add_salvage(barricade.salvage_reward)
-                self.event_log.append(
-                    GameEvent(
-                        f"Barricade cleared: {barricade.name} yielded {barricade.salvage_reward} salvage."
-                    )
+                self._log(
+                    "game.barricade_cleared",
+                    name=barricade.name,
+                    salvage=barricade.salvage_reward,
                 )
 
         if environment_changes.resource_drops:
             for cache in environment_changes.resource_drops:
                 self.player.add_salvage(cache.amount)
-                self.event_log.append(
-                    GameEvent(
-                        f"Collected {cache.name} for {cache.amount} salvage."
-                    )
+                self._log(
+                    "game.salvage_collected",
+                    name=cache.name,
+                    amount=cache.amount,
                 )
 
         if environment_changes.weather_events:
             for weather_event in environment_changes.weather_events:
                 if weather_event.ended:
                     self.active_weather = None
-                    self.event_log.append(
-                        GameEvent(
-                            "Weather shift: conditions normalize and movement returns to baseline."
-                        )
-                    )
+                    self._log("game.weather_clear")
                 else:
                     self.active_weather = weather_event
                     move_percent = int(weather_event.movement_modifier * 100)
                     vision_percent = int(weather_event.vision_modifier * 100)
                     descriptor = weather_event.description
-                    self.event_log.append(
-                        GameEvent(
-                            f"Weather shift: {weather_event.name} ({descriptor}) movement {move_percent:+d}% vision {vision_percent:+d}%"
-                        )
+                    self._log(
+                        "game.weather_change",
+                        name=weather_event.name,
+                        description=descriptor,
+                        movement=move_percent,
+                        vision=vision_percent,
                     )
 
         return environment_changes
@@ -117,7 +123,7 @@ class GameState:
     def grant_experience(self, amount: int) -> List[GameEvent]:
         """Grant experience and log resulting events."""
 
-        notifications = resolve_experience_gain(self.player, amount)
+        notifications = resolve_experience_gain(self.player, amount, translator=self.translator)
         events = [GameEvent(note) for note in notifications]
         self.event_log.extend(events)
         return events
@@ -126,7 +132,7 @@ class GameState:
         """Draw upgrade options for the next level-up."""
 
         options = self.upgrade_deck.draw_options()
-        self.event_log.append(GameEvent("Upgrade options presented."))
+        self._log("game.upgrade_presented")
         return options
 
     def apply_upgrade(self, card: UpgradeCard) -> None:
@@ -134,13 +140,13 @@ class GameState:
         if card.type is UpgradeType.GLYPH and card.glyph_family:
             if completed_sets:
                 for family in completed_sets:
-                    self.event_log.append(GameEvent(f"Ultimate unlocked for {family.value}!"))
+                    self._log("game.glyph_unlocked", family=family.value)
             else:
-                self.event_log.append(GameEvent(f"Glyph added: {card.glyph_family.value}"))
+                self._log("game.glyph_added", family=card.glyph_family.value)
         elif card.type is UpgradeType.WEAPON:
-            self.event_log.append(GameEvent(f"Weapon upgraded: {card.name} tier {card.weapon_tier}"))
+            self._log("game.weapon_upgraded", name=card.name, tier=card.weapon_tier)
         else:
-            self.event_log.append(GameEvent(f"Survival perk acquired: {card.name}"))
+            self._log("game.perk_acquired", name=card.name)
 
     def next_encounter(self) -> "Encounter":
         """Generate the next encounter for the active phase."""
@@ -149,12 +155,12 @@ class GameState:
         if encounter.kind == "wave" and encounter.wave:
             count = len(encounter.wave.enemies)
             number = encounter.wave.wave_index + 1
-            self.event_log.append(GameEvent(f"Wave {number} incoming with {count} foes."))
+            self._log("game.wave_incoming", number=number, count=count)
         elif encounter.kind == "miniboss" and encounter.miniboss:
-            self.event_log.append(GameEvent(f"Miniboss {encounter.miniboss.name} approaches!"))
+            self._log("game.miniboss_incoming", name=encounter.miniboss.name)
             if encounter.relic_reward:
                 self.player.relics.append(encounter.relic_reward)
-                self.event_log.append(GameEvent(f"Relic acquired: {encounter.relic_reward}"))
+                self._log("game.relic_acquired", name=encounter.relic_reward)
         return encounter
 
     def final_encounter(self) -> "Encounter":
@@ -163,11 +169,9 @@ class GameState:
         encounter = self.encounter_director.final_encounter()
         if encounter.boss_phases:
             base_name = encounter.boss_phases[0].name.split(" (")[0]
-            self.event_log.append(
-                GameEvent(f"The final boss {base_name} descends for the last stand.")
-            )
+            self._log("game.final_boss", name=base_name)
         else:
-            self.event_log.append(GameEvent("The final confrontation begins."))
+            self._log("game.final_boss_generic")
         return encounter
 
     def resolve_encounter(self, encounter: "Encounter") -> CombatSummary:
@@ -190,24 +194,25 @@ class GameState:
             self.grant_experience(summary.souls_gained)
 
         label = summary.kind.replace("_", " ")
-        self.event_log.append(
-            GameEvent(
-                f"Resolved {label} defeating {summary.enemies_defeated} foes in {summary.duration:.1f}s."
-            )
+        self._log(
+            "game.encounter_resolved",
+            label=label,
+            count=summary.enemies_defeated,
+            duration=summary.duration,
         )
         if summary.damage_taken or summary.healing_received:
-            self.event_log.append(
-                GameEvent(
-                    f"Combat aftermath: -{summary.damage_taken} HP, +{summary.healing_received} HP."
-                )
+            self._log(
+                "game.encounter_aftermath",
+                damage=summary.damage_taken,
+                healing=summary.healing_received,
             )
         for note in summary.notes:
             self.event_log.append(GameEvent(note))
 
         if self.player.health == 0:
-            self.event_log.append(GameEvent("The hunter succumbs to the onslaught."))
+            self._log("game.player_fallen")
         elif encounter.kind == "final_boss":
-            self.event_log.append(GameEvent("Dawn breaks! The hunter endures the night."))
+            self._log("game.player_survived")
 
         return summary
 
