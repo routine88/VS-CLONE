@@ -8,13 +8,12 @@ import math
 import random
 import time
 from dataclasses import dataclass, field
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Tuple
 
-from . import content
 from .audio import AudioEngine, AudioFrame
 from .accessibility import AccessibilitySettings
 from .combat import glyph_damage_multiplier, weapon_tier
-from .entities import Enemy, EnemyLane, UpgradeCard
+from .entities import Encounter, Enemy, EnemyLane, UpgradeCard
 from .game_state import GameState
 from .graphics import Camera, GraphicsEngine, SceneNode
 from .localization import Translator, get_translator
@@ -50,6 +49,7 @@ class ActiveEnemy:
     y: float
     speed: float
     health: float
+    encounter_tag: str = "wave"
 
     @property
     def alive(self) -> bool:
@@ -80,6 +80,7 @@ class FrameSnapshot:
     defeated: bool = False
     high_contrast: bool = False
     message_log_size: int = 8
+    relics: Sequence[str] = field(default_factory=list)
 
 
 class ArcadeEngine:
@@ -132,6 +133,18 @@ class ArcadeEngine:
         self._defeat_announced = False
         self._rng = random.Random()
         self._last_snapshot: FrameSnapshot | None = None
+        self._pending_enemies: List[Tuple[Enemy, str]] = []
+        self._encounter_timer = self._state.spawn_director.next_interval(
+            self._state.current_phase
+        )
+        self._encounter_blocked = False
+        self._force_spawn = False
+        self._final_encounter_triggered = False
+        self._final_encounter_complete = False
+        self._final_boss_queue: List[Enemy] = []
+        self._active_miniboss: ActiveEnemy | None = None
+        self._active_boss: ActiveEnemy | None = None
+        self._pending_relic_reward: str | None = None
 
         self._refresh_weapon_cache()
 
@@ -167,11 +180,18 @@ class ArcadeEngine:
 
         delta_time *= self._accessibility.game_speed_multiplier
 
-        if self._defeated or self._elapsed >= self._target_duration:
+        if self._defeated or self._final_encounter_complete:
             return self._snapshot()
 
         self._elapsed += delta_time
-        self._state.current_phase = min(4, int(self._elapsed // 75) + 1)
+        self._state.time_elapsed = self._elapsed
+        new_phase = min(4, int(self._elapsed // 75) + 1)
+        if new_phase != self._state.current_phase:
+            self._state.current_phase = new_phase
+            if not self._final_encounter_triggered:
+                self._encounter_timer = self._state.spawn_director.next_interval(
+                    new_phase
+                )
 
         self._dash_cooldown = max(0.0, self._dash_cooldown - delta_time)
         self._ultimate_cooldown = max(0.0, self._ultimate_cooldown - delta_time)
@@ -180,10 +200,9 @@ class ArcadeEngine:
         self._handle_weapons(delta_time)
         self._update_projectiles(delta_time)
         self._spawn_timer -= delta_time
-        while self._spawn_timer <= 0 and not self._awaiting_upgrade:
-            self._spawn_enemy()
-            phase_factor = 0.9 ** max(0, self._state.current_phase - 1)
-            self._spawn_timer += max(0.6, self._base_spawn_interval * phase_factor)
+        self._maybe_trigger_final_encounter()
+        self._process_encounter_timers(delta_time)
+        self._spawn_pending_enemies()
 
         self._advance_enemies(delta_time)
         if inputs.activate_ultimate:
@@ -257,6 +276,138 @@ class ArcadeEngine:
                 self._fire_projectiles(stats, multiplier)
             self._weapons[weapon] = remaining
 
+    def _maybe_trigger_final_encounter(self) -> None:
+        if self._final_encounter_triggered or self._defeated:
+            return
+
+        warning_window = min(self._target_duration * 0.25, 20.0)
+        trigger_time = max(0.0, self._target_duration - warning_window)
+        if self._elapsed >= trigger_time:
+            self._start_final_encounter()
+
+    def _process_encounter_timers(self, delta_time: float) -> None:
+        if self._final_encounter_triggered or self._encounter_blocked:
+            return
+
+        if self._pending_enemies:
+            self._encounter_timer = max(0.0, self._encounter_timer - delta_time)
+            return
+
+        self._encounter_timer -= delta_time
+        if self._encounter_timer > 0:
+            return
+
+        encounter = self._state.next_encounter()
+        self._handle_new_encounter(encounter)
+        self._encounter_timer = self._state.spawn_director.next_interval(
+            self._state.current_phase
+        )
+
+    def _spawn_pending_enemies(self) -> None:
+        if self._awaiting_upgrade or not self._pending_enemies:
+            return
+
+        density_limit = self._state.spawn_director.max_density(self._state.current_phase)
+
+        while self._pending_enemies and (self._force_spawn or self._spawn_timer <= 0):
+            if not self._force_spawn and self._live_enemy_count() >= density_limit:
+                break
+
+            template, tag = self._pending_enemies.pop(0)
+            active = self._activate_enemy(template, encounter_tag=tag)
+            if tag == "miniboss":
+                self._active_miniboss = active
+            elif tag == "final_boss":
+                self._active_boss = active
+
+            phase_factor = 0.9 ** max(0, self._state.current_phase - 1)
+            interval = max(0.4, self._base_spawn_interval * phase_factor)
+            self._spawn_timer += interval
+            self._force_spawn = False
+
+    def _handle_new_encounter(self, encounter: Encounter) -> None:
+        if encounter.kind == "wave" and encounter.wave:
+            descriptor = encounter.wave
+            for enemy in descriptor.enemies:
+                self._pending_enemies.append((enemy, "wave"))
+            number = descriptor.wave_index + 1
+            count = len(descriptor.enemies)
+            self._push_message(
+                self._translate("game.wave_incoming", number=number, count=count)
+            )
+        elif encounter.kind == "miniboss" and encounter.miniboss:
+            self._pending_enemies.clear()
+            self._pending_enemies.append((encounter.miniboss, "miniboss"))
+            self._encounter_blocked = True
+            self._pending_relic_reward = encounter.relic_reward
+            self._push_message(
+                self._translate("game.miniboss_incoming", name=encounter.miniboss.name)
+            )
+            self._push_audio("run.miniboss_warning")
+            self._force_spawn = True
+            self._spawn_timer = 0.0
+
+    def _start_final_encounter(self) -> None:
+        if self._final_encounter_triggered:
+            return
+
+        encounter = self._state.final_encounter()
+        self._final_encounter_triggered = True
+        self._encounter_blocked = True
+        self._pending_enemies.clear()
+        self._final_boss_queue = []
+        self._force_spawn = True
+        self._spawn_timer = 0.0
+        self._encounter_timer = float("inf")
+
+        if encounter.boss_phases:
+            phases = list(encounter.boss_phases)
+            first = phases[0]
+            self._pending_enemies.append((first, "final_boss"))
+            self._final_boss_queue = phases[1:]
+            base_name = first.name.split(" (")[0]
+            self._push_message(self._translate("game.final_boss", name=base_name))
+        else:
+            self._push_message(self._translate("game.final_boss_generic"))
+            self._final_encounter_complete = True
+            self._encounter_blocked = True
+
+        self._push_audio("run.final_boss_warning")
+        self._push_audio("music.boss")
+
+    def _activate_enemy(self, template: Enemy, *, encounter_tag: str) -> ActiveEnemy:
+        if template.lane is EnemyLane.GROUND:
+            y = self._ground
+        elif template.lane is EnemyLane.AIR:
+            lower = self._ceiling + 2.5
+            upper = self._ground - 2.0
+            y = self._rng.uniform(lower, upper)
+        else:
+            y = self._ceiling + 0.5
+
+        base_speed = 3.5 + template.speed * 1.8
+        if "dash" in template.behaviors or "pounce" in template.behaviors:
+            base_speed += 1.6
+        if "kamikaze" in template.behaviors:
+            base_speed += 2.4
+        if "slow" in template.behaviors:
+            base_speed -= 0.8
+
+        active = ActiveEnemy(
+            template=template,
+            x=self.width - 2.0,
+            y=y,
+            speed=max(1.5, base_speed),
+            health=float(template.health),
+            encounter_tag=encounter_tag,
+        )
+        self._enemies.append(active)
+        self._push_audio("combat.enemy_spawn")
+        return active
+
+    def _live_enemy_count(self) -> int:
+        return sum(1 for enemy in self._enemies if enemy.alive)
+
     def _fire_projectiles(self, stats, multiplier: float) -> None:
         base_y = self._player_position[1]
         spread = 0.35 if stats.projectiles > 1 else 0.0
@@ -293,15 +444,16 @@ class ArcadeEngine:
             if hit_enemy:
                 hit_enemy.health -= projectile.damage
                 if hit_enemy.health <= 0:
-                    self._reward_enemy(hit_enemy.template)
+                    self._reward_enemy(hit_enemy)
                 continue
 
             updated.append(projectile)
         self._projectiles = updated
 
-    def _reward_enemy(self, enemy: Enemy) -> None:
-        self._score += enemy.health * 4
-        xp = max(4, enemy.health // 2)
+    def _reward_enemy(self, enemy: ActiveEnemy) -> None:
+        template = enemy.template
+        self._score += template.health * 4
+        xp = max(4, template.health // 2)
         self._push_audio("combat.enemy_down")
         notifications = self._state.grant_experience(xp)
         for event in notifications:
@@ -311,40 +463,31 @@ class ArcadeEngine:
             self._awaiting_upgrade = True
             self._push_audio("ui.level_up")
             self._push_audio("ui.upgrade_presented")
+        self._on_special_enemy_defeated(enemy)
 
-    def _spawn_enemy(self) -> None:
-        archetypes = content.enemy_archetypes_for_phase(self._state.current_phase)
-        if not archetypes:
-            return
-        name = self._rng.choice(archetypes)
-        scale = 1.0 + 0.05 * self._state.current_phase
-        enemy = content.instantiate_enemy(name, scale)
-        if enemy.lane is EnemyLane.GROUND:
-            y = self._ground
-        elif enemy.lane is EnemyLane.AIR:
-            lower = self._ceiling + 2.5
-            upper = self._ground - 2.0
-            y = self._rng.uniform(lower, upper)
-        else:
-            y = self._ceiling + 0.5
-
-        base_speed = 3.5 + enemy.speed * 1.8
-        if "dash" in enemy.behaviors or "pounce" in enemy.behaviors:
-            base_speed += 1.6
-        if "kamikaze" in enemy.behaviors:
-            base_speed += 2.4
-        if "slow" in enemy.behaviors:
-            base_speed -= 0.8
-
-        active = ActiveEnemy(
-            template=enemy,
-            x=self.width - 2.0,
-            y=y,
-            speed=max(1.5, base_speed),
-            health=float(enemy.health),
-        )
-        self._enemies.append(active)
-        self._push_audio("combat.enemy_spawn")
+    def _on_special_enemy_defeated(self, enemy: ActiveEnemy) -> None:
+        if enemy.encounter_tag == "miniboss":
+            self._active_miniboss = None
+            self._encounter_blocked = False
+            reward = self._pending_relic_reward
+            if reward is None and self._state.player.relics:
+                reward = self._state.player.relics[-1]
+            if reward:
+                self._push_message(self._translate("game.relic_acquired", name=reward))
+                self._push_audio("run.relic_acquired")
+            self._pending_relic_reward = None
+        elif enemy.encounter_tag == "final_boss" and not self._final_encounter_complete:
+            self._active_boss = None
+            if self._final_boss_queue:
+                next_phase = self._final_boss_queue.pop(0)
+                self._pending_enemies.insert(0, (next_phase, "final_boss"))
+                self._force_spawn = True
+                self._spawn_timer = 0.0
+            else:
+                self._final_encounter_complete = True
+                self._encounter_blocked = True
+                self._push_message(self._translate("game.player_survived"))
+                self._push_audio("run.final_boss_defeated")
 
     def _advance_enemies(self, delta_time: float) -> None:
         surviving: List[ActiveEnemy] = []
@@ -408,7 +551,7 @@ class ArcadeEngine:
             enemy.health -= damage
             if enemy.health <= 0:
                 hits += 1
-                self._reward_enemy(enemy.template)
+                self._reward_enemy(enemy)
         if hits:
             self._push_message(self._translate("ui.ultimate_ready"))
             self._ultimate_cooldown = 18.0
@@ -419,7 +562,7 @@ class ArcadeEngine:
         next_level = player.level + 1
         from .config import LEVEL_CURVE
 
-        survived = self._elapsed >= self._target_duration and not self._defeated
+        survived = self._final_encounter_complete and not self._defeated
 
         if not self._music_started:
             self._push_audio("music.start")
@@ -452,6 +595,7 @@ class ArcadeEngine:
             defeated=self._defeated,
             high_contrast=self._accessibility.high_contrast,
             message_log_size=self._accessibility.message_log_size,
+            relics=list(self._state.player.relics),
         )
         self._last_snapshot = snapshot
         self._audio_events = []
