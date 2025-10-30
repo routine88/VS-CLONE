@@ -308,6 +308,10 @@ class MvpSimulation:
             self.player.level += 1
             leveled = True
             self.events.append(f"Hunter reached level {self.player.level}")
+            # Spend the experience required for the level-up so that we do not
+            # repeatedly re-trigger the same tier and get stuck in an infinite
+            # loop once the curve caps out.
+            self.player.experience = max(0.0, self.player.experience - required)
             upgrade = self._choose_upgrade()
             if upgrade == "Damage Boost":
                 self.player.damage_bonus += self.config.damage_upgrade_bonus
