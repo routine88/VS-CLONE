@@ -18,6 +18,7 @@ from .audio import (  # noqa: F401
     SoundClip,
     SoundInstruction,
 )
+from .export import UnityFrameExporter  # noqa: F401
 from .challenges import (  # noqa: F401
     ChallengeConfig,
     build_config,
