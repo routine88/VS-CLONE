@@ -1,6 +1,7 @@
 import pytest
 
 from game import content
+from game.accessibility import AccessibilitySettings
 from game.audio import AudioEngine
 from game.entities import Enemy, EnemyLane, UpgradeType
 from game.accessibility import AccessibilitySettings
