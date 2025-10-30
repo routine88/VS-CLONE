@@ -113,8 +113,24 @@
 - **Replayability Burnout:** Invest in glyph synergy system and dynamic events.
 - **Technical Debt:** Establish code standards, weekly refactor windows.
 
-## 15. Open Questions
+## 15. Accessibility
+- **Assist Matrix:** The playable prototype now exposes the baseline assist features that will carry forward to production. Designers can mix and match per playtest to keep difficulty approachable without invalidating progression.
+
+| Category | Option | Range / Values | Intent |
+| -------- | ------ | -------------- | ------ |
+| Aim Support | `auto_aim_radius` | `0.25`–`3.0` (default `0.8`) | Expands projectile hit cones for players who struggle with precision aiming. |
+| Survivability | `damage_taken_multiplier` | `0.1`–`2.0` (default `1.0`) | Scales incoming damage to relieve pressure or increase challenge. |
+| Pacing | `game_speed_multiplier` | `0.25`–`1.5` (default `1.0`) | Slows or accelerates the global simulation for reaction flexibility. |
+| Readability | `projectile_speed_multiplier` | `0.25`–`3.0` (default `1.0`) | Adjusts projectile travel speed to maintain clarity on varied displays. |
+| Visual Contrast | `high_contrast` | Boolean | Swaps ASCII glyphs for bold block variants that pop on dim or low-quality terminals. |
+| Visual Contrast | `colorblind_mode` | `none`, `protanopia`, `deuteranopia`, `tritanopia` | Applies palette-aware glyph swaps to preserve enemy/projectile distinction without relying on color. |
+| Information Density | `message_log_size` | `1`–`20` (default `8`) | Controls how many log entries persist for players who need extended context. |
+| Audio Landmarks | `audio_cues` | Boolean | Enables supplemental cues that call out low health, upgrade prompts, and other milestones. |
+
+- **Implementation Notes:** All numeric inputs clamp to their safe ranges, colorblind modes default back to `none` when an unknown value is supplied, and audio cues piggyback on existing prompt/confirm stingers so they remain informative even with placeholder assets.
+
+## 16. Open Questions
 - Will co-op be in scope for Early Access? (TBD post vertical slice).
-- Need to evaluate accessibility options (colorblind filters, auto-aim assist levels).
+- Playtest colorblind presets with external groups to validate glyph readability.
 - Decide on roguelite meta progression currency pacing.
 

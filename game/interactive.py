@@ -14,6 +14,13 @@ from .audio import AudioEngine, AudioFrame
 from .accessibility import AccessibilitySettings
 from .combat import glyph_damage_multiplier, weapon_tier
 from .entities import Encounter, Enemy, EnemyLane, UpgradeCard
+from .environment import (
+    BarricadeEvent,
+    EnvironmentTickResult,
+    HazardEvent,
+    ResourceDropEvent,
+    WeatherEvent,
+)
 from .game_state import GameState
 from .graphics import Camera, GraphicsEngine, SceneNode
 from .localization import Translator, get_translator
@@ -95,7 +102,77 @@ class FrameSnapshot:
     defeated: bool = False
     high_contrast: bool = False
     message_log_size: int = 8
+    colorblind_mode: str = "none"
+    audio_cues: bool = False
     relics: Sequence[str] = field(default_factory=list)
+
+
+COLORBLIND_GLYPHS = {
+    "none": {
+        "standard": {
+            "vertical_border": "|",
+            "horizontal_border": "-",
+            "player": "@",
+            "enemy": "E",
+            "projectile": "-",
+        },
+        "high": {
+            "vertical_border": "#",
+            "horizontal_border": "#",
+            "player": "█",
+            "enemy": "▓",
+            "projectile": "━",
+        },
+    },
+    "protanopia": {
+        "standard": {
+            "vertical_border": "|",
+            "horizontal_border": "=",
+            "player": "A",
+            "enemy": "V",
+            "projectile": "~",
+        },
+        "high": {
+            "vertical_border": "#",
+            "horizontal_border": "#",
+            "player": "█",
+            "enemy": "▒",
+            "projectile": "═",
+        },
+    },
+    "deuteranopia": {
+        "standard": {
+            "vertical_border": "|",
+            "horizontal_border": "~",
+            "player": "D",
+            "enemy": "M",
+            "projectile": "*",
+        },
+        "high": {
+            "vertical_border": "#",
+            "horizontal_border": "#",
+            "player": "█",
+            "enemy": "░",
+            "projectile": "+",
+        },
+    },
+    "tritanopia": {
+        "standard": {
+            "vertical_border": "|",
+            "horizontal_border": ".",
+            "player": "T",
+            "enemy": "H",
+            "projectile": ":",
+        },
+        "high": {
+            "vertical_border": "#",
+            "horizontal_border": "#",
+            "player": "█",
+            "enemy": "▓",
+            "projectile": "·",
+        },
+    },
+}
 
 
 class ArcadeEngine:
@@ -141,8 +218,11 @@ class ArcadeEngine:
         self._enemies: List[ActiveEnemy] = []
         self._messages: List[str] = []
         self._audio_events: List[str] = []
+        self._audio_low_health_alert = False
+        self._audio_upgrade_prompt_alert = False
         self._spawn_timer = spawn_interval
         self._base_spawn_interval = spawn_interval
+        self._environment_time_scale = 1.0
         self._elapsed = 0.0
         self._score = 0
         self._awaiting_upgrade = False
@@ -343,6 +423,30 @@ class ArcadeEngine:
 
     def _push_audio(self, event: str) -> None:
         self._audio_events.append(event)
+
+    def _inject_accessibility_cues(self) -> None:
+        if not self._accessibility.audio_cues:
+            self._audio_low_health_alert = False
+            self._audio_upgrade_prompt_alert = False
+            return
+
+        player = self._state.player
+        if player.max_health <= 0:
+            health_ratio = 0.0
+        else:
+            health_ratio = player.health / float(player.max_health)
+
+        if health_ratio <= 0.25 and not self._audio_low_health_alert:
+            self._push_audio("accessibility.health.low")
+            self._audio_low_health_alert = True
+        elif health_ratio >= 0.4 and self._audio_low_health_alert:
+            self._audio_low_health_alert = False
+
+        if self._awaiting_upgrade and not self._audio_upgrade_prompt_alert:
+            self._push_audio("accessibility.upgrade.prompt")
+            self._audio_upgrade_prompt_alert = True
+        elif not self._awaiting_upgrade and self._audio_upgrade_prompt_alert:
+            self._audio_upgrade_prompt_alert = False
 
     def _apply_movement(self, delta_time: float, inputs: InputFrame) -> None:
         speed = 14.0
@@ -682,6 +786,8 @@ class ArcadeEngine:
             self._push_audio("run.defeat")
             self._defeat_announced = True
 
+        self._inject_accessibility_cues()
+
         snapshot = FrameSnapshot(
             elapsed=self._elapsed,
             player_x=self._player_position[0],
@@ -709,6 +815,8 @@ class ArcadeEngine:
             defeated=self._defeated,
             high_contrast=self._accessibility.high_contrast,
             message_log_size=self._accessibility.message_log_size,
+            colorblind_mode=self._accessibility.colorblind_mode,
+            audio_cues=self._accessibility.audio_cues,
             relics=list(self._state.player.relics),
         )
         self._last_snapshot = snapshot
@@ -902,11 +1010,13 @@ def _render(
     )
     stdscr.addstr(0, 0, status[: int(width)])
 
-    vertical_border = "|" if not snapshot.high_contrast else "#"
-    horizontal_border = "-" if not snapshot.high_contrast else "#"
-    player_char = "@" if not snapshot.high_contrast else "█"
-    enemy_char = "E" if not snapshot.high_contrast else "▓"
-    projectile_char = "-" if not snapshot.high_contrast else "━"
+    palette = COLORBLIND_GLYPHS.get(snapshot.colorblind_mode, COLORBLIND_GLYPHS["none"])
+    glyphs = palette["high" if snapshot.high_contrast else "standard"]
+    vertical_border = glyphs["vertical_border"]
+    horizontal_border = glyphs["horizontal_border"]
+    player_char = glyphs["player"]
+    enemy_char = glyphs["enemy"]
+    projectile_char = glyphs["projectile"]
 
     for y in range(int(height)):
         stdscr.addstr(y, 0, vertical_border)
@@ -1054,9 +1164,20 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         help=translator.translate("cli.help.high_contrast"),
     )
     parser.add_argument(
+        "--colorblind-mode",
+        type=lambda value: value.lower(),
+        choices=tuple(COLORBLIND_GLYPHS.keys()),
+        help=translator.translate("cli.help.colorblind_mode"),
+    )
+    parser.add_argument(
         "--message-log",
         type=int,
         help=translator.translate("cli.help.message_log"),
+    )
+    parser.add_argument(
+        "--audio-cues",
+        action="store_true",
+        help=translator.translate("cli.help.audio_cues"),
     )
     parser.add_argument(
         "--demo",
@@ -1096,8 +1217,12 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         settings_kwargs["projectile_speed_multiplier"] = args.projectile_speed
     if args.high_contrast:
         settings_kwargs["high_contrast"] = True
+    if args.colorblind_mode is not None:
+        settings_kwargs["colorblind_mode"] = args.colorblind_mode
     if args.message_log is not None:
         settings_kwargs["message_log_size"] = args.message_log
+    if args.audio_cues:
+        settings_kwargs["audio_cues"] = True
 
     accessibility = (
         AccessibilitySettings(**settings_kwargs) if settings_kwargs else None

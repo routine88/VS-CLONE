@@ -172,6 +172,8 @@ class AudioEngine:
         self.bind_effect("run.relic_acquired", "effects/ui.confirm")
         self.bind_effect("run.final_boss_warning", "effects/ui.prompt")
         self.bind_effect("run.final_boss_defeated", "effects/run.victory")
+        self.bind_effect("accessibility.health.low", "effects/ui.prompt")
+        self.bind_effect("accessibility.upgrade.prompt", "effects/ui.confirm")
         self.bind_music("music.start", "music.dusk_theme")
         self.bind_music("music.boss", "music.boss_theme")
 
