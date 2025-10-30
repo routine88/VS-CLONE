@@ -206,12 +206,16 @@ loop now exposes accessibility toggles directly from the CLI:
 | `--speed-scale <float>` | Slows or speeds overall simulation time to accommodate reaction needs. |
 | `--projectile-speed <float>` | Adjusts projectile velocity so inputs remain readable on lower framerates. |
 | `--high-contrast` | Swaps the ASCII palette for high-contrast glyphs that pop on dim terminals. |
+| `--colorblind-mode <mode>` | Selects glyph presets tuned for `protanopia`, `deuteranopia`, or `tritanopia` vision profiles. |
 | `--message-log <int>` | Controls how many event messages persist on screen for easier tracking. |
+| `--audio-cues` | Plays supplemental audio callouts for low health, upgrade prompts, and other key beats. |
 
 Flags can be combined, and all numeric inputs are clamped to sensible ranges so
-the prototype remains stable even when extreme values are supplied. These
-options will inform the accessibility matrix that the Unity implementation ships
-with later in the roadmap.
+the prototype remains stable even when extreme values are supplied. The
+`--colorblind-mode` presets swap enemy/projectile glyphs without relying on
+color, while `--audio-cues` layers informative stingers on top of the default
+soundscape. These options will inform the accessibility matrix that the Unity
+implementation ships with later in the roadmap.
 
 ## Graphics Engine Bridge
 
