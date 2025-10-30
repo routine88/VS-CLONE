@@ -1,9 +1,16 @@
 import pytest
 
 from game import content
+from game.accessibility import AccessibilitySettings
 from game.audio import AudioEngine
 from game.entities import Enemy, EnemyLane
-from game.accessibility import AccessibilitySettings
+from game.environment import (
+    BarricadeEvent,
+    EnvironmentTickResult,
+    HazardEvent,
+    ResourceDropEvent,
+    WeatherEvent,
+)
 from game.interactive import ActiveEnemy, ArcadeEngine, InputFrame, Projectile
 from game.localization import default_catalog, get_translator
 
@@ -153,3 +160,116 @@ def test_build_audio_frame_emits_instructions():
     effect_ids = [instruction.clip.id for instruction in audio_frame.effects]
     assert "effects/ui.prompt" in effect_ids
     assert any(instr.action in {"play", "refresh"} for instr in audio_frame.music)
+
+
+def test_environment_events_log_and_audio(monkeypatch):
+    engine = ArcadeEngine(spawn_interval=10.0, target_duration=60.0)
+    hazard = HazardEvent(
+        biome="Graveyard",
+        name="Creeping Fog",
+        description="A chill fog.",
+        damage=12,
+        slow=0.25,
+        duration=6.0,
+    )
+    weather = WeatherEvent(
+        biome="Graveyard",
+        name="Moonlit Gusts",
+        description="Winds buffet the hunter.",
+        movement_modifier=-0.15,
+        vision_modifier=-0.1,
+        duration=8.0,
+    )
+
+    def fake_update(phase: int, delta_time: float) -> EnvironmentTickResult:
+        return EnvironmentTickResult(
+            hazards=[hazard],
+            barricades=[],
+            resource_drops=[],
+            weather_events=[weather],
+        )
+
+    monkeypatch.setattr(engine.state.environment_director, "update", fake_update)
+    engine.state.player.health = 80
+
+    snapshot = engine.step(0.5, InputFrame())
+
+    hazard_message = engine.translator.translate(
+        "game.hazard_trigger",
+        name=hazard.name,
+        biome=hazard.biome,
+        damage=hazard.damage,
+    )
+    slow_message = engine.translator.translate(
+        "game.hazard_slow",
+        name=hazard.name,
+        percent=int(hazard.slow * 100),
+        duration=int(round(hazard.duration)),
+    )
+    weather_message = engine.translator.translate(
+        "game.weather_change",
+        name=weather.name,
+        description=weather.description,
+        movement=int(weather.movement_modifier * 100),
+        vision=int(weather.vision_modifier * 100),
+    )
+
+    assert hazard_message in snapshot.messages
+    assert slow_message in snapshot.messages
+    assert weather_message in snapshot.messages
+    assert "environment.hazard" in snapshot.audio_events
+    assert "environment.weather.change" in snapshot.audio_events
+    assert snapshot.health == engine.state.player.health == 68
+    assert snapshot.hazards and snapshot.hazards[0].name == hazard.name
+    assert snapshot.weather_events and snapshot.weather_events[0].name == weather.name
+
+
+def test_environment_salvage_updates_snapshot(monkeypatch):
+    engine = ArcadeEngine(spawn_interval=10.0, target_duration=60.0)
+    barricade = BarricadeEvent(
+        biome="Village",
+        name="Collapsed Stall",
+        description="Timbers block the road.",
+        durability=10,
+        salvage_reward=9,
+    )
+    drop = ResourceDropEvent(
+        biome="Village",
+        name="Hidden Cache",
+        description="Supplies tucked away.",
+        amount=7,
+    )
+
+    def fake_update(phase: int, delta_time: float) -> EnvironmentTickResult:
+        return EnvironmentTickResult(
+            hazards=[],
+            barricades=[barricade],
+            resource_drops=[drop],
+            weather_events=[],
+        )
+
+    monkeypatch.setattr(engine.state.environment_director, "update", fake_update)
+    starting_salvage = engine.state.player.salvage
+
+    snapshot = engine.step(0.5, InputFrame())
+    total_gain = barricade.salvage_reward + drop.amount
+
+    barricade_message = engine.translator.translate(
+        "game.barricade_cleared",
+        name=barricade.name,
+        salvage=barricade.salvage_reward,
+    )
+    salvage_message = engine.translator.translate(
+        "game.salvage_collected",
+        name=drop.name,
+        amount=drop.amount,
+    )
+
+    assert snapshot.salvage_total == starting_salvage + total_gain
+    assert snapshot.salvage_gained == total_gain
+    assert engine.state.player.salvage == starting_salvage + total_gain
+    assert barricade_message in snapshot.messages
+    assert salvage_message in snapshot.messages
+    assert "environment.salvage" in snapshot.audio_events
+    assert snapshot.barricades and snapshot.barricades[0].name == barricade.name
+    assert snapshot.resource_drops and snapshot.resource_drops[0].name == drop.name

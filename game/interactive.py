@@ -14,6 +14,13 @@ from . import content
 from .audio import AudioEngine, AudioFrame
 from .accessibility import AccessibilitySettings
 from .combat import glyph_damage_multiplier, weapon_tier
+from .environment import (
+    BarricadeEvent,
+    EnvironmentTickResult,
+    HazardEvent,
+    ResourceDropEvent,
+    WeatherEvent,
+)
 from .entities import Enemy, EnemyLane, UpgradeCard
 from .game_state import GameState
 from .graphics import Camera, GraphicsEngine, SceneNode
@@ -72,6 +79,12 @@ class FrameSnapshot:
     score: int
     projectiles: Sequence[Projectile]
     enemies: Sequence[ActiveEnemy]
+    salvage_total: int = 0
+    salvage_gained: int = 0
+    hazards: Sequence[HazardEvent] = field(default_factory=list)
+    barricades: Sequence[BarricadeEvent] = field(default_factory=list)
+    resource_drops: Sequence[ResourceDropEvent] = field(default_factory=list)
+    weather_events: Sequence[WeatherEvent] = field(default_factory=list)
     messages: Sequence[str] = field(default_factory=list)
     audio_events: Sequence[str] = field(default_factory=list)
     awaiting_upgrade: bool = False
@@ -132,6 +145,9 @@ class ArcadeEngine:
         self._defeat_announced = False
         self._rng = random.Random()
         self._last_snapshot: FrameSnapshot | None = None
+        self._environment_time_scale = 300.0 / 75.0
+        self._environment_events = EnvironmentTickResult([], [], [], [])
+        self._environment_salvage_gained = 0
 
         self._refresh_weapon_cache()
 
@@ -170,8 +186,13 @@ class ArcadeEngine:
         if self._defeated or self._elapsed >= self._target_duration:
             return self._snapshot()
 
+        environment_result = self._state.tick(delta_time * self._environment_time_scale)
+        self._process_environment_tick(environment_result)
+
         self._elapsed += delta_time
-        self._state.current_phase = min(4, int(self._elapsed // 75) + 1)
+
+        if self._defeated or self._elapsed >= self._target_duration:
+            return self._snapshot()
 
         self._dash_cooldown = max(0.0, self._dash_cooldown - delta_time)
         self._ultimate_cooldown = max(0.0, self._ultimate_cooldown - delta_time)
@@ -207,6 +228,86 @@ class ArcadeEngine:
         self._upgrade_options = []
         self._refresh_weapon_cache()
         return card
+
+    def _process_environment_tick(self, result: EnvironmentTickResult) -> None:
+        """Translate environment outputs into arcade-facing feedback."""
+
+        self._environment_events = EnvironmentTickResult(
+            list(result.hazards),
+            list(result.barricades),
+            list(result.resource_drops),
+            list(result.weather_events),
+        )
+        self._environment_salvage_gained = 0
+
+        for hazard in result.hazards:
+            self._push_message(
+                self._translate(
+                    "game.hazard_trigger",
+                    name=hazard.name,
+                    biome=hazard.biome,
+                    damage=hazard.damage,
+                )
+            )
+            if hazard.slow > 0:
+                percent = int(hazard.slow * 100)
+                duration = int(round(hazard.duration))
+                self._push_message(
+                    self._translate(
+                        "game.hazard_slow",
+                        name=hazard.name,
+                        percent=percent,
+                        duration=duration,
+                    )
+                )
+            self._push_audio("environment.hazard")
+
+        for barricade in result.barricades:
+            self._environment_salvage_gained += barricade.salvage_reward
+            self._push_message(
+                self._translate(
+                    "game.barricade_cleared",
+                    name=barricade.name,
+                    salvage=barricade.salvage_reward,
+                )
+            )
+            self._push_audio("environment.salvage")
+
+        for drop in result.resource_drops:
+            self._environment_salvage_gained += drop.amount
+            self._push_message(
+                self._translate(
+                    "game.salvage_collected",
+                    name=drop.name,
+                    amount=drop.amount,
+                )
+            )
+            self._push_audio("environment.salvage")
+
+        for weather in result.weather_events:
+            if weather.ended:
+                self._push_message(self._translate("game.weather_clear"))
+                self._push_audio("environment.weather.clear")
+            else:
+                movement = int(weather.movement_modifier * 100)
+                vision = int(weather.vision_modifier * 100)
+                self._push_message(
+                    self._translate(
+                        "game.weather_change",
+                        name=weather.name,
+                        description=weather.description,
+                        movement=movement,
+                        vision=vision,
+                    )
+                )
+                self._push_audio("environment.weather.change")
+
+        if self._state.player.health <= 0 and not self._defeated:
+            self._defeated = True
+            self._push_message(self._translate("game.environment_defeat"))
+            if not self._defeat_announced:
+                self._push_audio("run.defeat")
+                self._defeat_announced = True
 
     def _push_message(self, message: str) -> None:
         self._messages.append(message)
@@ -442,8 +543,14 @@ class ArcadeEngine:
             next_level_xp=LEVEL_CURVE.xp_for_level(next_level),
             phase=self._state.current_phase,
             score=self._score,
+            salvage_total=player.salvage,
+            salvage_gained=self._environment_salvage_gained,
             projectiles=list(self._projectiles),
             enemies=list(self._enemies),
+            hazards=list(self._environment_events.hazards),
+            barricades=list(self._environment_events.barricades),
+            resource_drops=list(self._environment_events.resource_drops),
+            weather_events=list(self._environment_events.weather_events),
             messages=list(self._messages),
             audio_events=list(self._audio_events),
             awaiting_upgrade=self._awaiting_upgrade,
