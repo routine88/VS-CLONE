@@ -24,6 +24,8 @@ hazard rolls are reproducible between runs.
 | `--event-year` | Year to evaluate when resolving `--event-id`. |
 | `--profile-path` | Load an encrypted player profile before running. Requires `--key`. |
 | `--key` | Decryption key used with `--profile-path`. |
+| `--export` | Write the run transcript to a JSON file after completion. |
+| `--summary` | Print an analytics summary derived from the run. |
 
 ## Demo Mode & Seasonal Events
 
@@ -102,8 +104,10 @@ weekly challenge briefs before the Unity client is playable.
 
 ## Transcript Export & Analytics
 
-Designers can persist simulated runs to JSON for deeper telemetry analysis. After
-executing a run, serialise the transcript and feed it to the analytics CLI:
+Designers can persist simulated runs to JSON for deeper telemetry analysis. Pass
+`--export runs/nightfall_run.json` when launching the prototype to serialise a
+run automatically, or generate the file programmatically and feed it to the
+analytics CLI:
 
 ```python
 from game.prototype import PrototypeSession, save_transcript
@@ -122,7 +126,8 @@ python -m game.analytics runs/nightfall_run.json runs/elite_test.json
 Add `--json` to emit machine-readable aggregates that plug into dashboards or
 spreadsheet tooling. Metrics include survival rate, upgrade diversity, salvage
 flow, and phase reach distributions to keep the project aligned with the PRD's
-success criteria.
+success criteria. Combine exports with the `--summary` flag during prototype
+runs to get an immediate pulse on performance without leaving the terminal.
 
 ## Steam Cloud Simulation
 
