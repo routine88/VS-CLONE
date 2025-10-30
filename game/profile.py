@@ -76,6 +76,7 @@ _UNLOCK_GLYPH_MAP = {
 }
 
 _UNLOCK_WEAPON_CARDS = {
+    "weapon_bloodthorn": "Bloodthorn Lance",
     "weapon_nocturne": "Nocturne Harp",
 }
 
@@ -109,7 +110,6 @@ class PlayerProfile:
             "Dusk Repeater",
             "Gloom Chakram",
             "Storm Siphon",
-            "Bloodthorn Lance",
             "Gravebloom Staff",
             "Tempest Gauntlet",
             "Frostbrand Edge",

@@ -22,6 +22,7 @@ def test_unlock_flow_enables_new_cards():
     profile = PlayerProfile()
     cards = {card.name for card in profile.available_upgrade_cards()}
     assert "Verdant Sigil" not in cards
+    assert "Bloodthorn Lance" not in cards
 
     unlock = next(item for item in default_unlocks() if item.id == "glyph_verdant")
     profile.apply_unlock(unlock)
@@ -29,6 +30,12 @@ def test_unlock_flow_enables_new_cards():
     cards = {card.name for card in profile.available_upgrade_cards()}
     assert "Verdant Sigil" in cards
     assert GlyphFamily.VERDANT in profile.available_glyph_families
+
+    weapon_unlock = next(item for item in default_unlocks() if item.id == "weapon_bloodthorn")
+    profile.apply_unlock(weapon_unlock)
+
+    cards = {card.name for card in profile.available_upgrade_cards()}
+    assert weapon_unlock.name in cards
 
 
 def test_claim_unlock_validates_requirements():
@@ -91,7 +98,6 @@ def test_profile_exposes_full_weapon_roster_by_default():
         "Dusk Repeater",
         "Gloom Chakram",
         "Storm Siphon",
-        "Bloodthorn Lance",
         "Gravebloom Staff",
         "Tempest Gauntlet",
         "Frostbrand Edge",
@@ -100,3 +106,5 @@ def test_profile_exposes_full_weapon_roster_by_default():
     }
 
     assert expected.issubset(weapon_names)
+    assert "Bloodthorn Lance" not in weapon_names
+    assert "Nocturne Harp" not in weapon_names

@@ -8,6 +8,13 @@ from typing import Dict, Iterable, List, Optional, Sequence, Set
 from .session import RunResult, score_run
 
 
+HUNTER_LUNARA_COST = 45
+WEAPON_BLOODTHORN_COST = 60
+GLYPH_VERDANT_COST = 55
+WEAPON_NOCTURNE_COST = 110
+HUNTER_AURORA_COST = 120
+
+
 @dataclass(frozen=True)
 class MetaRequirement:
     """Requirement that must be met to unlock a reward."""
@@ -124,15 +131,23 @@ def default_unlocks() -> List[Unlockable]:
             id="hunter_lunara",
             name="Lunara the Moonshadow",
             category="hunter",
-            cost=30,
+            cost=HUNTER_LUNARA_COST,
             description="Agile huntress specializing in aerial glyph combos.",
+            requirements=(MetaRequirement("encounters", threshold=5),),
+        ),
+        Unlockable(
+            id="weapon_bloodthorn",
+            name="Bloodthorn Lance",
+            category="weapon",
+            cost=WEAPON_BLOODTHORN_COST,
+            description="Unlock the Bloodthorn Lance, a vampiric spear that rewards aggressive play.",
             requirements=(MetaRequirement("survive"),),
         ),
         Unlockable(
             id="weapon_nocturne",
             name="Nocturne Harp",
             category="weapon",
-            cost=45,
+            cost=WEAPON_NOCTURNE_COST,
             description="Channel haunting chords into piercing shockwaves.",
             requirements=(MetaRequirement("final_boss"),),
         ),
@@ -140,7 +155,7 @@ def default_unlocks() -> List[Unlockable]:
             id="glyph_verdant",
             name="Verdant Sigil Set",
             category="glyph",
-            cost=25,
+            cost=GLYPH_VERDANT_COST,
             description="Unlock the Verdant glyph family focused on regeneration.",
             requirements=(MetaRequirement("min_relics", threshold=2),),
         ),
@@ -148,9 +163,12 @@ def default_unlocks() -> List[Unlockable]:
             id="hunter_aurora",
             name="Aurora the Dawnbringer",
             category="hunter",
-            cost=20,
+            cost=HUNTER_AURORA_COST,
             description="Support hunter wielding radiant slows and shields.",
-            requirements=(MetaRequirement("encounters", threshold=6),),
+            requirements=(
+                MetaRequirement("survive"),
+                MetaRequirement("encounters", threshold=12),
+            ),
         ),
     ]
 
