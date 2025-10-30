@@ -3,7 +3,7 @@
 import pytest
 
 from game.profile import PlayerProfile
-from game.prototype import PrototypeSession, format_transcript, main
+from game.prototype import PrototypeSession, format_transcript, main, summarize_transcript
 
 
 def test_prototype_session_generates_transcript() -> None:
@@ -20,6 +20,10 @@ def test_prototype_session_generates_transcript() -> None:
     assert "Nightfall Survivors Prototype Run" in rendered
     assert transcript.hunter_name in rendered
 
+    summary = summarize_transcript(transcript)
+    assert "Analytics Summary" in summary
+    assert "Duration" in summary
+
 
 def test_main_invocation_prints_output(capsys: pytest.CaptureFixture[str]) -> None:
     exit_code = main(["--seed", "99", "--duration", "60", "--tick-step", "10"])
@@ -33,3 +37,26 @@ def test_profile_path_requires_key(tmp_path) -> None:
     profile_path = tmp_path / "profile.nfs"
     with pytest.raises(SystemExit):
         main(["--profile-path", str(profile_path)])
+
+
+def test_main_export_and_summary(tmp_path, capsys: pytest.CaptureFixture[str]) -> None:
+    export_path = tmp_path / "transcript.json"
+    exit_code = main(
+        [
+            "--seed",
+            "77",
+            "--duration",
+            "60",
+            "--tick-step",
+            "10",
+            "--export",
+            str(export_path),
+            "--summary",
+        ]
+    )
+    assert exit_code == 0
+    assert export_path.exists()
+
+    captured = capsys.readouterr().out
+    assert "Transcript saved to" in captured
+    assert "Analytics Summary" in captured

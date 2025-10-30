@@ -8,7 +8,7 @@ import random
 import secrets
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from .distribution import (
     DemoRestrictions,
@@ -18,6 +18,7 @@ from .distribution import (
 )
 from .environment import EnvironmentDirector
 from .game_state import GameState
+from .metrics import derive_metrics, format_run_summary
 from .live_ops import SeasonalEvent, activate_event, find_event, seasonal_schedule
 from .profile import PlayerProfile
 from .session import RunResult, RunSimulator
@@ -201,6 +202,13 @@ def save_transcript(transcript: PrototypeTranscript, path: Path | str) -> Path:
     return target
 
 
+def summarize_transcript(transcript: PrototypeTranscript) -> str:
+    """Return a concise analytics summary for a transcript."""
+
+    metrics = derive_metrics(transcript.run_result, hunter_id=transcript.hunter_id)
+    return format_run_summary(metrics)
+
+
 def _build_profile_from_args(args: argparse.Namespace) -> PlayerProfile:
     if args.profile_path:
         if not args.key:
@@ -253,6 +261,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         type=str,
         help="Decryption key used when a profile path is provided.",
     )
+    parser.add_argument(
+        "--export",
+        type=str,
+        help="Write the run transcript to the specified JSON path.",
+    )
+    parser.add_argument(
+        "--summary",
+        action="store_true",
+        help="Print an analytics summary after the transcript.",
+    )
 
     args = parser.parse_args(argv)
     profile = _build_profile_from_args(args)
@@ -271,6 +289,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         seasonal_event=seasonal,
     )
     print(format_transcript(transcript))
+
+    tail_sections: List[str] = []
+    if args.export:
+        saved_path = save_transcript(transcript, args.export)
+        tail_sections.append(f"Transcript saved to {saved_path}")
+    if args.summary:
+        tail_sections.append(summarize_transcript(transcript))
+
+    if tail_sections:
+        print()
+        print("\n\n".join(tail_sections))
     return 0
 
 
