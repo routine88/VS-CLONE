@@ -25,6 +25,15 @@ from .entities import Enemy, EnemyLane, UpgradeCard
 from .game_state import GameState
 from .graphics import Camera, GraphicsEngine, SceneNode
 from .localization import Translator, get_translator
+from .distribution import (
+    DemoRestrictions,
+    apply_demo_restrictions,
+    default_demo_restrictions,
+    demo_duration,
+)
+from .live_ops import SeasonalEvent, activate_event, find_event, seasonal_schedule
+from .profile import PlayerProfile
+from .storage import load_profile
 
 
 @dataclass
@@ -104,6 +113,7 @@ class ArcadeEngine:
         width: int = 80,
         height: int = 20,
         state: Optional[GameState] = None,
+        profile: PlayerProfile | None = None,
         spawn_interval: float = 2.0,
         target_duration: float = 300.0,
         translator: Translator | None = None,
@@ -116,12 +126,17 @@ class ArcadeEngine:
         self.height = float(height)
         self._ground = self.height - 2.0
         self._ceiling = 1.0
+        if state is None and profile is not None:
+            state = profile.start_run()
         if state is None:
             self._translator = translator or get_translator()
             self._state = GameState(translator=self._translator)
         else:
+            if translator is not None:
+                state.translator = translator
             self._state = state
             self._translator = translator or state.translator
+        self._profile: PlayerProfile | None = profile
         self._accessibility = (accessibility or AccessibilitySettings()).normalized()
         self._player_position = [5.0, self.height / 2.0]
         self._player_velocity = [0.0, 0.0]
@@ -174,6 +189,10 @@ class ArcadeEngine:
     @property
     def accessibility(self) -> AccessibilitySettings:
         return self._accessibility
+
+    @property
+    def profile(self) -> PlayerProfile | None:
+        return self._profile
 
     def step(self, delta_time: float, inputs: InputFrame) -> FrameSnapshot:
         """Advance the engine and return a snapshot for presentation."""
@@ -814,16 +833,46 @@ def launch_playable(
     *,
     language: str = "en",
     accessibility: AccessibilitySettings | None = None,
+    profile: PlayerProfile | None = None,
+    demo_restrictions: DemoRestrictions | None = None,
+    seasonal_event: SeasonalEvent | None = None,
 ) -> None:
     """Entry point that spins up the curses loop."""
 
     translator = get_translator(language)
+    active_profile = profile or PlayerProfile()
+
+    if demo_restrictions is not None:
+        apply_demo_restrictions(active_profile, demo_restrictions)
+
+    state = active_profile.start_run()
+    state.translator = translator
+
+    if seasonal_event is not None:
+        activate_event(state, seasonal_event)
+
+    target_duration = (
+        demo_duration(duration, demo_restrictions)
+        if demo_restrictions is not None
+        else duration
+    )
+
     engine = ArcadeEngine(
-        target_duration=duration,
+        target_duration=target_duration,
         translator=translator,
         accessibility=accessibility,
+        state=state,
+        profile=active_profile,
     )
     curses.wrapper(_run_curses_loop, engine, fps)
+
+
+def _profile_from_args(args: argparse.Namespace) -> PlayerProfile:
+    if args.profile_path:
+        if not args.key:
+            raise SystemExit("--profile-path requires --key for decryption")
+        return load_profile(args.profile_path, key=args.key)
+    return PlayerProfile()
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
@@ -877,6 +926,31 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         type=int,
         help=translator.translate("cli.help.message_log"),
     )
+    parser.add_argument(
+        "--demo",
+        action="store_true",
+        help=translator.translate("cli.help.demo"),
+    )
+    parser.add_argument(
+        "--event-id",
+        type=str,
+        help=translator.translate("cli.help.event_id"),
+    )
+    parser.add_argument(
+        "--event-year",
+        type=int,
+        help=translator.translate("cli.help.event_year"),
+    )
+    parser.add_argument(
+        "--profile-path",
+        type=str,
+        help=translator.translate("cli.help.profile_path"),
+    )
+    parser.add_argument(
+        "--key",
+        type=str,
+        help=translator.translate("cli.help.key"),
+    )
     args = parser.parse_args(argv)
 
     settings_kwargs = {}
@@ -897,11 +971,21 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         AccessibilitySettings(**settings_kwargs) if settings_kwargs else None
     )
 
+    profile = _profile_from_args(args)
+    restrictions = default_demo_restrictions() if args.demo else None
+    seasonal = None
+    if args.event_id:
+        events = seasonal_schedule(args.event_year)
+        seasonal = find_event(args.event_id, events)
+
     launch_playable(
         duration=args.duration,
         fps=args.fps,
         language=args.language,
         accessibility=accessibility,
+        profile=profile,
+        demo_restrictions=restrictions,
+        seasonal_event=seasonal,
     )
 
 

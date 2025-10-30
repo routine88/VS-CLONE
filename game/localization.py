@@ -124,6 +124,11 @@ def _build_default_catalog() -> LocalizationCatalog:
         "cli.help.projectile_speed": "Projectile speed multiplier",
         "cli.help.high_contrast": "Enable high-contrast rendering",
         "cli.help.message_log": "Number of messages to keep visible",
+        "cli.help.demo": "Apply demo restrictions (limited content)",
+        "cli.help.event_id": "Activate a seasonal event by identifier",
+        "cli.help.event_year": "Year used when evaluating the seasonal schedule",
+        "cli.help.profile_path": "Path to an encrypted profile to load",
+        "cli.help.key": "Decryption key for the supplied profile",
     }
 
     spanish_strings: Dict[str, str] = {
@@ -169,6 +174,11 @@ def _build_default_catalog() -> LocalizationCatalog:
         "cli.help.projectile_speed": "Multiplicador de velocidad de proyectiles",
         "cli.help.high_contrast": "Activa representación de alto contraste",
         "cli.help.message_log": "Cantidad de mensajes visibles en pantalla",
+        "cli.help.demo": "Aplicar restricciones de demo (contenido limitado)",
+        "cli.help.event_id": "Activar un evento de temporada por identificador",
+        "cli.help.event_year": "Año usado para evaluar el calendario estacional",
+        "cli.help.profile_path": "Ruta a un perfil cifrado para cargar",
+        "cli.help.key": "Clave de descifrado para el perfil proporcionado",
     }
 
     catalog.register_language("en", english_strings)

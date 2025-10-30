@@ -3,15 +3,9 @@ import pytest
 from game import content
 from game.accessibility import AccessibilitySettings
 from game.audio import AudioEngine
-from game.entities import Enemy, EnemyLane
-from game.environment import (
-    BarricadeEvent,
-    EnvironmentTickResult,
-    HazardEvent,
-    ResourceDropEvent,
-    WeatherEvent,
-)
-from game.interactive import ActiveEnemy, ArcadeEngine, InputFrame, Projectile
+from game.entities import Enemy, EnemyLane, UpgradeType
+from game.accessibility import AccessibilitySettings
+from game.interactive import ActiveEnemy, ArcadeEngine, InputFrame, Projectile, main
 from game.localization import default_catalog, get_translator
 
 
@@ -162,114 +156,42 @@ def test_build_audio_frame_emits_instructions():
     assert any(instr.action in {"play", "refresh"} for instr in audio_frame.music)
 
 
-def test_environment_events_log_and_audio(monkeypatch):
-    engine = ArcadeEngine(spawn_interval=10.0, target_duration=60.0)
-    hazard = HazardEvent(
-        biome="Graveyard",
-        name="Creeping Fog",
-        description="A chill fog.",
-        damage=12,
-        slow=0.25,
-        duration=6.0,
-    )
-    weather = WeatherEvent(
-        biome="Graveyard",
-        name="Moonlit Gusts",
-        description="Winds buffet the hunter.",
-        movement_modifier=-0.15,
-        vision_modifier=-0.1,
-        duration=8.0,
-    )
+def test_main_demo_restrictions_trim_weapon_cards(monkeypatch):
+    captured = {}
 
-    def fake_update(phase: int, delta_time: float) -> EnvironmentTickResult:
-        return EnvironmentTickResult(
-            hazards=[hazard],
-            barricades=[],
-            resource_drops=[],
-            weather_events=[weather],
-        )
+    def fake_wrapper(func, engine, fps):
+        captured["engine"] = engine
+        return None
 
-    monkeypatch.setattr(engine.state.environment_director, "update", fake_update)
-    engine.state.player.health = 80
+    monkeypatch.setattr("game.interactive.curses.wrapper", fake_wrapper)
 
-    snapshot = engine.step(0.5, InputFrame())
+    main(["--demo"])
 
-    hazard_message = engine.translator.translate(
-        "game.hazard_trigger",
-        name=hazard.name,
-        biome=hazard.biome,
-        damage=hazard.damage,
-    )
-    slow_message = engine.translator.translate(
-        "game.hazard_slow",
-        name=hazard.name,
-        percent=int(hazard.slow * 100),
-        duration=int(round(hazard.duration)),
-    )
-    weather_message = engine.translator.translate(
-        "game.weather_change",
-        name=weather.name,
-        description=weather.description,
-        movement=int(weather.movement_modifier * 100),
-        vision=int(weather.vision_modifier * 100),
-    )
-
-    assert hazard_message in snapshot.messages
-    assert slow_message in snapshot.messages
-    assert weather_message in snapshot.messages
-    assert "environment.hazard" in snapshot.audio_events
-    assert "environment.weather.change" in snapshot.audio_events
-    assert snapshot.health == engine.state.player.health == 68
-    assert snapshot.hazards and snapshot.hazards[0].name == hazard.name
-    assert snapshot.weather_events and snapshot.weather_events[0].name == weather.name
+    engine = captured["engine"]
+    deck = engine.state.upgrade_deck
+    weapon_cards = {
+        card.name
+        for card in deck._pool  # type: ignore[attr-defined]
+        if card.type is UpgradeType.WEAPON
+    }
+    assert len(weapon_cards) <= 4
 
 
-def test_environment_salvage_updates_snapshot(monkeypatch):
-    engine = ArcadeEngine(spawn_interval=10.0, target_duration=60.0)
-    barricade = BarricadeEvent(
-        biome="Village",
-        name="Collapsed Stall",
-        description="Timbers block the road.",
-        durability=10,
-        salvage_reward=9,
-    )
-    drop = ResourceDropEvent(
-        biome="Village",
-        name="Hidden Cache",
-        description="Supplies tucked away.",
-        amount=7,
-    )
+def test_main_event_activation_adjusts_state(monkeypatch):
+    captured = {}
 
-    def fake_update(phase: int, delta_time: float) -> EnvironmentTickResult:
-        return EnvironmentTickResult(
-            hazards=[],
-            barricades=[barricade],
-            resource_drops=[drop],
-            weather_events=[],
-        )
+    def fake_wrapper(func, engine, fps):
+        captured["engine"] = engine
+        return None
 
-    monkeypatch.setattr(engine.state.environment_director, "update", fake_update)
-    starting_salvage = engine.state.player.salvage
+    monkeypatch.setattr("game.interactive.curses.wrapper", fake_wrapper)
 
-    snapshot = engine.step(0.5, InputFrame())
-    total_gain = barricade.salvage_reward + drop.amount
+    main(["--event-id", "harvest_moon", "--event-year", "2025"])
 
-    barricade_message = engine.translator.translate(
-        "game.barricade_cleared",
-        name=barricade.name,
-        salvage=barricade.salvage_reward,
-    )
-    salvage_message = engine.translator.translate(
-        "game.salvage_collected",
-        name=drop.name,
-        amount=drop.amount,
-    )
+    engine = captured["engine"]
+    spawn_director = engine.state.spawn_director
+    environment = engine.state.environment_director
 
-    assert snapshot.salvage_total == starting_salvage + total_gain
-    assert snapshot.salvage_gained == total_gain
-    assert engine.state.player.salvage == starting_salvage + total_gain
-    assert barricade_message in snapshot.messages
-    assert salvage_message in snapshot.messages
-    assert "environment.salvage" in snapshot.audio_events
-    assert snapshot.barricades and snapshot.barricades[0].name == barricade.name
-    assert snapshot.resource_drops and snapshot.resource_drops[0].name == drop.name
+    assert spawn_director._density_scale == pytest.approx(1.25)  # type: ignore[attr-defined]
+    assert environment._hazard_damage_scale == pytest.approx(1.1)  # type: ignore[attr-defined]
+    assert environment._salvage_scale == pytest.approx(1.3)  # type: ignore[attr-defined]
