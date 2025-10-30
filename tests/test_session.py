@@ -4,7 +4,12 @@ from game import config
 from game.entities import GlyphFamily
 from game.environment import EnvironmentDirector
 from game.game_state import GameState
-from game.session import RunSimulator
+from game.session import (
+    RunSimulator,
+    SIGIL_BASELINE,
+    SIGIL_FINAL_BOSS_BONUS,
+    SIGIL_SURVIVAL_BONUS,
+)
 from game.systems import EncounterDirector
 
 
@@ -35,7 +40,8 @@ def test_run_simulator_completes_full_session():
     assert result.duration >= config.RUN_DURATION_SECONDS
     assert result.encounters_resolved >= 1
     assert result.events
-    assert result.sigils_earned >= 30
+    minimum_expected = SIGIL_BASELINE + SIGIL_SURVIVAL_BONUS + SIGIL_FINAL_BOSS_BONUS
+    assert result.sigils_earned >= minimum_expected
 
 
 def test_run_simulator_handles_defeat_before_dawn():
@@ -54,4 +60,4 @@ def test_run_simulator_handles_defeat_before_dawn():
     assert result.final_summary is None
     assert result.duration <= 300.0
     assert result.encounters_resolved >= 0
-    assert result.sigils_earned >= 5
+    assert result.sigils_earned >= SIGIL_BASELINE

@@ -1,5 +1,6 @@
 """Core package for Nightfall Survivors prototype logic."""
 
+from .accessibility import AccessibilitySettings  # noqa: F401
 from .analytics import (  # noqa: F401
     AggregateMetrics,
     RunMetrics,
@@ -9,6 +10,15 @@ from .analytics import (  # noqa: F401
     kpi_snapshot,
     render_report,
 )
+from .audio import (  # noqa: F401
+    AudioEngine,
+    AudioFrame,
+    MusicInstruction,
+    MusicTrack,
+    SoundClip,
+    SoundInstruction,
+)
+from .export import UnityFrameExporter  # noqa: F401
 from .challenges import (  # noqa: F401
     ChallengeConfig,
     build_config,
@@ -29,6 +39,17 @@ from .distribution import (  # noqa: F401
 )
 from .cloud import CloudSlot, CloudSync, run_cli as cloud_cli  # noqa: F401
 from .environment import EnvironmentDirector  # noqa: F401
+from .graphics import (  # noqa: F401
+    AnimationClip,
+    AnimationFrame,
+    Camera,
+    GraphicsEngine,
+    LayerSettings,
+    RenderFrame,
+    RenderInstruction,
+    SceneNode,
+    Sprite,
+)
 from .game_state import GameState  # noqa: F401
 from .live_ops import (  # noqa: F401
     SeasonalEvent,

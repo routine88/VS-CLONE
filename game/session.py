@@ -23,21 +23,51 @@ class RunResult:
     sigils_earned: int = 0
 
 
+SIGIL_BASELINE = 10
+SIGIL_SURVIVAL_BONUS = 30
+SIGIL_FINAL_BOSS_BONUS = 25
+SIGIL_PER_RELIC = 6
+SIGIL_PER_ENCOUNTER = 2
+SIGIL_MAX_ENCOUNTER_REWARD = 40
+SIGIL_MINUTE_BUCKET = 60
+SIGIL_PER_MINUTE_BUCKET = 3
+SIGIL_MINUTE_BUCKET_CAP = 15
+SIGIL_ENCOUNTER_MILESTONE = 5
+SIGIL_ENCOUNTER_MILESTONE_BONUS = 5
+SIGIL_ENCOUNTER_MILESTONE_CAP = 6
+
+
 def score_run(result: RunResult) -> int:
     """Return the number of sigils earned from a completed run."""
 
-    sigils = 5  # baseline for participating in a run
+    sigils = SIGIL_BASELINE
+
     if result.survived:
-        sigils += 15
-    sigils += len(result.relics_collected) * 3
-    sigils += min(12, result.encounters_resolved // 3)
+        sigils += SIGIL_SURVIVAL_BONUS
+
+    sigils += len(result.relics_collected) * SIGIL_PER_RELIC
+    encounter_count = result.encounters_resolved
+    if SIGIL_MAX_ENCOUNTER_REWARD:
+        encounter_count = min(encounter_count, SIGIL_MAX_ENCOUNTER_REWARD)
+    sigils += encounter_count * SIGIL_PER_ENCOUNTER
+
+    minute_buckets = int(result.duration // SIGIL_MINUTE_BUCKET)
+    if SIGIL_MINUTE_BUCKET_CAP:
+        minute_buckets = min(minute_buckets, SIGIL_MINUTE_BUCKET_CAP)
+    sigils += minute_buckets * SIGIL_PER_MINUTE_BUCKET
+
+    if SIGIL_ENCOUNTER_MILESTONE:
+        milestone_count = result.encounters_resolved // SIGIL_ENCOUNTER_MILESTONE
+        if SIGIL_ENCOUNTER_MILESTONE_CAP:
+            milestone_count = min(milestone_count, SIGIL_ENCOUNTER_MILESTONE_CAP)
+        sigils += milestone_count * SIGIL_ENCOUNTER_MILESTONE_BONUS
 
     if (
         result.survived
         and result.final_summary is not None
         and result.final_summary.kind == "final_boss"
     ):
-        sigils += 12
+        sigils += SIGIL_FINAL_BOSS_BONUS
 
     return sigils
 

@@ -8,13 +8,24 @@ import math
 import random
 import time
 from dataclasses import dataclass, field
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Tuple
 
-from . import content
+from .audio import AudioEngine, AudioFrame
+from .accessibility import AccessibilitySettings
 from .combat import glyph_damage_multiplier, weapon_tier
 from .entities import Enemy, EnemyLane, UpgradeCard
 from .game_state import GameState
+from .graphics import Camera, GraphicsEngine, SceneNode
 from .localization import Translator, get_translator
+from .distribution import (
+    DemoRestrictions,
+    apply_demo_restrictions,
+    default_demo_restrictions,
+    demo_duration,
+)
+from .live_ops import SeasonalEvent, activate_event, find_event, seasonal_schedule
+from .profile import PlayerProfile
+from .storage import load_profile
 
 
 @dataclass
@@ -47,6 +58,7 @@ class ActiveEnemy:
     y: float
     speed: float
     health: float
+    encounter_tag: str = "wave"
 
     @property
     def alive(self) -> bool:
@@ -69,11 +81,91 @@ class FrameSnapshot:
     score: int
     projectiles: Sequence[Projectile]
     enemies: Sequence[ActiveEnemy]
+    salvage_total: int = 0
+    salvage_gained: int = 0
+    hazards: Sequence[HazardEvent] = field(default_factory=list)
+    barricades: Sequence[BarricadeEvent] = field(default_factory=list)
+    resource_drops: Sequence[ResourceDropEvent] = field(default_factory=list)
+    weather_events: Sequence[WeatherEvent] = field(default_factory=list)
     messages: Sequence[str] = field(default_factory=list)
+    audio_events: Sequence[str] = field(default_factory=list)
     awaiting_upgrade: bool = False
     upgrade_options: Sequence[UpgradeCard] = field(default_factory=list)
     survived: bool = False
     defeated: bool = False
+    high_contrast: bool = False
+    message_log_size: int = 8
+    colorblind_mode: str = "none"
+    audio_cues: bool = False
+    relics: Sequence[str] = field(default_factory=list)
+
+
+COLORBLIND_GLYPHS = {
+    "none": {
+        "standard": {
+            "vertical_border": "|",
+            "horizontal_border": "-",
+            "player": "@",
+            "enemy": "E",
+            "projectile": "-",
+        },
+        "high": {
+            "vertical_border": "#",
+            "horizontal_border": "#",
+            "player": "█",
+            "enemy": "▓",
+            "projectile": "━",
+        },
+    },
+    "protanopia": {
+        "standard": {
+            "vertical_border": "|",
+            "horizontal_border": "=",
+            "player": "A",
+            "enemy": "V",
+            "projectile": "~",
+        },
+        "high": {
+            "vertical_border": "#",
+            "horizontal_border": "#",
+            "player": "█",
+            "enemy": "▒",
+            "projectile": "═",
+        },
+    },
+    "deuteranopia": {
+        "standard": {
+            "vertical_border": "|",
+            "horizontal_border": "~",
+            "player": "D",
+            "enemy": "M",
+            "projectile": "*",
+        },
+        "high": {
+            "vertical_border": "#",
+            "horizontal_border": "#",
+            "player": "█",
+            "enemy": "░",
+            "projectile": "+",
+        },
+    },
+    "tritanopia": {
+        "standard": {
+            "vertical_border": "|",
+            "horizontal_border": ".",
+            "player": "T",
+            "enemy": "H",
+            "projectile": ":",
+        },
+        "high": {
+            "vertical_border": "#",
+            "horizontal_border": "#",
+            "player": "█",
+            "enemy": "▓",
+            "projectile": "·",
+        },
+    },
+}
 
 
 class ArcadeEngine:
@@ -85,9 +177,11 @@ class ArcadeEngine:
         width: int = 80,
         height: int = 20,
         state: Optional[GameState] = None,
+        profile: PlayerProfile | None = None,
         spawn_interval: float = 2.0,
         target_duration: float = 300.0,
         translator: Translator | None = None,
+        accessibility: AccessibilitySettings | None = None,
     ) -> None:
         if width < 40 or height < 10:
             raise ValueError("playfield too small for interaction")
@@ -96,12 +190,18 @@ class ArcadeEngine:
         self.height = float(height)
         self._ground = self.height - 2.0
         self._ceiling = 1.0
+        if state is None and profile is not None:
+            state = profile.start_run()
         if state is None:
             self._translator = translator or get_translator()
             self._state = GameState(translator=self._translator)
         else:
+            if translator is not None:
+                state.translator = translator
             self._state = state
             self._translator = translator or state.translator
+        self._profile: PlayerProfile | None = profile
+        self._accessibility = (accessibility or AccessibilitySettings()).normalized()
         self._player_position = [5.0, self.height / 2.0]
         self._player_velocity = [0.0, 0.0]
         self._dash_cooldown = 0.0
@@ -110,15 +210,35 @@ class ArcadeEngine:
         self._projectiles: List[Projectile] = []
         self._enemies: List[ActiveEnemy] = []
         self._messages: List[str] = []
+        self._audio_events: List[str] = []
+        self._audio_low_health_alert = False
+        self._audio_upgrade_prompt_alert = False
         self._spawn_timer = spawn_interval
         self._base_spawn_interval = spawn_interval
+        self._environment_time_scale = 1.0
         self._elapsed = 0.0
         self._score = 0
         self._awaiting_upgrade = False
         self._upgrade_options: List[UpgradeCard] = []
         self._target_duration = target_duration
         self._defeated = False
+        self._music_started = False
+        self._victory_announced = False
+        self._defeat_announced = False
         self._rng = random.Random()
+        self._last_snapshot: FrameSnapshot | None = None
+        self._pending_enemies: List[Tuple[Enemy, str]] = []
+        self._encounter_timer = self._state.spawn_director.next_interval(
+            self._state.current_phase
+        )
+        self._encounter_blocked = False
+        self._force_spawn = False
+        self._final_encounter_triggered = False
+        self._final_encounter_complete = False
+        self._final_boss_queue: List[Enemy] = []
+        self._active_miniboss: ActiveEnemy | None = None
+        self._active_boss: ActiveEnemy | None = None
+        self._pending_relic_reward: str | None = None
 
         self._refresh_weapon_cache()
 
@@ -142,17 +262,37 @@ class ArcadeEngine:
     def translator(self) -> Translator:
         return self._translator
 
+    @property
+    def accessibility(self) -> AccessibilitySettings:
+        return self._accessibility
+
+    @property
+    def profile(self) -> PlayerProfile | None:
+        return self._profile
+
     def step(self, delta_time: float, inputs: InputFrame) -> FrameSnapshot:
         """Advance the engine and return a snapshot for presentation."""
 
         if delta_time <= 0:
             raise ValueError("delta_time must be positive")
 
-        if self._defeated or self._elapsed >= self._target_duration:
+        delta_time *= self._accessibility.game_speed_multiplier
+
+        if self._defeated or self._final_encounter_complete:
             return self._snapshot()
 
+        environment_result = self._state.tick(delta_time * self._environment_time_scale)
+        self._process_environment_tick(environment_result)
+
         self._elapsed += delta_time
-        self._state.current_phase = min(4, int(self._elapsed // 75) + 1)
+        self._state.time_elapsed = self._elapsed
+        new_phase = min(4, int(self._elapsed // 75) + 1)
+        if new_phase != self._state.current_phase:
+            self._state.current_phase = new_phase
+            if not self._final_encounter_triggered:
+                self._encounter_timer = self._state.spawn_director.next_interval(
+                    new_phase
+                )
 
         self._dash_cooldown = max(0.0, self._dash_cooldown - delta_time)
         self._ultimate_cooldown = max(0.0, self._ultimate_cooldown - delta_time)
@@ -161,10 +301,9 @@ class ArcadeEngine:
         self._handle_weapons(delta_time)
         self._update_projectiles(delta_time)
         self._spawn_timer -= delta_time
-        while self._spawn_timer <= 0 and not self._awaiting_upgrade:
-            self._spawn_enemy()
-            phase_factor = 0.9 ** max(0, self._state.current_phase - 1)
-            self._spawn_timer += max(0.6, self._base_spawn_interval * phase_factor)
+        self._maybe_trigger_final_encounter()
+        self._process_encounter_timers(delta_time)
+        self._spawn_pending_enemies()
 
         self._advance_enemies(delta_time)
         if inputs.activate_ultimate:
@@ -182,11 +321,125 @@ class ArcadeEngine:
 
         card = self._upgrade_options[index]
         self._state.apply_upgrade(card)
-        self._messages.append(self._translate("ui.upgrade_selected", name=card.name))
+        self._push_message(self._translate("ui.upgrade_selected", name=card.name))
+        self._push_audio("ui.upgrade_selected")
         self._awaiting_upgrade = False
         self._upgrade_options = []
         self._refresh_weapon_cache()
         return card
+
+    def _process_environment_tick(self, result: EnvironmentTickResult) -> None:
+        """Translate environment outputs into arcade-facing feedback."""
+
+        self._environment_events = EnvironmentTickResult(
+            list(result.hazards),
+            list(result.barricades),
+            list(result.resource_drops),
+            list(result.weather_events),
+        )
+        self._environment_salvage_gained = 0
+
+        for hazard in result.hazards:
+            self._push_message(
+                self._translate(
+                    "game.hazard_trigger",
+                    name=hazard.name,
+                    biome=hazard.biome,
+                    damage=hazard.damage,
+                )
+            )
+            if hazard.slow > 0:
+                percent = int(hazard.slow * 100)
+                duration = int(round(hazard.duration))
+                self._push_message(
+                    self._translate(
+                        "game.hazard_slow",
+                        name=hazard.name,
+                        percent=percent,
+                        duration=duration,
+                    )
+                )
+            self._push_audio("environment.hazard")
+
+        for barricade in result.barricades:
+            self._environment_salvage_gained += barricade.salvage_reward
+            self._push_message(
+                self._translate(
+                    "game.barricade_cleared",
+                    name=barricade.name,
+                    salvage=barricade.salvage_reward,
+                )
+            )
+            self._push_audio("environment.salvage")
+
+        for drop in result.resource_drops:
+            self._environment_salvage_gained += drop.amount
+            self._push_message(
+                self._translate(
+                    "game.salvage_collected",
+                    name=drop.name,
+                    amount=drop.amount,
+                )
+            )
+            self._push_audio("environment.salvage")
+
+        for weather in result.weather_events:
+            if weather.ended:
+                self._push_message(self._translate("game.weather_clear"))
+                self._push_audio("environment.weather.clear")
+            else:
+                movement = int(weather.movement_modifier * 100)
+                vision = int(weather.vision_modifier * 100)
+                self._push_message(
+                    self._translate(
+                        "game.weather_change",
+                        name=weather.name,
+                        description=weather.description,
+                        movement=movement,
+                        vision=vision,
+                    )
+                )
+                self._push_audio("environment.weather.change")
+
+        if self._state.player.health <= 0 and not self._defeated:
+            self._defeated = True
+            self._push_message(self._translate("game.environment_defeat"))
+            if not self._defeat_announced:
+                self._push_audio("run.defeat")
+                self._defeat_announced = True
+
+    def _push_message(self, message: str) -> None:
+        self._messages.append(message)
+        limit = max(1, int(self._accessibility.message_log_size))
+        if len(self._messages) > limit:
+            self._messages = self._messages[-limit:]
+
+    def _push_audio(self, event: str) -> None:
+        self._audio_events.append(event)
+
+    def _inject_accessibility_cues(self) -> None:
+        if not self._accessibility.audio_cues:
+            self._audio_low_health_alert = False
+            self._audio_upgrade_prompt_alert = False
+            return
+
+        player = self._state.player
+        if player.max_health <= 0:
+            health_ratio = 0.0
+        else:
+            health_ratio = player.health / float(player.max_health)
+
+        if health_ratio <= 0.25 and not self._audio_low_health_alert:
+            self._push_audio("accessibility.health.low")
+            self._audio_low_health_alert = True
+        elif health_ratio >= 0.4 and self._audio_low_health_alert:
+            self._audio_low_health_alert = False
+
+        if self._awaiting_upgrade and not self._audio_upgrade_prompt_alert:
+            self._push_audio("accessibility.upgrade.prompt")
+            self._audio_upgrade_prompt_alert = True
+        elif not self._awaiting_upgrade and self._audio_upgrade_prompt_alert:
+            self._audio_upgrade_prompt_alert = False
 
     def _apply_movement(self, delta_time: float, inputs: InputFrame) -> None:
         speed = 14.0
@@ -228,6 +481,138 @@ class ArcadeEngine:
                 self._fire_projectiles(stats, multiplier)
             self._weapons[weapon] = remaining
 
+    def _maybe_trigger_final_encounter(self) -> None:
+        if self._final_encounter_triggered or self._defeated:
+            return
+
+        warning_window = min(self._target_duration * 0.25, 20.0)
+        trigger_time = max(0.0, self._target_duration - warning_window)
+        if self._elapsed >= trigger_time:
+            self._start_final_encounter()
+
+    def _process_encounter_timers(self, delta_time: float) -> None:
+        if self._final_encounter_triggered or self._encounter_blocked:
+            return
+
+        if self._pending_enemies:
+            self._encounter_timer = max(0.0, self._encounter_timer - delta_time)
+            return
+
+        self._encounter_timer -= delta_time
+        if self._encounter_timer > 0:
+            return
+
+        encounter = self._state.next_encounter()
+        self._handle_new_encounter(encounter)
+        self._encounter_timer = self._state.spawn_director.next_interval(
+            self._state.current_phase
+        )
+
+    def _spawn_pending_enemies(self) -> None:
+        if self._awaiting_upgrade or not self._pending_enemies:
+            return
+
+        density_limit = self._state.spawn_director.max_density(self._state.current_phase)
+
+        while self._pending_enemies and (self._force_spawn or self._spawn_timer <= 0):
+            if not self._force_spawn and self._live_enemy_count() >= density_limit:
+                break
+
+            template, tag = self._pending_enemies.pop(0)
+            active = self._activate_enemy(template, encounter_tag=tag)
+            if tag == "miniboss":
+                self._active_miniboss = active
+            elif tag == "final_boss":
+                self._active_boss = active
+
+            phase_factor = 0.9 ** max(0, self._state.current_phase - 1)
+            interval = max(0.4, self._base_spawn_interval * phase_factor)
+            self._spawn_timer += interval
+            self._force_spawn = False
+
+    def _handle_new_encounter(self, encounter: Encounter) -> None:
+        if encounter.kind == "wave" and encounter.wave:
+            descriptor = encounter.wave
+            for enemy in descriptor.enemies:
+                self._pending_enemies.append((enemy, "wave"))
+            number = descriptor.wave_index + 1
+            count = len(descriptor.enemies)
+            self._push_message(
+                self._translate("game.wave_incoming", number=number, count=count)
+            )
+        elif encounter.kind == "miniboss" and encounter.miniboss:
+            self._pending_enemies.clear()
+            self._pending_enemies.append((encounter.miniboss, "miniboss"))
+            self._encounter_blocked = True
+            self._pending_relic_reward = encounter.relic_reward
+            self._push_message(
+                self._translate("game.miniboss_incoming", name=encounter.miniboss.name)
+            )
+            self._push_audio("run.miniboss_warning")
+            self._force_spawn = True
+            self._spawn_timer = 0.0
+
+    def _start_final_encounter(self) -> None:
+        if self._final_encounter_triggered:
+            return
+
+        encounter = self._state.final_encounter()
+        self._final_encounter_triggered = True
+        self._encounter_blocked = True
+        self._pending_enemies.clear()
+        self._final_boss_queue = []
+        self._force_spawn = True
+        self._spawn_timer = 0.0
+        self._encounter_timer = float("inf")
+
+        if encounter.boss_phases:
+            phases = list(encounter.boss_phases)
+            first = phases[0]
+            self._pending_enemies.append((first, "final_boss"))
+            self._final_boss_queue = phases[1:]
+            base_name = first.name.split(" (")[0]
+            self._push_message(self._translate("game.final_boss", name=base_name))
+        else:
+            self._push_message(self._translate("game.final_boss_generic"))
+            self._final_encounter_complete = True
+            self._encounter_blocked = True
+
+        self._push_audio("run.final_boss_warning")
+        self._push_audio("music.boss")
+
+    def _activate_enemy(self, template: Enemy, *, encounter_tag: str) -> ActiveEnemy:
+        if template.lane is EnemyLane.GROUND:
+            y = self._ground
+        elif template.lane is EnemyLane.AIR:
+            lower = self._ceiling + 2.5
+            upper = self._ground - 2.0
+            y = self._rng.uniform(lower, upper)
+        else:
+            y = self._ceiling + 0.5
+
+        base_speed = 3.5 + template.speed * 1.8
+        if "dash" in template.behaviors or "pounce" in template.behaviors:
+            base_speed += 1.6
+        if "kamikaze" in template.behaviors:
+            base_speed += 2.4
+        if "slow" in template.behaviors:
+            base_speed -= 0.8
+
+        active = ActiveEnemy(
+            template=template,
+            x=self.width - 2.0,
+            y=y,
+            speed=max(1.5, base_speed),
+            health=float(template.health),
+            encounter_tag=encounter_tag,
+        )
+        self._enemies.append(active)
+        self._push_audio("combat.enemy_spawn")
+        return active
+
+    def _live_enemy_count(self) -> int:
+        return sum(1 for enemy in self._enemies if enemy.alive)
+
     def _fire_projectiles(self, stats, multiplier: float) -> None:
         base_y = self._player_position[1]
         spread = 0.35 if stats.projectiles > 1 else 0.0
@@ -236,10 +621,11 @@ class ArcadeEngine:
             proj = Projectile(
                 x=self._player_position[0] + 1.5,
                 y=max(self._ceiling, min(self._ground, base_y + offset)),
-                speed=28.0,
+                speed=28.0 * self._accessibility.projectile_speed_multiplier,
                 damage=stats.damage * multiplier,
             )
             self._projectiles.append(proj)
+            self._push_audio("combat.weapon_fire")
 
     def _update_projectiles(self, delta_time: float) -> None:
         updated: List[Projectile] = []
@@ -253,25 +639,30 @@ class ArcadeEngine:
             for enemy in self._enemies:
                 if not enemy.alive:
                     continue
-                if abs(enemy.y - projectile.y) <= 0.8 and projectile.x >= enemy.x:
+                if (
+                    abs(enemy.y - projectile.y) <= self._accessibility.auto_aim_radius
+                    and projectile.x >= enemy.x
+                ):
                     hit_enemy = enemy
                     break
 
             if hit_enemy:
                 hit_enemy.health -= projectile.damage
                 if hit_enemy.health <= 0:
-                    self._reward_enemy(hit_enemy.template)
+                    self._reward_enemy(hit_enemy)
                 continue
 
             updated.append(projectile)
         self._projectiles = updated
 
-    def _reward_enemy(self, enemy: Enemy) -> None:
-        self._score += enemy.health * 4
-        xp = max(4, enemy.health // 2)
+    def _reward_enemy(self, enemy: ActiveEnemy) -> None:
+        template = enemy.template
+        self._score += template.health * 4
+        xp = max(4, template.health // 2)
+        self._push_audio("combat.enemy_down")
         notifications = self._state.grant_experience(xp)
         for event in notifications:
-            self._messages.append(event.message)
+            self._push_message(event.message)
         if any(event.message.startswith("Level up!") for event in notifications):
             self._upgrade_options = list(self._state.draw_upgrades())
             self._awaiting_upgrade = True
@@ -344,8 +735,12 @@ class ArcadeEngine:
         self._messages.append(
             self._translate("ui.damage_taken", enemy=enemy.template.name, damage=damage)
         )
+        self._push_audio("player.damage")
         if self._state.player.health == 0:
             self._defeated = True
+            if not self._defeat_announced:
+                self._push_audio("run.defeat")
+                self._defeat_announced = True
 
     def _trigger_ultimate(self) -> None:
         if self._ultimate_cooldown > 0:
@@ -362,15 +757,30 @@ class ArcadeEngine:
             enemy.health -= damage
             if enemy.health <= 0:
                 hits += 1
-                self._reward_enemy(enemy.template)
+                self._reward_enemy(enemy)
         if hits:
-            self._messages.append(self._translate("ui.ultimate_ready"))
+            self._push_message(self._translate("ui.ultimate_ready"))
             self._ultimate_cooldown = 18.0
+            self._push_audio("combat.ultimate")
 
     def _snapshot(self) -> FrameSnapshot:
         player = self._state.player
         next_level = player.level + 1
         from .config import LEVEL_CURVE
+
+        survived = self._final_encounter_complete and not self._defeated
+
+        if not self._music_started:
+            self._push_audio("music.start")
+            self._music_started = True
+        if survived and not self._victory_announced:
+            self._push_audio("run.victory")
+            self._victory_announced = True
+        if self._defeated and not self._defeat_announced:
+            self._push_audio("run.defeat")
+            self._defeat_announced = True
+
+        self._inject_accessibility_cues()
 
         snapshot = FrameSnapshot(
             elapsed=self._elapsed,
@@ -383,15 +793,28 @@ class ArcadeEngine:
             next_level_xp=LEVEL_CURVE.xp_for_level(next_level),
             phase=self._state.current_phase,
             score=self._score,
+            salvage_total=player.salvage,
+            salvage_gained=self._environment_salvage_gained,
             projectiles=list(self._projectiles),
             enemies=list(self._enemies),
+            hazards=list(self._environment_events.hazards),
+            barricades=list(self._environment_events.barricades),
+            resource_drops=list(self._environment_events.resource_drops),
+            weather_events=list(self._environment_events.weather_events),
             messages=list(self._messages),
+            audio_events=list(self._audio_events),
             awaiting_upgrade=self._awaiting_upgrade,
             upgrade_options=list(self._upgrade_options),
-            survived=self._elapsed >= self._target_duration and not self._defeated,
+            survived=survived,
             defeated=self._defeated,
+            high_contrast=self._accessibility.high_contrast,
+            message_log_size=self._accessibility.message_log_size,
+            colorblind_mode=self._accessibility.colorblind_mode,
+            audio_cues=self._accessibility.audio_cues,
+            relics=list(self._state.player.relics),
         )
-        self._messages.clear()
+        self._last_snapshot = snapshot
+        self._audio_events = []
         return snapshot
 
     def _refresh_weapon_cache(self) -> None:
@@ -400,6 +823,108 @@ class ArcadeEngine:
 
     def _translate(self, key: str, **params) -> str:
         return self._translator.translate(key, **params)
+
+    @property
+    def last_snapshot(self) -> FrameSnapshot | None:
+        """Expose the most recent frame snapshot for external systems."""
+
+        return self._last_snapshot
+
+    def build_scene_nodes(self, snapshot: FrameSnapshot | None = None) -> Sequence[SceneNode]:
+        """Convert gameplay state into a scene graph for the graphics engine."""
+
+        snap = snapshot or self._last_snapshot
+        if snap is None:
+            raise RuntimeError("no snapshot available to convert into scene nodes")
+
+        nodes: List[SceneNode] = []
+        nodes.append(
+            SceneNode(
+                id="player",
+                position=(snap.player_x, snap.player_y),
+                layer="actors",
+                sprite_id="actors/player",
+                metadata={"kind": "player", "health": snap.health, "max_health": snap.max_health},
+            )
+        )
+
+        nodes.append(
+            SceneNode(
+                id="background",
+                position=(snap.player_x, self.height / 2.0),
+                layer="background",
+                sprite_id="environment/dusk",  # allows art swaps per biome later
+                parallax=0.25,
+                metadata={"kind": "background", "phase": snap.phase},
+            )
+        )
+
+        for index, enemy in enumerate(snap.enemies):
+            if not enemy.alive:
+                continue
+            lane = enemy.template.lane.value
+            nodes.append(
+                SceneNode(
+                    id=f"enemy-{index}",
+                    position=(enemy.x, enemy.y),
+                    layer=f"actors.enemies.{lane}",
+                    sprite_id=f"enemies/{enemy.template.name}",
+                    metadata={
+                        "kind": "enemy",
+                        "name": enemy.template.name,
+                        "lane": lane,
+                        "behaviors": tuple(enemy.template.behaviors),
+                    },
+                )
+            )
+
+        for index, projectile in enumerate(snap.projectiles):
+            nodes.append(
+                SceneNode(
+                    id=f"projectile-{index}",
+                    position=(projectile.x, projectile.y),
+                    layer="projectiles",
+                    sprite_id="projectiles/basic",
+                    metadata={"kind": "projectile", "damage": projectile.damage},
+                )
+            )
+
+        return nodes
+
+    def render_frame(
+        self,
+        graphics: GraphicsEngine,
+        *,
+        snapshot: FrameSnapshot | None = None,
+        camera: Camera | None = None,
+        time_override: float | None = None,
+    ) -> "RenderFrame":
+        """Build a renderable frame using the provided graphics engine."""
+
+        snap = snapshot or self._last_snapshot
+        if snap is None:
+            raise RuntimeError("render_frame requires a snapshot; call step() first")
+
+        nodes = self.build_scene_nodes(snap)
+        camera = camera or Camera(position=(snap.player_x, self.height / 2.0), viewport=graphics.viewport)
+        timestamp = time_override if time_override is not None else snap.elapsed
+        return graphics.build_frame(nodes, camera=camera, time=timestamp, messages=snap.messages)
+
+    def build_audio_frame(
+        self,
+        audio: AudioEngine,
+        *,
+        snapshot: FrameSnapshot | None = None,
+        time_override: float | None = None,
+    ) -> AudioFrame:
+        """Generate audio cues for the given snapshot using ``audio``."""
+
+        snap = snapshot or self._last_snapshot
+        if snap is None:
+            raise RuntimeError("build_audio_frame requires a snapshot; call step() first")
+
+        timestamp = time_override if time_override is not None else snap.elapsed
+        return audio.build_frame(snap.audio_events, time=timestamp)
 
 
 def _run_curses_loop(
@@ -479,24 +1004,39 @@ def _render(
     )
     stdscr.addstr(0, 0, status[: int(width)])
 
-    for y in range(int(height)):
-        stdscr.addstr(y, 0, "|")
-        stdscr.addstr(y, int(width) - 1, "|")
-    for x in range(int(width)):
-        stdscr.addstr(int(height) - 1, x, "-")
+    palette = COLORBLIND_GLYPHS.get(snapshot.colorblind_mode, COLORBLIND_GLYPHS["none"])
+    glyphs = palette["high" if snapshot.high_contrast else "standard"]
+    vertical_border = glyphs["vertical_border"]
+    horizontal_border = glyphs["horizontal_border"]
+    player_char = glyphs["player"]
+    enemy_char = glyphs["enemy"]
+    projectile_char = glyphs["projectile"]
 
-    stdscr.addstr(int(snapshot.player_y), int(snapshot.player_x), "@")
+    for y in range(int(height)):
+        stdscr.addstr(y, 0, vertical_border)
+        stdscr.addstr(y, int(width) - 1, vertical_border)
+    for x in range(int(width)):
+        stdscr.addstr(int(height) - 1, x, horizontal_border)
+
+    stdscr.addstr(int(snapshot.player_y), int(snapshot.player_x), player_char)
 
     for enemy in snapshot.enemies:
         if not enemy.alive:
             continue
-        stdscr.addstr(int(enemy.y), max(1, int(enemy.x)), "E")
+        stdscr.addstr(int(enemy.y), max(1, int(enemy.x)), enemy_char)
 
     for projectile in snapshot.projectiles:
-        stdscr.addstr(int(projectile.y), min(int(width) - 2, int(projectile.x)), "-")
+        stdscr.addstr(
+            int(projectile.y),
+            min(int(width) - 2, int(projectile.x)),
+            projectile_char,
+        )
 
     row = 1
-    for message in snapshot.messages[-(int(height) - 2) :]:
+    visible_messages = snapshot.messages[-min(
+        max(1, int(snapshot.message_log_size)), max(1, int(height) - 2)
+    ) :]
+    for message in visible_messages:
         stdscr.addstr(row, int(width) // 2, message[: int(width / 2) - 2])
         row += 1
 
@@ -524,13 +1064,51 @@ def _render(
 
 
 def launch_playable(
-    duration: float = 300.0, fps: float = 30.0, *, language: str = "en"
+    duration: float = 300.0,
+    fps: float = 30.0,
+    *,
+    language: str = "en",
+    accessibility: AccessibilitySettings | None = None,
+    profile: PlayerProfile | None = None,
+    demo_restrictions: DemoRestrictions | None = None,
+    seasonal_event: SeasonalEvent | None = None,
 ) -> None:
     """Entry point that spins up the curses loop."""
 
     translator = get_translator(language)
-    engine = ArcadeEngine(target_duration=duration, translator=translator)
+    active_profile = profile or PlayerProfile()
+
+    if demo_restrictions is not None:
+        apply_demo_restrictions(active_profile, demo_restrictions)
+
+    state = active_profile.start_run()
+    state.translator = translator
+
+    if seasonal_event is not None:
+        activate_event(state, seasonal_event)
+
+    target_duration = (
+        demo_duration(duration, demo_restrictions)
+        if demo_restrictions is not None
+        else duration
+    )
+
+    engine = ArcadeEngine(
+        target_duration=target_duration,
+        translator=translator,
+        accessibility=accessibility,
+        state=state,
+        profile=active_profile,
+    )
     curses.wrapper(_run_curses_loop, engine, fps)
+
+
+def _profile_from_args(args: argparse.Namespace) -> PlayerProfile:
+    if args.profile_path:
+        if not args.key:
+            raise SystemExit("--profile-path requires --key for decryption")
+        return load_profile(args.profile_path, key=args.key)
+    return PlayerProfile()
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
@@ -554,9 +1132,112 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         default="en",
         help=translator.translate("cli.help.language"),
     )
+    parser.add_argument(
+        "--assist-radius",
+        type=float,
+        help=translator.translate("cli.help.assist_radius"),
+    )
+    parser.add_argument(
+        "--damage-multiplier",
+        type=float,
+        help=translator.translate("cli.help.damage_multiplier"),
+    )
+    parser.add_argument(
+        "--speed-scale",
+        type=float,
+        help=translator.translate("cli.help.speed_scale"),
+    )
+    parser.add_argument(
+        "--projectile-speed",
+        type=float,
+        help=translator.translate("cli.help.projectile_speed"),
+    )
+    parser.add_argument(
+        "--high-contrast",
+        action="store_true",
+        help=translator.translate("cli.help.high_contrast"),
+    )
+    parser.add_argument(
+        "--colorblind-mode",
+        type=lambda value: value.lower(),
+        choices=tuple(COLORBLIND_GLYPHS.keys()),
+        help=translator.translate("cli.help.colorblind_mode"),
+    )
+    parser.add_argument(
+        "--message-log",
+        type=int,
+        help=translator.translate("cli.help.message_log"),
+    )
+    parser.add_argument(
+        "--audio-cues",
+        action="store_true",
+        help=translator.translate("cli.help.audio_cues"),
+    )
+    parser.add_argument(
+        "--demo",
+        action="store_true",
+        help=translator.translate("cli.help.demo"),
+    )
+    parser.add_argument(
+        "--event-id",
+        type=str,
+        help=translator.translate("cli.help.event_id"),
+    )
+    parser.add_argument(
+        "--event-year",
+        type=int,
+        help=translator.translate("cli.help.event_year"),
+    )
+    parser.add_argument(
+        "--profile-path",
+        type=str,
+        help=translator.translate("cli.help.profile_path"),
+    )
+    parser.add_argument(
+        "--key",
+        type=str,
+        help=translator.translate("cli.help.key"),
+    )
     args = parser.parse_args(argv)
 
-    launch_playable(duration=args.duration, fps=args.fps, language=args.language)
+    settings_kwargs = {}
+    if args.assist_radius is not None:
+        settings_kwargs["auto_aim_radius"] = args.assist_radius
+    if args.damage_multiplier is not None:
+        settings_kwargs["damage_taken_multiplier"] = args.damage_multiplier
+    if args.speed_scale is not None:
+        settings_kwargs["game_speed_multiplier"] = args.speed_scale
+    if args.projectile_speed is not None:
+        settings_kwargs["projectile_speed_multiplier"] = args.projectile_speed
+    if args.high_contrast:
+        settings_kwargs["high_contrast"] = True
+    if args.colorblind_mode is not None:
+        settings_kwargs["colorblind_mode"] = args.colorblind_mode
+    if args.message_log is not None:
+        settings_kwargs["message_log_size"] = args.message_log
+    if args.audio_cues:
+        settings_kwargs["audio_cues"] = True
+
+    accessibility = (
+        AccessibilitySettings(**settings_kwargs) if settings_kwargs else None
+    )
+
+    profile = _profile_from_args(args)
+    restrictions = default_demo_restrictions() if args.demo else None
+    seasonal = None
+    if args.event_id:
+        events = seasonal_schedule(args.event_year)
+        seasonal = find_event(args.event_id, events)
+
+    launch_playable(
+        duration=args.duration,
+        fps=args.fps,
+        language=args.language,
+        accessibility=accessibility,
+        profile=profile,
+        demo_restrictions=restrictions,
+        seasonal_event=seasonal,
+    )
 
 
 if __name__ == "__main__":  # pragma: no cover

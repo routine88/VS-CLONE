@@ -24,6 +24,8 @@ hazard rolls are reproducible between runs.
 | `--event-year` | Year to evaluate when resolving `--event-id`. |
 | `--profile-path` | Load an encrypted player profile before running. Requires `--key`. |
 | `--key` | Decryption key used with `--profile-path`. |
+| `--export` | Write the run transcript to a JSON file after completion. |
+| `--summary` | Print an analytics summary derived from the run. |
 
 ## Demo Mode & Seasonal Events
 
@@ -102,8 +104,10 @@ weekly challenge briefs before the Unity client is playable.
 
 ## Transcript Export & Analytics
 
-Designers can persist simulated runs to JSON for deeper telemetry analysis. After
-executing a run, serialise the transcript and feed it to the analytics CLI:
+Designers can persist simulated runs to JSON for deeper telemetry analysis. Pass
+`--export runs/nightfall_run.json` when launching the prototype to serialise a
+run automatically, or generate the file programmatically and feed it to the
+analytics CLI:
 
 ```python
 from game.prototype import PrototypeSession, save_transcript
@@ -122,7 +126,49 @@ python -m game.analytics runs/nightfall_run.json runs/elite_test.json
 Add `--json` to emit machine-readable aggregates that plug into dashboards or
 spreadsheet tooling. Metrics include survival rate, upgrade diversity, salvage
 flow, and phase reach distributions to keep the project aligned with the PRD's
-success criteria.
+success criteria. Combine exports with the `--summary` flag during prototype
+runs to get an immediate pulse on performance without leaving the terminal.
+
+## Steam Cloud Simulation
+
+A lightweight Steam Cloud façade is available to sync encrypted saves between
+machines while the Unity client is under construction. Upload your local save
+into a named slot:
+
+```bash
+python -m game.cloud --root .cloud upload --profile-path saves/profile.sav --key hunter --slot home
+```
+
+List remote slots or download them back to disk when moving to a different
+machine:
+
+```bash
+python -m game.cloud --root .cloud list
+python -m game.cloud --root .cloud download --slot home --key hunter --output saves/profile.sav
+```
+
+Manifest checksums guard against corruption so meta progression isn't lost while
+passing saves around.
+
+## Cosmetic DLC & Demo Restrictions
+
+The monetization plan now has a functional mock via `game.monetization`. Packs
+are cosmetic-only in line with the PRD. Designers can script purchases and apply
+skins to hunter loadouts using the storefront helpers:
+
+```python
+from game.monetization import Storefront, CurrencyWallet, default_dlc_packs
+
+store = Storefront(default_dlc_packs().values())
+wallet = CurrencyWallet(balance=10.0)
+inventory = profile.cosmetics
+
+store.purchase("dlc_founders", wallet, inventory)
+inventory.equip(next(item for item in store.get_pack("dlc_founders").items if item.category == "hunter_skin"))
+```
+
+Equipped cosmetics flow into the profile so future runs and the Unity client can
+reflect owned skins and VFX.
 
 ## Steam Cloud Simulation
 
@@ -199,3 +245,28 @@ feedback on how mixed-lane waves tax the player.
 Enemy spawns escalate with time, use the full enemy library, and award souls to
 drive level-ups. The UI renders health, phase, XP, and upgrade prompts so
 playtesters can exercise the core loop before the Unity client lands.
+
+## Audio Routing Bridge
+
+`game.audio` mirrors the graphics bridge by emitting sound and music cues for
+each frame. The `AudioEngine` class ships with placeholder assets, event
+bindings, and a simple state tracker so downstream presenters (whether Pygame,
+Unity, or middleware like FMOD) can translate gameplay events into audible
+feedback:
+
+```python
+from game.audio import AudioEngine
+from game.interactive import ArcadeEngine, InputFrame
+
+engine = ArcadeEngine(target_duration=30.0)
+audio = AudioEngine()
+
+snapshot = engine.step(0.16, InputFrame(move_right=True))
+audio_frame = engine.build_audio_frame(audio, snapshot=snapshot)
+```
+
+`audio_frame.effects` lists the triggered sound effects (level-up stings,
+weapon fire, victory cues), while `audio_frame.music` surfaces play/refresh
+instructions for the looping dusk and boss themes. As the Unity client comes
+online, the same cues can be wired into actual assets without rewriting the
+gameplay loop.
