@@ -170,6 +170,47 @@ inventory.equip(next(item for item in store.get_pack("dlc_founders").items if it
 Equipped cosmetics flow into the profile so future runs and the Unity client can
 reflect owned skins and VFX.
 
+## Steam Cloud Simulation
+
+A lightweight Steam Cloud façade is available to sync encrypted saves between
+machines while the Unity client is under construction. Upload your local save
+into a named slot:
+
+```bash
+python -m game.cloud --root .cloud upload --profile-path saves/profile.sav --key hunter --slot home
+```
+
+List remote slots or download them back to disk when moving to a different
+machine:
+
+```bash
+python -m game.cloud --root .cloud list
+python -m game.cloud --root .cloud download --slot home --key hunter --output saves/profile.sav
+```
+
+Manifest checksums guard against corruption so meta progression isn't lost while
+passing saves around.
+
+## Cosmetic DLC & Demo Restrictions
+
+The monetization plan now has a functional mock via `game.monetization`. Packs
+are cosmetic-only in line with the PRD. Designers can script purchases and apply
+skins to hunter loadouts using the storefront helpers:
+
+```python
+from game.monetization import Storefront, CurrencyWallet, default_dlc_packs
+
+store = Storefront(default_dlc_packs().values())
+wallet = CurrencyWallet(balance=10.0)
+inventory = profile.cosmetics
+
+store.purchase("dlc_founders", wallet, inventory)
+inventory.equip(next(item for item in store.get_pack("dlc_founders").items if item.category == "hunter_skin"))
+```
+
+Equipped cosmetics flow into the profile so future runs and the Unity client can
+reflect owned skins and VFX.
+
 ## Arcade Playable Prototype
 
 The repo now includes a curses-powered arcade loop that surfaces an interactive
@@ -193,52 +234,6 @@ Controls are intentionally lightweight so design can focus on pacing:
 | `U` | Fire any unlocked glyph ultimate (18s cooldown). |
 | `1`-`3` | Select upgrades when a level-up prompt appears. |
 | `Q` | Quit the run early. |
-
-## Accessibility Support
-
-To keep playtests inclusive while the Unity client is in development, the arcade
-loop now exposes accessibility toggles directly from the CLI:
-
-| Option | Effect |
-| ------ | ------ |
-| `--assist-radius <float>` | Widens projectile hit checks for players who benefit from auto-aim. |
-| `--damage-multiplier <float>` | Scales incoming damage; values below `1.0` reduce pressure. |
-| `--speed-scale <float>` | Slows or speeds overall simulation time to accommodate reaction needs. |
-| `--projectile-speed <float>` | Adjusts projectile velocity so inputs remain readable on lower framerates. |
-| `--high-contrast` | Swaps the ASCII palette for high-contrast glyphs that pop on dim terminals. |
-| `--colorblind-mode <mode>` | Selects glyph presets tuned for `protanopia`, `deuteranopia`, or `tritanopia` vision profiles. |
-| `--message-log <int>` | Controls how many event messages persist on screen for easier tracking. |
-| `--audio-cues` | Plays supplemental audio callouts for low health, upgrade prompts, and other key beats. |
-
-Flags can be combined, and all numeric inputs are clamped to sensible ranges so
-the prototype remains stable even when extreme values are supplied. The
-`--colorblind-mode` presets swap enemy/projectile glyphs without relying on
-color, while `--audio-cues` layers informative stingers on top of the default
-soundscape. These options will inform the accessibility matrix that the Unity
-implementation ships with later in the roadmap.
-
-## Graphics Engine Bridge
-
-The new `game.graphics` module converts gameplay snapshots into renderer-ready
-instructions. It packages placeholder sprites, parallax-aware layers, and camera
-helpers so the forthcoming Unity client (or any interim renderer) can ingest the
-same data contract:
-
-```python
-from game.graphics import GraphicsEngine
-from game.interactive import ArcadeEngine, InputFrame
-
-engine = ArcadeEngine(target_duration=30.0)
-graphics = GraphicsEngine()
-
-snapshot = engine.step(0.16, InputFrame(move_right=True))
-render_frame = engine.render_frame(graphics, snapshot=snapshot)
-```
-
-`render_frame.instructions` lists sprite draw calls sorted by z-index, giving the
-front end sprite ids, screen positions, scale, and flip metadata. While we wait
-for the Unity project to stand up, this bridge keeps combat/system updates
-flowing into a structured render feed.
 
 Enemy routing now honours the content lane assignments introduced in the PRD:
 ground units hug the cobblestones, air casters swoop between jump arcs, and

@@ -13,14 +13,7 @@ from typing import List, Optional, Sequence, Tuple
 from .audio import AudioEngine, AudioFrame
 from .accessibility import AccessibilitySettings
 from .combat import glyph_damage_multiplier, weapon_tier
-from .entities import Encounter, Enemy, EnemyLane, UpgradeCard
-from .environment import (
-    BarricadeEvent,
-    EnvironmentTickResult,
-    HazardEvent,
-    ResourceDropEvent,
-    WeatherEvent,
-)
+from .entities import Enemy, EnemyLane, UpgradeCard
 from .game_state import GameState
 from .graphics import Camera, GraphicsEngine, SceneNode
 from .localization import Translator, get_translator
@@ -673,33 +666,39 @@ class ArcadeEngine:
         if any(event.message.startswith("Level up!") for event in notifications):
             self._upgrade_options = list(self._state.draw_upgrades())
             self._awaiting_upgrade = True
-            self._push_audio("ui.level_up")
-            self._push_audio("ui.upgrade_presented")
-        self._on_special_enemy_defeated(enemy)
 
-    def _on_special_enemy_defeated(self, enemy: ActiveEnemy) -> None:
-        if enemy.encounter_tag == "miniboss":
-            self._active_miniboss = None
-            self._encounter_blocked = False
-            reward = self._pending_relic_reward
-            if reward is None and self._state.player.relics:
-                reward = self._state.player.relics[-1]
-            if reward:
-                self._push_message(self._translate("game.relic_acquired", name=reward))
-                self._push_audio("run.relic_acquired")
-            self._pending_relic_reward = None
-        elif enemy.encounter_tag == "final_boss" and not self._final_encounter_complete:
-            self._active_boss = None
-            if self._final_boss_queue:
-                next_phase = self._final_boss_queue.pop(0)
-                self._pending_enemies.insert(0, (next_phase, "final_boss"))
-                self._force_spawn = True
-                self._spawn_timer = 0.0
-            else:
-                self._final_encounter_complete = True
-                self._encounter_blocked = True
-                self._push_message(self._translate("game.player_survived"))
-                self._push_audio("run.final_boss_defeated")
+    def _spawn_enemy(self) -> None:
+        archetypes = content.enemy_archetypes_for_phase(self._state.current_phase)
+        if not archetypes:
+            return
+        name = self._rng.choice(archetypes)
+        scale = 1.0 + 0.05 * self._state.current_phase
+        enemy = content.instantiate_enemy(name, scale)
+        if enemy.lane is EnemyLane.GROUND:
+            y = self._ground
+        elif enemy.lane is EnemyLane.AIR:
+            lower = self._ceiling + 2.5
+            upper = self._ground - 2.0
+            y = self._rng.uniform(lower, upper)
+        else:
+            y = self._ceiling + 0.5
+
+        base_speed = 3.5 + enemy.speed * 1.8
+        if "dash" in enemy.behaviors or "pounce" in enemy.behaviors:
+            base_speed += 1.6
+        if "kamikaze" in enemy.behaviors:
+            base_speed += 2.4
+        if "slow" in enemy.behaviors:
+            base_speed -= 0.8
+
+        active = ActiveEnemy(
+            template=enemy,
+            x=self.width - 2.0,
+            y=y,
+            speed=max(1.5, base_speed),
+            health=float(enemy.health),
+        )
+        self._enemies.append(active)
 
     def _advance_enemies(self, delta_time: float) -> None:
         surviving: List[ActiveEnemy] = []
@@ -732,14 +731,9 @@ class ArcadeEngine:
         damage = max(1, enemy.template.damage)
         if "kamikaze" in enemy.template.behaviors:
             damage = int(damage * 1.5)
-        scaled_damage = max(
-            1, int(round(damage * self._accessibility.damage_taken_multiplier))
-        )
-        self._state.player.health = max(0, self._state.player.health - scaled_damage)
-        self._push_message(
-            self._translate(
-                "ui.damage_taken", enemy=enemy.template.name, damage=scaled_damage
-            )
+        self._state.player.health = max(0, self._state.player.health - damage)
+        self._messages.append(
+            self._translate("ui.damage_taken", enemy=enemy.template.name, damage=damage)
         )
         self._push_audio("player.damage")
         if self._state.player.health == 0:
