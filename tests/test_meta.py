@@ -53,12 +53,13 @@ def test_meta_progression_records_sigil_rewards():
 def test_available_unlocks_respect_requirements():
     ledger = SigilLedger()
     system = MetaProgressionSystem(ledger=ledger)
-    result = _run_result(survived=True, relics=1, encounters=4, final_boss=False)
+    result = _run_result(survived=True, relics=1, encounters=6, final_boss=False)
 
     available = system.available_unlocks(run_result=result)
 
     ids = {unlock.id for unlock in available}
     assert "hunter_lunara" in ids
+    assert "weapon_bloodthorn" in ids
     assert "hunter_aurora" not in ids
     assert "weapon_nocturne" not in ids
 
