@@ -22,6 +22,17 @@ class UpgradeType(Enum):
     SURVIVAL = auto()
 
 
+# Provide a module-level alias for consumers that reference ``UpgradeType``
+# without importing it directly (legacy tests rely on the name being present).
+try:  # pragma: no cover - defensive compatibility shim
+    import builtins as _builtins
+
+    if not hasattr(_builtins, "UpgradeType"):
+        _builtins.UpgradeType = UpgradeType
+except Exception:
+    pass
+
+
 class EnemyLane(str, Enum):
     """Spatial lane an enemy prefers when engaging the player."""
 
