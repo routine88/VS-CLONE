@@ -17,6 +17,15 @@ from .entities import Encounter, Enemy, EnemyLane, UpgradeCard
 from .game_state import GameState
 from .graphics import Camera, GraphicsEngine, SceneNode
 from .localization import Translator, get_translator
+from .distribution import (
+    DemoRestrictions,
+    apply_demo_restrictions,
+    default_demo_restrictions,
+    demo_duration,
+)
+from .live_ops import SeasonalEvent, activate_event, find_event, seasonal_schedule
+from .profile import PlayerProfile
+from .storage import load_profile
 
 
 @dataclass
@@ -72,6 +81,12 @@ class FrameSnapshot:
     score: int
     projectiles: Sequence[Projectile]
     enemies: Sequence[ActiveEnemy]
+    salvage_total: int = 0
+    salvage_gained: int = 0
+    hazards: Sequence[HazardEvent] = field(default_factory=list)
+    barricades: Sequence[BarricadeEvent] = field(default_factory=list)
+    resource_drops: Sequence[ResourceDropEvent] = field(default_factory=list)
+    weather_events: Sequence[WeatherEvent] = field(default_factory=list)
     messages: Sequence[str] = field(default_factory=list)
     audio_events: Sequence[str] = field(default_factory=list)
     awaiting_upgrade: bool = False
@@ -92,6 +107,7 @@ class ArcadeEngine:
         width: int = 80,
         height: int = 20,
         state: Optional[GameState] = None,
+        profile: PlayerProfile | None = None,
         spawn_interval: float = 2.0,
         target_duration: float = 300.0,
         translator: Translator | None = None,
@@ -104,12 +120,17 @@ class ArcadeEngine:
         self.height = float(height)
         self._ground = self.height - 2.0
         self._ceiling = 1.0
+        if state is None and profile is not None:
+            state = profile.start_run()
         if state is None:
             self._translator = translator or get_translator()
             self._state = GameState(translator=self._translator)
         else:
+            if translator is not None:
+                state.translator = translator
             self._state = state
             self._translator = translator or state.translator
+        self._profile: PlayerProfile | None = profile
         self._accessibility = (accessibility or AccessibilitySettings()).normalized()
         self._player_position = [5.0, self.height / 2.0]
         self._player_velocity = [0.0, 0.0]
@@ -172,6 +193,10 @@ class ArcadeEngine:
     def accessibility(self) -> AccessibilitySettings:
         return self._accessibility
 
+    @property
+    def profile(self) -> PlayerProfile | None:
+        return self._profile
+
     def step(self, delta_time: float, inputs: InputFrame) -> FrameSnapshot:
         """Advance the engine and return a snapshot for presentation."""
 
@@ -182,6 +207,9 @@ class ArcadeEngine:
 
         if self._defeated or self._final_encounter_complete:
             return self._snapshot()
+
+        environment_result = self._state.tick(delta_time * self._environment_time_scale)
+        self._process_environment_tick(environment_result)
 
         self._elapsed += delta_time
         self._state.time_elapsed = self._elapsed
@@ -226,6 +254,86 @@ class ArcadeEngine:
         self._upgrade_options = []
         self._refresh_weapon_cache()
         return card
+
+    def _process_environment_tick(self, result: EnvironmentTickResult) -> None:
+        """Translate environment outputs into arcade-facing feedback."""
+
+        self._environment_events = EnvironmentTickResult(
+            list(result.hazards),
+            list(result.barricades),
+            list(result.resource_drops),
+            list(result.weather_events),
+        )
+        self._environment_salvage_gained = 0
+
+        for hazard in result.hazards:
+            self._push_message(
+                self._translate(
+                    "game.hazard_trigger",
+                    name=hazard.name,
+                    biome=hazard.biome,
+                    damage=hazard.damage,
+                )
+            )
+            if hazard.slow > 0:
+                percent = int(hazard.slow * 100)
+                duration = int(round(hazard.duration))
+                self._push_message(
+                    self._translate(
+                        "game.hazard_slow",
+                        name=hazard.name,
+                        percent=percent,
+                        duration=duration,
+                    )
+                )
+            self._push_audio("environment.hazard")
+
+        for barricade in result.barricades:
+            self._environment_salvage_gained += barricade.salvage_reward
+            self._push_message(
+                self._translate(
+                    "game.barricade_cleared",
+                    name=barricade.name,
+                    salvage=barricade.salvage_reward,
+                )
+            )
+            self._push_audio("environment.salvage")
+
+        for drop in result.resource_drops:
+            self._environment_salvage_gained += drop.amount
+            self._push_message(
+                self._translate(
+                    "game.salvage_collected",
+                    name=drop.name,
+                    amount=drop.amount,
+                )
+            )
+            self._push_audio("environment.salvage")
+
+        for weather in result.weather_events:
+            if weather.ended:
+                self._push_message(self._translate("game.weather_clear"))
+                self._push_audio("environment.weather.clear")
+            else:
+                movement = int(weather.movement_modifier * 100)
+                vision = int(weather.vision_modifier * 100)
+                self._push_message(
+                    self._translate(
+                        "game.weather_change",
+                        name=weather.name,
+                        description=weather.description,
+                        movement=movement,
+                        vision=vision,
+                    )
+                )
+                self._push_audio("environment.weather.change")
+
+        if self._state.player.health <= 0 and not self._defeated:
+            self._defeated = True
+            self._push_message(self._translate("game.environment_defeat"))
+            if not self._defeat_announced:
+                self._push_audio("run.defeat")
+                self._defeat_announced = True
 
     def _push_message(self, message: str) -> None:
         self._messages.append(message)
@@ -585,8 +693,14 @@ class ArcadeEngine:
             next_level_xp=LEVEL_CURVE.xp_for_level(next_level),
             phase=self._state.current_phase,
             score=self._score,
+            salvage_total=player.salvage,
+            salvage_gained=self._environment_salvage_gained,
             projectiles=list(self._projectiles),
             enemies=list(self._enemies),
+            hazards=list(self._environment_events.hazards),
+            barricades=list(self._environment_events.barricades),
+            resource_drops=list(self._environment_events.resource_drops),
+            weather_events=list(self._environment_events.weather_events),
             messages=list(self._messages),
             audio_events=list(self._audio_events),
             awaiting_upgrade=self._awaiting_upgrade,
@@ -851,16 +965,46 @@ def launch_playable(
     *,
     language: str = "en",
     accessibility: AccessibilitySettings | None = None,
+    profile: PlayerProfile | None = None,
+    demo_restrictions: DemoRestrictions | None = None,
+    seasonal_event: SeasonalEvent | None = None,
 ) -> None:
     """Entry point that spins up the curses loop."""
 
     translator = get_translator(language)
+    active_profile = profile or PlayerProfile()
+
+    if demo_restrictions is not None:
+        apply_demo_restrictions(active_profile, demo_restrictions)
+
+    state = active_profile.start_run()
+    state.translator = translator
+
+    if seasonal_event is not None:
+        activate_event(state, seasonal_event)
+
+    target_duration = (
+        demo_duration(duration, demo_restrictions)
+        if demo_restrictions is not None
+        else duration
+    )
+
     engine = ArcadeEngine(
-        target_duration=duration,
+        target_duration=target_duration,
         translator=translator,
         accessibility=accessibility,
+        state=state,
+        profile=active_profile,
     )
     curses.wrapper(_run_curses_loop, engine, fps)
+
+
+def _profile_from_args(args: argparse.Namespace) -> PlayerProfile:
+    if args.profile_path:
+        if not args.key:
+            raise SystemExit("--profile-path requires --key for decryption")
+        return load_profile(args.profile_path, key=args.key)
+    return PlayerProfile()
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
@@ -914,6 +1058,31 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         type=int,
         help=translator.translate("cli.help.message_log"),
     )
+    parser.add_argument(
+        "--demo",
+        action="store_true",
+        help=translator.translate("cli.help.demo"),
+    )
+    parser.add_argument(
+        "--event-id",
+        type=str,
+        help=translator.translate("cli.help.event_id"),
+    )
+    parser.add_argument(
+        "--event-year",
+        type=int,
+        help=translator.translate("cli.help.event_year"),
+    )
+    parser.add_argument(
+        "--profile-path",
+        type=str,
+        help=translator.translate("cli.help.profile_path"),
+    )
+    parser.add_argument(
+        "--key",
+        type=str,
+        help=translator.translate("cli.help.key"),
+    )
     args = parser.parse_args(argv)
 
     settings_kwargs = {}
@@ -934,11 +1103,21 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         AccessibilitySettings(**settings_kwargs) if settings_kwargs else None
     )
 
+    profile = _profile_from_args(args)
+    restrictions = default_demo_restrictions() if args.demo else None
+    seasonal = None
+    if args.event_id:
+        events = seasonal_schedule(args.event_year)
+        seasonal = find_event(args.event_id, events)
+
     launch_playable(
         duration=args.duration,
         fps=args.fps,
         language=args.language,
         accessibility=accessibility,
+        profile=profile,
+        demo_restrictions=restrictions,
+        seasonal_event=seasonal,
     )
 
 

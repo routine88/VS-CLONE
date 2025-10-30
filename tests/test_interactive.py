@@ -3,10 +3,11 @@ import types
 import pytest
 
 from game import content
+from game.accessibility import AccessibilitySettings
 from game.audio import AudioEngine
 from game.entities import Encounter, Enemy, EnemyLane, WaveDescriptor
 from game.accessibility import AccessibilitySettings
-from game.interactive import ActiveEnemy, ArcadeEngine, InputFrame, Projectile
+from game.interactive import ActiveEnemy, ArcadeEngine, InputFrame, Projectile, main
 from game.localization import default_catalog, get_translator
 from game.game_state import GameState
 
@@ -243,3 +244,44 @@ def test_build_audio_frame_emits_instructions():
     effect_ids = [instruction.clip.id for instruction in audio_frame.effects]
     assert "effects/ui.prompt" in effect_ids
     assert any(instr.action in {"play", "refresh"} for instr in audio_frame.music)
+
+
+def test_main_demo_restrictions_trim_weapon_cards(monkeypatch):
+    captured = {}
+
+    def fake_wrapper(func, engine, fps):
+        captured["engine"] = engine
+        return None
+
+    monkeypatch.setattr("game.interactive.curses.wrapper", fake_wrapper)
+
+    main(["--demo"])
+
+    engine = captured["engine"]
+    deck = engine.state.upgrade_deck
+    weapon_cards = {
+        card.name
+        for card in deck._pool  # type: ignore[attr-defined]
+        if card.type is UpgradeType.WEAPON
+    }
+    assert len(weapon_cards) <= 4
+
+
+def test_main_event_activation_adjusts_state(monkeypatch):
+    captured = {}
+
+    def fake_wrapper(func, engine, fps):
+        captured["engine"] = engine
+        return None
+
+    monkeypatch.setattr("game.interactive.curses.wrapper", fake_wrapper)
+
+    main(["--event-id", "harvest_moon", "--event-year", "2025"])
+
+    engine = captured["engine"]
+    spawn_director = engine.state.spawn_director
+    environment = engine.state.environment_director
+
+    assert spawn_director._density_scale == pytest.approx(1.25)  # type: ignore[attr-defined]
+    assert environment._hazard_damage_scale == pytest.approx(1.1)  # type: ignore[attr-defined]
+    assert environment._salvage_scale == pytest.approx(1.3)  # type: ignore[attr-defined]
