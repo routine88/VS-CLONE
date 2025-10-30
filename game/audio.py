@@ -168,6 +168,10 @@ class AudioEngine:
             "run.defeat",
             "effects/run.defeat",
         )
+        self.bind_effect("run.miniboss_warning", "effects/ui.prompt")
+        self.bind_effect("run.relic_acquired", "effects/ui.confirm")
+        self.bind_effect("run.final_boss_warning", "effects/ui.prompt")
+        self.bind_effect("run.final_boss_defeated", "effects/run.victory")
         self.bind_music("music.start", "music.dusk_theme")
         self.bind_music("music.boss", "music.boss_theme")
 
