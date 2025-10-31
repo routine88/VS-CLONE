@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Mapping, Optional, Sequence, Tuple
@@ -15,6 +16,9 @@ try:  # pragma: no cover - optional dependency on some platforms
     import tkinter as tk  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover - optional dependency on some platforms
     tk = None  # type: ignore
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -168,12 +172,15 @@ class MvpViewerApp:
 
     def _write_report_log(self, report: MvpReport, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        existing = path.exists() and path.stat().st_size > 0
-        with path.open("a", encoding="utf-8") as handle:
-            if existing:
+        try:
+            existing = path.exists() and path.stat().st_size > 0
+            with path.open("a", encoding="utf-8") as handle:
+                if existing:
+                    handle.write("\n")
+                handle.write(self._format_report(report))
                 handle.write("\n")
-            handle.write(self._format_report(report))
-            handle.write("\n")
+        except OSError as exc:
+            logger.warning("Could not write viewer log at %s: %s", path, exc)
 
     def _format_report(self, report: MvpReport) -> str:
         enemies = ", ".join(f"{kind}: {count}" for kind, count in report.enemy_type_counts.items())
