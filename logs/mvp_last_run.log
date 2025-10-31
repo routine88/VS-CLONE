@@ -1,0 +1,18 @@
+==== Nightfall Survivors MVP Launcher ====
+Run started Thu 10/30/2025 16:34:34.45
+
+Changing directory to: C:\Users\Matt Lamon\Desktop\VS-CLONE-main\
+
+Updating repository to latest main branch...
+From https://github.com/routine88/VS-CLONE
+   5cb1901..cf3bfe2  main       -> origin/main
+ * [new branch]      codex/fix-permissionerror-in-mvp-launcher -> origin/codex/fix-permissionerror-in-mvp-launcher
+Updating 5cb1901..cf3bfe2
+Fast-forward
+ game/mvp_viewer.py       | 17 ++++++++++++-----
+ tests/test_mvp_viewer.py | 43 +++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 53 insertions(+), 7 deletions(-)
+
+Launching graphical MVP...
+<frozen runpy>:128: RuntimeWarning: 'game.mvp_viewer' found in sys.modules after import of package 'game', but prior to execution of 'game.mvp_viewer'; this may result in unpredictable behaviour
+Could not write viewer log at C:\Users\Matt Lamon\Desktop\VS-CLONE-main\logs\mvp_last_run.log: [Errno 13] Permission denied: 'C:\\Users\\Matt Lamon\\Desktop\\VS-CLONE-main\\logs\\mvp_last_run.log'

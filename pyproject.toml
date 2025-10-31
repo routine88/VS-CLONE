@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nightfall-survivors-prototype"
+version = "0.1.0"
+description = "Nightfall Survivors prototype stack: text sim, arcade, and MVP viewer"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Proprietary"}
+authors = [{ name = "Nightfall Team" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Environment :: Console",
+  "Topic :: Games/Entertainment",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7",
+]
+
+[project.scripts]
+ns-prototype = "game.prototype:main"
+ns-interactive = "game.interactive:main"
+ns-mvp = "game.mvp:main"
+ns-viewer = "game.mvp_viewer:main"
+ns-liveops = "game.live_ops:main"
+ns-graphics-manifest = "tools.graphics_manifest:main"
+ns-export-frames = "tools.export_unity_frames:main"
+
