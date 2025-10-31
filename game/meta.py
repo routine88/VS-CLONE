@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Optional, Sequence, Set
+from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from .session import RunResult, score_run
 
@@ -21,6 +21,24 @@ class MetaRequirement:
 
     kind: str
     threshold: int = 0
+
+
+@dataclass(frozen=True)
+class RequirementStatus:
+    """Snapshot describing whether a requirement was satisfied when unlocked."""
+
+    requirement: MetaRequirement
+    met: bool
+
+
+@dataclass(frozen=True)
+class UnlockTelemetry:
+    """Telemetry entry recorded whenever an unlock is claimed."""
+
+    unlock_id: str
+    run_index: int
+    total_playtime: float
+    requirements: Tuple[RequirementStatus, ...]
 
 
 @dataclass(frozen=True)
@@ -75,13 +93,38 @@ class MetaProgressionSystem:
         unlock_list = list(unlocks) if unlocks is not None else default_unlocks()
         self._unlocks: Dict[str, Unlockable] = {unlock.id: unlock for unlock in unlock_list}
         self.ledger = ledger or SigilLedger()
+        self._runs_recorded = 0
+        self._total_playtime = 0.0
+        self._unlock_log: List[UnlockTelemetry] = []
+        self._last_run_result: Optional[RunResult] = None
 
     def record_run(self, result: RunResult) -> int:
         """Deposit sigils earned from a completed run."""
 
         earned = score_run(result)
         self.ledger.deposit(earned)
+        self._runs_recorded += 1
+        self._total_playtime += max(0.0, float(result.duration))
+        self._last_run_result = result
         return earned
+
+    @property
+    def runs_recorded(self) -> int:
+        """Return the number of runs processed by the meta system."""
+
+        return self._runs_recorded
+
+    @property
+    def total_playtime(self) -> float:
+        """Return the cumulative playtime of recorded runs in seconds."""
+
+        return self._total_playtime
+
+    @property
+    def unlock_log(self) -> Sequence[UnlockTelemetry]:
+        """Expose a snapshot of unlock telemetry entries."""
+
+        return tuple(self._unlock_log)
 
     def available_unlocks(
         self,
@@ -104,7 +147,7 @@ class MetaProgressionSystem:
             candidates.append(unlock)
         return sorted(candidates, key=lambda item: item.cost)
 
-    def unlock(self, unlock_id: str) -> Unlockable:
+    def unlock(self, unlock_id: str, run_result: Optional[RunResult] = None) -> Unlockable:
         """Spend sigils to claim an unlockable reward."""
 
         unlock = self._unlocks.get(unlock_id)
@@ -114,6 +157,7 @@ class MetaProgressionSystem:
             raise ValueError(f"unlock '{unlock_id}' already claimed")
         self.ledger.spend(unlock.cost)
         self.ledger.mark_unlocked(unlock_id)
+        self._record_unlock(unlock, run_result)
         return unlock
 
     def unlocked(self) -> List[Unlockable]:
@@ -121,6 +165,23 @@ class MetaProgressionSystem:
 
         claimed = [self._unlocks[unlock_id] for unlock_id in self.ledger.unlocked_ids]
         return sorted(claimed, key=lambda item: item.cost)
+
+    def _record_unlock(self, unlock: Unlockable, run_result: Optional[RunResult]) -> None:
+        source = run_result or self._last_run_result
+        statuses: List[RequirementStatus] = []
+        for requirement in unlock.requirements:
+            if source is None:
+                met = True
+            else:
+                met = _requirements_met((requirement,), source)
+            statuses.append(RequirementStatus(requirement=requirement, met=met))
+        entry = UnlockTelemetry(
+            unlock_id=unlock.id,
+            run_index=self._runs_recorded,
+            total_playtime=self._total_playtime,
+            requirements=tuple(statuses),
+        )
+        self._unlock_log.append(entry)
 
 
 def default_unlocks() -> List[Unlockable]:
@@ -194,7 +255,9 @@ def _requirements_met(requirements: Sequence[MetaRequirement], run: RunResult) -
 __all__ = [
     "MetaProgressionSystem",
     "MetaRequirement",
+    "RequirementStatus",
     "SigilLedger",
+    "UnlockTelemetry",
     "Unlockable",
     "default_unlocks",
 ]
