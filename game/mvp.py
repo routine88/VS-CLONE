@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import random
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 
 @dataclass(frozen=True)
@@ -26,6 +26,7 @@ class EnemyState:
     archetype: EnemyArchetype
     position: float
     health: float
+    instance_id: int
 
     @property
     def name(self) -> str:
@@ -77,6 +78,40 @@ class PlayerState:
 
     def record_dash(self) -> None:
         self.dash_count += 1
+
+
+@dataclass(frozen=True)
+class MvpEnemySnapshot:
+    """Serializable view of an enemy for rendering or analytics."""
+
+    id: int
+    name: str
+    position: float
+    health: float
+    max_health: float
+    damage: int
+    speed: float
+    xp_reward: int
+
+
+@dataclass(frozen=True)
+class MvpFrameSnapshot:
+    """Immutable snapshot emitted after each MVP simulation tick."""
+
+    time: float
+    player_position: float
+    player_health: float
+    player_max_health: float
+    player_level: int
+    player_experience: float
+    next_level_experience: float
+    dash_cooldown: float
+    fire_cooldown: float
+    dash_ready: bool
+    soul_shards: int
+    enemies: Sequence[MvpEnemySnapshot]
+    enemies_defeated: int
+    events: Sequence[str]
 
 
 @dataclass(frozen=True)
@@ -158,21 +193,67 @@ class MvpSimulation:
         self.next_spawn = 0.0
         self.move_direction = 1.0
         self.enemies_defeated = 0
+        self._enemy_sequence = 0
 
     def run(self) -> MvpReport:
         config = self.config
         tick = config.tick_rate
         while self.elapsed < config.duration and self.player.health > 0:
-            self._maybe_spawn_enemy()
-            self._update_player(tick)
-            self._update_enemies(tick)
-            self._handle_combat(tick)
-            self._handle_level_up()
+            self.step(tick)
 
-            self.elapsed += tick
-            self.player.dash_timer = max(0.0, self.player.dash_timer - tick)
-            self.player.fire_timer = max(0.0, self.player.fire_timer - tick)
+        return self.build_report()
 
+    def step(self, tick: float) -> MvpFrameSnapshot:
+        """Advance the simulation by ``tick`` seconds and capture a snapshot."""
+
+        events_start = len(self.events)
+        self._maybe_spawn_enemy()
+        self._update_player(tick)
+        self._update_enemies(tick)
+        self._handle_combat(tick)
+        self._handle_level_up()
+
+        self.elapsed += tick
+        self.player.dash_timer = max(0.0, self.player.dash_timer - tick)
+        self.player.fire_timer = max(0.0, self.player.fire_timer - tick)
+
+        new_events = self.events[events_start:]
+        return self._snapshot(new_events)
+
+    def _snapshot(self, new_events: Sequence[str]) -> MvpFrameSnapshot:
+        curve = self.config.experience_curve
+        next_level_index = min(len(curve) - 1, self.player.level)
+        return MvpFrameSnapshot(
+            time=min(self.elapsed, self.config.duration),
+            player_position=self.player.position,
+            player_health=self.player.health,
+            player_max_health=float(self.player.max_health),
+            player_level=self.player.level,
+            player_experience=self.player.experience,
+            next_level_experience=float(curve[next_level_index]),
+            dash_cooldown=self.player.dash_timer,
+            fire_cooldown=self.player.fire_timer,
+            dash_ready=self.player.ready_to_dash(),
+            soul_shards=self.soul_shards,
+            enemies=tuple(
+                MvpEnemySnapshot(
+                    id=enemy.instance_id,
+                    name=enemy.name,
+                    position=enemy.position,
+                    health=enemy.health,
+                    max_health=enemy.archetype.health,
+                    damage=enemy.archetype.damage,
+                    speed=enemy.archetype.speed,
+                    xp_reward=enemy.archetype.xp_reward,
+                )
+                for enemy in self.enemies
+            ),
+            enemies_defeated=self.enemies_defeated,
+            events=tuple(new_events),
+        )
+
+    def build_report(self) -> MvpReport:
+        config = self.config
         survived = self.player.health > 0
         return MvpReport(
             seed=self.seed_value,
@@ -213,7 +294,14 @@ class MvpSimulation:
 
             spawn_side = self.rng.choice([-1.0, 1.0])
             position = spawn_side * config.lane_half_length
-            self.enemies.append(EnemyState(archetype=archetype, position=position, health=archetype.health))
+            enemy = EnemyState(
+                archetype=archetype,
+                position=position,
+                health=archetype.health,
+                instance_id=self._enemy_sequence,
+            )
+            self._enemy_sequence += 1
+            self.enemies.append(enemy)
             self.enemy_type_counts[tag] += 1
             self.events.append(f"Spawned {archetype.name}")
 
@@ -340,6 +428,23 @@ def run_mvp_simulation(
     seed_value = seed if seed is not None else rng.randrange(1 << 30)
     simulation = MvpSimulation(cfg, rng, seed_value)
     return simulation.run()
+
+
+def run_mvp_with_snapshots(
+    *, seed: Optional[int] = None, config: Optional[MvpConfig] = None
+) -> Tuple[MvpReport, Sequence[MvpFrameSnapshot]]:
+    """Execute the MVP simulation while capturing per-tick snapshots."""
+
+    cfg = config or MvpConfig()
+    rng = random.Random(seed)
+    seed_value = seed if seed is not None else rng.randrange(1 << 30)
+    simulation = MvpSimulation(cfg, rng, seed_value)
+    snapshots: List[MvpFrameSnapshot] = []
+    tick = cfg.tick_rate
+    while simulation.elapsed < cfg.duration and simulation.player.health > 0:
+        snapshots.append(simulation.step(tick))
+    report = simulation.build_report()
+    return report, tuple(snapshots)
 
 
 DEFAULT_SUMMARY_EVENT_COUNT = 15

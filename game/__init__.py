@@ -50,6 +50,20 @@ from .graphics import (  # noqa: F401
     SceneNode,
     Sprite,
 )
+from .mvp import (  # noqa: F401
+    EnemyArchetype,
+    MvpConfig,
+    MvpEnemySnapshot,
+    MvpFrameSnapshot,
+    MvpReport,
+    run_mvp_simulation,
+    run_mvp_with_snapshots,
+)
+from .mvp_graphics import (  # noqa: F401
+    MvpVisualizationResult,
+    MvpVisualSettings,
+    MvpVisualizer,
+)
 from .game_state import GameState  # noqa: F401
 from .live_ops import (  # noqa: F401
     SeasonalEvent,
