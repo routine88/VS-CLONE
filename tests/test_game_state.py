@@ -32,8 +32,8 @@ def test_tick_resolves_environment_hazards():
         weather_seen = weather_seen or any(not event.ended for event in result.weather_events)
 
     assert state.player.health < starting_health
-    assert state.active_hazards
     assert any("Hazard triggered" in event.message for event in state.event_log)
+    assert any("Hazard subsides" in event.message for event in state.event_log)
     assert all(event.damage > 0 for event in state.active_hazards)
     assert state.player.salvage >= salvaged
     assert weather_seen or any("Weather shift" in event.message for event in state.event_log)
@@ -93,6 +93,45 @@ def test_grant_experience_scales_with_multiplier():
     state.player.experience = 0
     state.grant_experience(20)
     assert state.player.experience >= 30
+
+
+def test_tick_expires_hazards():
+    class OneShotEnvironment:
+        def __init__(self):
+            self.emitted = False
+
+        def update(self, phase, delta_time):
+            if not self.emitted:
+                self.emitted = True
+                hazard = HazardEvent(
+                    biome="Test",
+                    name="Spectral Storm",
+                    description="",
+                    damage=5,
+                    slow=0.0,
+                    duration=1.5,
+                )
+                return EnvironmentTickResult(
+                    hazards=[hazard],
+                    barricades=[],
+                    resource_drops=[],
+                    weather_events=[],
+                )
+            return EnvironmentTickResult(
+                hazards=[],
+                barricades=[],
+                resource_drops=[],
+                weather_events=[],
+            )
+
+    state = GameState(environment_director=OneShotEnvironment())
+    state.tick(1.0)
+    assert state.active_hazards
+    state.tick(1.0)
+    assert state.active_hazards
+    state.tick(1.0)
+    assert not state.active_hazards
+    assert any("Hazard subsides" in event.message for event in state.event_log)
 
 
 def test_resolve_encounter_applies_soul_multiplier():

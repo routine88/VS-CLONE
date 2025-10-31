@@ -4,6 +4,7 @@
     "game.phase_advance": "Phase advanced to {phase}.",
     "game.hazard_trigger": "Hazard triggered: {name} in the {biome} (-{damage} HP).",
     "game.hazard_slow": "Movement hindered by {name}: speed reduced by {percent}% for {duration}s.",
+    "game.hazard_cleared": "Hazard subsides: {name} in the {biome} dissipates.",
     "game.environment_defeat": "The hunter is overwhelmed by the environment.",
     "game.barricade_cleared": "Barricade cleared: {name} yielded {salvage} salvage.",
     "game.salvage_collected": "Collected {name} for {amount} salvage.",
