@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, List, Optional, Sequence
 
+from .audio import AudioEngine, AudioFrame
 from .graphics import Camera, GraphicsEngine, RenderFrame, SceneNode
 from .mvp import MvpConfig, MvpFrameSnapshot, MvpReport, run_mvp_with_snapshots
 
@@ -33,6 +34,7 @@ class MvpVisualizationResult:
 
     report: MvpReport
     frames: Sequence[RenderFrame]
+    audio_frames: Sequence[AudioFrame]
 
 
 class MvpVisualizer:
@@ -42,9 +44,11 @@ class MvpVisualizer:
         self,
         *,
         graphics: Optional[GraphicsEngine] = None,
+        audio: Optional[AudioEngine] = None,
         settings: Optional[MvpVisualSettings] = None,
     ) -> None:
         self.graphics = graphics or GraphicsEngine()
+        self.audio = audio or AudioEngine()
         self.settings = settings or MvpVisualSettings()
 
     def run(
@@ -61,7 +65,12 @@ class MvpVisualizer:
 
         viewport_camera = camera or Camera(viewport=self.graphics.viewport)
         frames = self._build_frames(snapshots, camera=viewport_camera)
-        return MvpVisualizationResult(report=report, frames=tuple(frames))
+        audio_frames = self._build_audio_frames(snapshots)
+        return MvpVisualizationResult(
+            report=report,
+            frames=tuple(frames),
+            audio_frames=tuple(audio_frames),
+        )
 
     def _build_frames(
         self,
@@ -80,6 +89,16 @@ class MvpVisualizer:
                     time=snapshot.time,
                     messages=messages,
                 )
+            )
+        return frames
+
+    def _build_audio_frames(
+        self, snapshots: Sequence[MvpFrameSnapshot]
+    ) -> List[AudioFrame]:
+        frames: List[AudioFrame] = []
+        for snapshot in snapshots:
+            frames.append(
+                self.audio.build_frame(snapshot.audio_events, time=snapshot.time)
             )
         return frames
 

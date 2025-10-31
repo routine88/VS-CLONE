@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from game.mvp import EnemyArchetype, MvpConfig, run_mvp_simulation, main
+from game.mvp import (
+    EnemyArchetype,
+    MvpConfig,
+    main,
+    run_mvp_simulation,
+    run_mvp_with_snapshots,
+)
 
 
 def test_mvp_simulation_generates_progression() -> None:
@@ -78,4 +84,14 @@ def test_mvp_cli_event_limit(capsys: pytest.CaptureFixture[str]) -> None:
     event_lines = [line for line in captured.splitlines() if line.strip().startswith("-")]
     assert len(event_lines) <= 5
     assert event_lines, "Expected at least one event to be printed"
+
+
+def test_mvp_snapshots_include_audio_events() -> None:
+    config = MvpConfig(duration=45.0, tick_rate=0.5)
+    _, snapshots = run_mvp_with_snapshots(seed=12, config=config)
+
+    assert snapshots, "expected snapshots to be captured"
+    assert any(snapshot.audio_events for snapshot in snapshots)
+    for snapshot in snapshots:
+        assert isinstance(snapshot.audio_events, tuple)
 
