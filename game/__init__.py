@@ -64,6 +64,12 @@ from .mvp_graphics import (  # noqa: F401
     MvpVisualSettings,
     MvpVisualizer,
 )
+from .mvp_viewer import (  # noqa: F401
+    CanvasDrawable,
+    CanvasTranslator,
+    MvpViewerApp,
+    run_viewer,
+)
 from .game_state import GameState  # noqa: F401
 from .live_ops import (  # noqa: F401
     SeasonalEvent,

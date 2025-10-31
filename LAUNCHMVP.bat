@@ -38,10 +38,10 @@ git pull >> "%LOG_FILE%" 2>&1
 if errorlevel 1 goto :error
 
 echo.
-echo Launching MVP simulation...
+echo Launching graphical MVP...
 >> "%LOG_FILE%" echo.
->> "%LOG_FILE%" echo Launching MVP simulation...
-python -m game.mvp --summary >> "%LOG_FILE%" 2>&1
+>> "%LOG_FILE%" echo Launching graphical MVP...
+python -m game.mvp_viewer --log "%LOG_FILE%" >> "%LOG_FILE%" 2>&1
 if errorlevel 1 goto :error
 
 echo.
