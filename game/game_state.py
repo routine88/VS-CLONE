@@ -40,6 +40,7 @@ class GameState:
     combat_resolver: CombatResolver = field(default_factory=CombatResolver)
     event_log: List[GameEvent] = field(default_factory=list)
     active_hazards: List[HazardEvent] = field(default_factory=list)
+    _hazard_durations: List[float] = field(default_factory=list)
     active_weather: WeatherEvent | None = None
     translator: Translator = field(default_factory=get_translator)
 
@@ -52,6 +53,8 @@ class GameState:
         if delta_time <= 0:
             raise ValueError("delta_time must be positive")
 
+        self._update_active_hazards(delta_time)
+
         self.time_elapsed += delta_time
         phase = min(4, int(self.time_elapsed // 300) + 1)
         if phase != self.current_phase:
@@ -61,8 +64,9 @@ class GameState:
         environment_changes = self.environment_director.update(self.current_phase, delta_time)
         hazards = environment_changes.hazards
         if hazards:
-            self.active_hazards.extend(hazards)
             for hazard in hazards:
+                self.active_hazards.append(hazard)
+                self._hazard_durations.append(float(hazard.duration))
                 inflicted = hazard.damage
                 if self.player.hazard_resistance:
                     reduction = max(0.0, min(0.9, self.player.hazard_resistance))
@@ -130,6 +134,22 @@ class GameState:
                 self.player.health = min(self.player.max_health, self.player.health + healed)
 
         return environment_changes
+
+    def _update_active_hazards(self, delta_time: float) -> None:
+        if not self.active_hazards:
+            return
+
+        expired: List[int] = []
+        for index, remaining in enumerate(self._hazard_durations):
+            remaining = max(0.0, remaining - delta_time)
+            self._hazard_durations[index] = remaining
+            if remaining <= 1e-6:
+                expired.append(index)
+
+        for index in reversed(expired):
+            hazard = self.active_hazards.pop(index)
+            self._hazard_durations.pop(index)
+            self._log("game.hazard_cleared", name=hazard.name, biome=hazard.biome)
 
     def grant_experience(self, amount: int, *, apply_multiplier: bool = True) -> List[GameEvent]:
         """Grant experience and log resulting events."""

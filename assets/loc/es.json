@@ -5,6 +5,7 @@
     "game.phase_advance": "Fase avanzada a {phase}.",
     "game.hazard_trigger": "Peligro activado: {name} en {biome} (-{damage} PS).",
     "game.hazard_slow": "Movimiento afectado por {name}: velocidad reducida {percent}% durante {duration}s.",
+    "game.hazard_cleared": "Peligro disipado: {name} en {biome} se desvanece.",
     "game.environment_defeat": "El cazador cae ante el entorno.",
     "game.barricade_cleared": "Barricada despejada: {name} entregó {salvage} chatarra.",
     "game.salvage_collected": "Recolectado {name} obteniendo {amount} chatarra.",
