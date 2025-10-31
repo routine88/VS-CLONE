@@ -63,6 +63,7 @@ class AggregateMetrics:
     median_duration: float
     average_encounters: float
     average_sigils: float
+    average_relics: float
     average_upgrade_diversity: float
     environment_death_rate: float
     final_boss_rate: float
@@ -164,6 +165,7 @@ def aggregate_metrics(metrics: Sequence[RunMetrics]) -> AggregateMetrics:
     median_duration = median(metric.duration for metric in metrics)
     average_encounters = mean(metric.encounters_resolved for metric in metrics)
     average_sigils = mean(metric.sigils_earned for metric in metrics)
+    average_relics = mean(metric.relics_collected for metric in metrics)
     average_upgrade_diversity = mean(metric.upgrade_diversity for metric in metrics)
     environment_death_rate = sum(1 for metric in metrics if metric.environment_death) / total_runs
     final_boss_rate = sum(1 for metric in metrics if metric.faced_final_boss) / total_runs
@@ -181,6 +183,7 @@ def aggregate_metrics(metrics: Sequence[RunMetrics]) -> AggregateMetrics:
         median_duration=median_duration,
         average_encounters=average_encounters,
         average_sigils=average_sigils,
+        average_relics=average_relics,
         average_upgrade_diversity=average_upgrade_diversity,
         environment_death_rate=environment_death_rate,
         final_boss_rate=final_boss_rate,
@@ -202,6 +205,7 @@ def kpi_snapshot(metrics: Sequence[RunMetrics]) -> Mapping[str, float]:
         "environment_death_rate": summary.environment_death_rate,
         "final_boss_rate": summary.final_boss_rate,
         "average_sigils": summary.average_sigils,
+        "average_relics": summary.average_relics,
         "average_salvage": summary.average_salvage,
     }
 
@@ -221,6 +225,7 @@ def format_run_summary(metrics: RunMetrics) -> str:
         f"  Max Phase Reached: {metrics.max_phase_reached}",
         f"  Glyph Sets Completed: {metrics.glyph_sets_completed}",
         f"  Upgrades Taken: {metrics.total_upgrades} ({diversity_percent} unique)",
+        f"  Relics Collected: {metrics.relics_collected}",
         f"  Hazard Triggers: {metrics.hazard_triggers}",
         f"  Weather Events: {metrics.weather_events}",
         f"  Salvage Collected: {metrics.salvage_collected}",
