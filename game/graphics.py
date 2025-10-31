@@ -130,6 +130,42 @@ class RenderFrame:
     messages: Sequence[str] = ()
 
 
+@dataclass(frozen=True)
+class GraphicsManifest:
+    """Snapshot of registered graphics resources."""
+
+    viewport: Tuple[int, int]
+    sprites: Mapping[str, Sprite]
+    placeholders: Mapping[str, str]
+    layers: Mapping[str, LayerSettings]
+
+    def to_dict(self) -> Dict[str, object]:
+        """Convert the manifest to JSON-serialisable primitives."""
+
+        return {
+            "viewport": list(self.viewport),
+            "sprites": {
+                sprite_id: {
+                    "texture": sprite.texture,
+                    "size": list(sprite.size),
+                    "pivot": list(sprite.pivot),
+                    "tint": list(sprite.tint) if sprite.tint is not None else None,
+                }
+                for sprite_id, sprite in self.sprites.items()
+            },
+            "placeholders": dict(self.placeholders),
+            "layers": {
+                layer_id: {
+                    "name": layer.name,
+                    "z_index": layer.z_index,
+                    "parallax": layer.parallax,
+                    "scroll": list(layer.scroll),
+                }
+                for layer_id, layer in self.layers.items()
+            },
+        }
+
+
 class GraphicsEngine:
     """Lightweight renderer facade that prepares data for a graphics front end."""
 
@@ -221,6 +257,16 @@ class GraphicsEngine:
 
     def sprite(self, sprite_id: str) -> Sprite:
         return self._sprites[sprite_id]
+
+    def build_manifest(self) -> GraphicsManifest:
+        """Return a snapshot of all registered sprites, placeholders, and layers."""
+
+        return GraphicsManifest(
+            viewport=self._viewport,
+            sprites=dict(self._sprites),
+            placeholders=dict(self._placeholders),
+            layers=dict(self._layers),
+        )
 
     def build_frame(
         self,

@@ -2,6 +2,7 @@ from game.graphics import (
     AnimationClip,
     AnimationFrame,
     Camera,
+    GraphicsManifest,
     GraphicsEngine,
     LayerSettings,
     SceneNode,
@@ -86,3 +87,15 @@ def test_arcade_engine_render_frame_bridge():
 
     assert render_frame.messages == tuple(snapshot.messages)
     assert any(instr.metadata.get("kind") == "player" for instr in render_frame.instructions)
+
+
+def test_graphics_manifest_export():
+    graphics = GraphicsEngine()
+    manifest = graphics.build_manifest()
+    assert isinstance(manifest, GraphicsManifest)
+
+    manifest_dict = manifest.to_dict()
+    assert manifest_dict["viewport"] == [1280, 720]
+    assert manifest_dict["sprites"]["placeholders/player"]["size"] == [96, 96]
+    assert manifest_dict["placeholders"]["player"] == "placeholders/player"
+    assert "actors" in manifest_dict["layers"]
