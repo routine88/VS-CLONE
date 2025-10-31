@@ -7,6 +7,7 @@ from typing import Dict, Iterable, List, Sequence, Tuple
 
 from . import config
 from .entities import Enemy, EnemyLane, WaveDescriptor
+from .relics import relic_names
 
 # Enemy archetype blueprints roughly aligned with the PRD's enemy list.
 _BASE_ENEMY_ARCHETYPES: Dict[str, Dict[str, object]] = {
@@ -189,30 +190,6 @@ _MINIBOSS_BLUEPRINTS: Sequence[Dict[str, object]] = (
 )
 
 
-_RELIC_LIBRARY: Sequence[str] = (
-    "Moonlit Charm",
-    "Storm Prism",
-    "Blood Chalice",
-    "Gale Idols",
-    "Iron Bark Totem",
-    "Phoenix Ember",
-    "Gravemind Bloom",
-    "Astral Needle",
-    "Chillwyrm Scale",
-    "Inferno Brand",
-    "Verdant Heart",
-    "Clockwork Sigil",
-    "Duskwalker Boots",
-    "Siren's Locket",
-    "Juggernaut Core",
-    "Wraith Candle",
-    "Lantern of Dawn",
-    "Gauntlet Coil",
-    "Frostglass Rosary",
-    "Umbral Codex",
-)
-
-
 _FINAL_BOSS_BLUEPRINT = {
     "name": "Dawn Revenant",
     "phases": (
@@ -345,13 +322,13 @@ def pick_miniboss(phase: int, rng: random.Random) -> Enemy:
 def draw_relic(rng: random.Random) -> str:
     """Return a relic reward name."""
 
-    return rng.choice(_RELIC_LIBRARY)
+    return rng.choice(relic_names())
 
 
 def relic_catalog() -> Sequence[str]:
     """Expose the full relic catalog for validation and tooling."""
 
-    return list(_RELIC_LIBRARY)
+    return list(relic_names())
 
 
 def _dedupe(items: Iterable[str]) -> List[str]:

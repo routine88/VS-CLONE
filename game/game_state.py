@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import List, Sequence
 
 from . import config
@@ -15,6 +15,7 @@ from .environment import (
     WeatherEvent,
 )
 from .localization import Translator, get_translator
+from .relics import get_relic_definition
 from .systems import EncounterDirector, SpawnDirector, UpgradeDeck, resolve_experience_gain
 
 
@@ -62,12 +63,17 @@ class GameState:
         if hazards:
             self.active_hazards.extend(hazards)
             for hazard in hazards:
-                self.player.health = max(0, self.player.health - hazard.damage)
+                inflicted = hazard.damage
+                if self.player.hazard_resistance:
+                    reduction = max(0.0, min(0.9, self.player.hazard_resistance))
+                    inflicted = int(round(inflicted * (1.0 - reduction)))
+                inflicted = max(0, inflicted)
+                self.player.health = max(0, self.player.health - inflicted)
                 self._log(
                     "game.hazard_trigger",
                     name=hazard.name,
                     biome=hazard.biome,
-                    damage=hazard.damage,
+                    damage=inflicted,
                 )
                 if hazard.slow > 0:
                     percent = int(hazard.slow * 100)
@@ -84,20 +90,20 @@ class GameState:
 
         if environment_changes.barricades:
             for barricade in environment_changes.barricades:
-                self.player.add_salvage(barricade.salvage_reward)
+                gained = self.player.add_salvage(barricade.salvage_reward)
                 self._log(
                     "game.barricade_cleared",
                     name=barricade.name,
-                    salvage=barricade.salvage_reward,
+                    salvage=gained,
                 )
 
         if environment_changes.resource_drops:
             for cache in environment_changes.resource_drops:
-                self.player.add_salvage(cache.amount)
+                gained = self.player.add_salvage(cache.amount)
                 self._log(
                     "game.salvage_collected",
                     name=cache.name,
-                    amount=cache.amount,
+                    amount=gained,
                 )
 
         if environment_changes.weather_events:
@@ -118,12 +124,20 @@ class GameState:
                         vision=vision_percent,
                     )
 
+        if self.player.regen_per_second and self.player.health > 0:
+            healed = int(self.player.regen_per_second * delta_time)
+            if healed > 0:
+                self.player.health = min(self.player.max_health, self.player.health + healed)
+
         return environment_changes
 
-    def grant_experience(self, amount: int) -> List[GameEvent]:
+    def grant_experience(self, amount: int, *, apply_multiplier: bool = True) -> List[GameEvent]:
         """Grant experience and log resulting events."""
 
-        notifications = resolve_experience_gain(self.player, amount, translator=self.translator)
+        scaled = amount
+        if apply_multiplier:
+            scaled = self.player.scale_soul_reward(amount)
+        notifications = resolve_experience_gain(self.player, scaled, translator=self.translator)
         events = [GameEvent(note) for note in notifications]
         self.event_log.extend(events)
         return events
@@ -159,8 +173,22 @@ class GameState:
         elif encounter.kind == "miniboss" and encounter.miniboss:
             self._log("game.miniboss_incoming", name=encounter.miniboss.name)
             if encounter.relic_reward:
-                self.player.relics.append(encounter.relic_reward)
-                self._log("game.relic_acquired", name=encounter.relic_reward)
+                relic_name = encounter.relic_reward
+                self.player.relics.append(relic_name)
+                try:
+                    definition = get_relic_definition(relic_name)
+                except KeyError:
+                    self._log("game.relic_acquired", name=relic_name)
+                else:
+                    completed_sets = self.player.apply_relic_modifier(definition.modifier)
+                    self._log("game.relic_acquired", name=definition.name)
+                    self._log(
+                        "game.relic_empowerment",
+                        name=definition.name,
+                        description=definition.description,
+                    )
+                    for family in completed_sets:
+                        self._log("game.glyph_unlocked", family=family.value)
         return encounter
 
     def final_encounter(self) -> "Encounter":
@@ -191,7 +219,10 @@ class GameState:
             self.player.health = min(self.player.max_health, self.player.health + summary.healing_received)
 
         if summary.souls_gained:
-            self.grant_experience(summary.souls_gained)
+            scaled_souls = self.player.scale_soul_reward(summary.souls_gained)
+            if scaled_souls != summary.souls_gained:
+                summary = replace(summary, souls_gained=scaled_souls)
+            self.grant_experience(scaled_souls, apply_multiplier=False)
 
         label = summary.kind.replace("_", " ")
         self._log(

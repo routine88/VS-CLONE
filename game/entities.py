@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Dict, List, Literal, Optional, Tuple, TYPE_CHECKING
+
+
+if TYPE_CHECKING:  # pragma: no cover - imports used for typing only
+    from .relics import RelicModifier
 
 
 class GlyphFamily(str, Enum):
@@ -59,6 +63,13 @@ class Player:
     unlocked_weapons: Dict[str, int] = field(default_factory=lambda: {"Dusk Repeater": 1})
     relics: List[str] = field(default_factory=list)
     salvage: int = 0
+    damage_multiplier: float = 1.0
+    defense_multiplier: float = 1.0
+    hazard_resistance: float = 0.0
+    salvage_multiplier: float = 1.0
+    soul_multiplier: float = 1.0
+    lifesteal_bonus: float = 0.0
+    regen_per_second: float = 0.0
 
     def add_glyph(self, family: GlyphFamily) -> None:
         """Increase glyph count for the given family."""
@@ -100,12 +111,63 @@ class Player:
                     pass
         return completed
 
-    def add_salvage(self, amount: int) -> None:
+    def add_salvage(self, amount: int) -> int:
         """Grant salvage resources collected from the environment."""
 
         if amount < 0:
             raise ValueError("salvage cannot be negative")
-        self.salvage += amount
+        scaled = amount
+        if amount > 0 and self.salvage_multiplier != 1.0:
+            scaled = max(1, int(round(amount * self.salvage_multiplier)))
+        self.salvage += scaled
+        return scaled
+
+    def scale_soul_reward(self, amount: int) -> int:
+        """Return the soul reward after applying run modifiers."""
+
+        if amount <= 0:
+            return amount
+        if self.soul_multiplier == 1.0:
+            return amount
+        scaled = int(round(amount * self.soul_multiplier))
+        return max(1, scaled)
+
+    def apply_relic_modifier(self, modifier: "RelicModifier") -> List[GlyphFamily]:
+        """Apply relic bonuses and return any glyph sets completed."""
+
+        completed_sets: List[GlyphFamily] = []
+        if modifier.max_health:
+            self.max_health += modifier.max_health
+            self.health += modifier.max_health
+        if modifier.heal_on_pickup:
+            self.health = min(self.max_health, self.health + modifier.heal_on_pickup)
+        if modifier.damage_scale:
+            self.damage_multiplier *= 1.0 + modifier.damage_scale
+        if modifier.defense_scale:
+            self.defense_multiplier *= 1.0 + modifier.defense_scale
+        if modifier.hazard_resist:
+            self.hazard_resistance = min(0.9, self.hazard_resistance + modifier.hazard_resist)
+        if modifier.salvage_scale:
+            self.salvage_multiplier *= 1.0 + modifier.salvage_scale
+        if modifier.soul_scale:
+            self.soul_multiplier *= 1.0 + modifier.soul_scale
+        if modifier.lifesteal_bonus:
+            self.lifesteal_bonus += modifier.lifesteal_bonus
+        if modifier.regen_per_second:
+            self.regen_per_second += modifier.regen_per_second
+        if modifier.salvage_bonus_flat:
+            bonus = max(0, int(modifier.salvage_bonus_flat))
+            if bonus:
+                self.salvage += bonus
+
+        if modifier.glyph_bonus:
+            for family, amount in modifier.glyph_bonus.items():
+                for _ in range(max(0, int(amount))):
+                    self.add_glyph(family)
+            completed_sets.extend(self.complete_glyph_sets())
+
+        self.health = min(self.max_health, max(0, self.health))
+        return completed_sets
 
 
 @dataclass
