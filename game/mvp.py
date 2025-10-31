@@ -112,6 +112,15 @@ class MvpFrameSnapshot:
     enemies: Sequence[MvpEnemySnapshot]
     enemies_defeated: int
     events: Sequence[str]
+    audio_events: Sequence[str]
+
+
+@dataclass(frozen=True)
+class MvpEventLogEntry:
+    """Structured record describing an MVP event."""
+
+    code: str
+    message: str
 
 
 @dataclass(frozen=True)
@@ -186,7 +195,7 @@ class MvpSimulation:
             base_fire_rate=config.player_fire_rate,
         )
         self.enemies: List[EnemyState] = []
-        self.events: List[str] = []
+        self.events: List[MvpEventLogEntry] = []
         self.enemy_type_counts: Dict[str, int] = {"swarm": 0, "bruiser": 0}
         self.soul_shards = 0
         self.elapsed = 0.0
@@ -217,10 +226,16 @@ class MvpSimulation:
         self.player.dash_timer = max(0.0, self.player.dash_timer - tick)
         self.player.fire_timer = max(0.0, self.player.fire_timer - tick)
 
-        new_events = self.events[events_start:]
-        return self._snapshot(new_events)
+        new_entries = self.events[events_start:]
+        return self._snapshot(new_entries)
 
-    def _snapshot(self, new_events: Sequence[str]) -> MvpFrameSnapshot:
+    def _record_event(self, code: str, message: str) -> None:
+        self.events.append(MvpEventLogEntry(code=code, message=message))
+
+    def _event_recorded(self, code: str) -> bool:
+        return any(entry.code == code for entry in self.events)
+
+    def _snapshot(self, new_events: Sequence[MvpEventLogEntry]) -> MvpFrameSnapshot:
         curve = self.config.experience_curve
         next_level_index = min(len(curve) - 1, self.player.level)
         return MvpFrameSnapshot(
@@ -249,7 +264,8 @@ class MvpSimulation:
                 for enemy in self.enemies
             ),
             enemies_defeated=self.enemies_defeated,
-            events=tuple(new_events),
+            events=tuple(entry.message for entry in new_events),
+            audio_events=tuple(entry.code for entry in new_events if entry.code),
         )
 
     def build_report(self) -> MvpReport:
@@ -265,7 +281,7 @@ class MvpSimulation:
             soul_shards=self.soul_shards,
             upgrades_applied=list(self.player.upgrade_history),
             dash_count=self.player.dash_count,
-            events=list(self.events),
+            events=[entry.message for entry in self.events],
             final_health=max(0.0, self.player.health),
         )
 
@@ -303,7 +319,7 @@ class MvpSimulation:
             self._enemy_sequence += 1
             self.enemies.append(enemy)
             self.enemy_type_counts[tag] += 1
-            self.events.append(f"Spawned {archetype.name}")
+            self._record_event("combat.enemy_spawn", f"Spawned {archetype.name}")
 
     def _update_player(self, tick: float) -> None:
         if not self.enemies:
@@ -321,7 +337,7 @@ class MvpSimulation:
             )
             self.player.reset_dash_cooldown()
             self.player.record_dash()
-            self.events.append("Player dashed to safety")
+            self._record_event("player.dash", "Player dashed to safety")
             return
 
         if distance > self.player.dash_trigger * 4:
@@ -360,7 +376,7 @@ class MvpSimulation:
             target = min(self.enemies, key=lambda e: abs(e.position - self.player.position))
             target.health -= self.player.damage_per_shot
             self.player.fire_timer = 1.0 / max(0.1, self.player.fire_rate)
-            self.events.append(f"Player struck {target.name}")
+            self._record_event("combat.weapon_fire", f"Player struck {target.name}")
             if target.health <= 0:
                 self._collect_soul_shard(target)
                 self.enemies_defeated += 1
@@ -370,9 +386,14 @@ class MvpSimulation:
         for enemy in self.enemies:
             if abs(enemy.position - self.player.position) <= 0.3 and enemy.health > 0:
                 self.player.health -= enemy.archetype.damage
-                self.events.append(f"Player took {enemy.archetype.damage} damage from {enemy.name}")
+                self._record_event(
+                    "player.damage",
+                    f"Player took {enemy.archetype.damage} damage from {enemy.name}",
+                )
                 if self.player.health <= 0:
                     self.player.health = 0
+                    if not self._event_recorded("run.defeat"):
+                        self._record_event("run.defeat", "The hunter fell in battle")
                 # enemy is defeated upon impact
                 self._collect_soul_shard(enemy)
                 self.enemies_defeated += 1
@@ -383,7 +404,7 @@ class MvpSimulation:
     def _collect_soul_shard(self, enemy: EnemyState) -> None:
         self.soul_shards += 1
         self.player.experience += enemy.archetype.xp_reward
-        self.events.append(f"Collected soul shard from {enemy.name}")
+        self._record_event("combat.enemy_down", f"Collected soul shard from {enemy.name}")
 
     def _handle_level_up(self) -> None:
         curve = self.config.experience_curve
@@ -395,7 +416,7 @@ class MvpSimulation:
                 break
             self.player.level += 1
             leveled = True
-            self.events.append(f"Hunter reached level {self.player.level}")
+            self._record_event("ui.level_up", f"Hunter reached level {self.player.level}")
             # Spend the experience required for the level-up so that we do not
             # repeatedly re-trigger the same tier and get stuck in an infinite
             # loop once the curve caps out.
@@ -406,7 +427,7 @@ class MvpSimulation:
             else:
                 self.player.fire_rate_bonus += self.config.fire_rate_bonus
             self.player.upgrade_history.append(upgrade)
-            self.events.append(f"Applied upgrade: {upgrade}")
+            self._record_event("ui.upgrade_selected", f"Applied upgrade: {upgrade}")
 
         if leveled:
             # Prevent runaway leveling when the curve is exhausted.

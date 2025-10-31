@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""CLI: export MVP render frames as Unity-friendly JSON.
+"""CLI: export MVP render/audio frames as Unity-friendly JSON bundles.
 
 Writes one JSON object per line (JSONL) so downstream tools can stream frames.
 """
@@ -14,12 +14,17 @@ from game.mvp_graphics import MvpVisualizer
 from game.mvp import MvpConfig
 
 
-def _iter_render_frames(*, seed: Optional[int], cfg: MvpConfig):
+def _iter_frame_bundles(*, seed: Optional[int], cfg: MvpConfig):
     vis = MvpVisualizer()
     result = vis.run(seed=seed, config=cfg)
     exporter = UnityFrameExporter()
-    for frame in result.frames:
-        yield exporter.render_json(frame)
+    if len(result.frames) != len(result.audio_frames):
+        raise RuntimeError(
+            "render/audio frame count mismatch: "
+            f"{len(result.frames)} render vs {len(result.audio_frames)} audio"
+        )
+    for render_frame, audio_frame in zip(result.frames, result.audio_frames):
+        yield exporter.bundle_json(render_frame=render_frame, audio_frame=audio_frame)
 
 
 def _parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
@@ -43,7 +48,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         duration=args.duration if args.duration is not None else MvpConfig.duration,
         tick_rate=args.tick if args.tick is not None else MvpConfig.tick_rate,
     )
-    lines: Iterable[str] = _iter_render_frames(seed=args.seed, cfg=cfg)
+    lines: Iterable[str] = _iter_frame_bundles(seed=args.seed, cfg=cfg)
 
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)

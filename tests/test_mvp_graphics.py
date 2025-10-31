@@ -17,6 +17,8 @@ def test_mvp_visualizer_matches_simulation_report() -> None:
 
     assert result.report == reference_report
     assert result.frames, "expected at least one render frame"
+    assert result.audio_frames, "expected audio frames to accompany render output"
+    assert len(result.frames) == len(result.audio_frames)
 
     first_frame = result.frames[0]
     assert any(instr.metadata.get("kind") == "player" for instr in first_frame.instructions)
@@ -26,6 +28,8 @@ def test_mvp_visualizer_matches_simulation_report() -> None:
         any(instr.metadata.get("kind") == "enemy" for instr in frame.instructions)
         for frame in result.frames
     ), "expected an enemy to appear in at least one frame"
+
+    assert any(frame.effects for frame in result.audio_frames), "audio cues should be emitted"
 
 
 def test_mvp_visualizer_tracks_snapshots() -> None:
@@ -37,4 +41,5 @@ def test_mvp_visualizer_tracks_snapshots() -> None:
 
     assert result.report == report
     assert len(result.frames) == len(snapshots)
+    assert len(result.audio_frames) == len(result.frames)
     assert all(frame.messages for frame in result.frames[:3])
