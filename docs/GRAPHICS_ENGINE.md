@@ -41,4 +41,10 @@ The following assets should be delivered into an upcoming `assets/graphics_asset
 ### Asset manifest tooling
 Run `python -m tools.graphics_manifest` to print the current manifest as JSON. Pass `--output path/to/file.json` to save it for art or Unity teams.
 
+The same CLI also supports `--format markdown`, which emits the high-level asset brief consumed by AI concept pipelines. The checked-in `docs/GRAPHICS_ASSET_BRIEF.md` file is regenerated with:
+
+```
+python -m tools.graphics_manifest --format markdown --output docs/GRAPHICS_ASSET_BRIEF.md
+```
+
 These specifications will be revisited once bespoke art direction assets replace placeholders.
