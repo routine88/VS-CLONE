@@ -2,7 +2,7 @@ import pytest
 
 from game import content
 from game.entities import Enemy, EnemyLane
-from game.interactive import ArcadeEngine, InputFrame
+from game.interactive import ActiveEnemy, ArcadeEngine, InputFrame
 from game.localization import default_catalog, get_translator
 from game.game_state import GameState
 

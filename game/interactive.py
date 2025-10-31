@@ -3,17 +3,33 @@
 from __future__ import annotations
 
 import argparse
-import curses
 import math
+import os
 import random
+import sys
 import time
 from dataclasses import dataclass, field
 from typing import List, Optional, Sequence, Tuple
+
+try:
+    import curses  # type: ignore
+except ModuleNotFoundError as exc:  # pragma: no cover - platform specific
+    curses = None  # type: ignore
+    _CURSES_IMPORT_ERROR = exc
+else:  # pragma: no cover - platform specific
+    _CURSES_IMPORT_ERROR = None
 
 from .audio import AudioEngine, AudioFrame
 from .accessibility import AccessibilitySettings
 from .combat import glyph_damage_multiplier, weapon_tier
 from .entities import Enemy, EnemyLane, UpgradeCard
+from .environment import (
+    BarricadeEvent,
+    EnvironmentTickResult,
+    HazardEvent,
+    ResourceDropEvent,
+    WeatherEvent,
+)
 from .game_state import GameState
 from .graphics import Camera, GraphicsEngine, SceneNode
 from .localization import Translator, get_translator
@@ -26,6 +42,7 @@ from .distribution import (
 from .live_ops import SeasonalEvent, activate_event, find_event, seasonal_schedule
 from .profile import PlayerProfile
 from .storage import load_profile
+from . import content
 
 
 @dataclass
@@ -666,6 +683,7 @@ class ArcadeEngine:
         if any(event.message.startswith("Level up!") for event in notifications):
             self._upgrade_options = list(self._state.draw_upgrades())
             self._awaiting_upgrade = True
+            self._push_audio("ui.level_up")
 
     def _spawn_enemy(self) -> None:
         archetypes = content.enemy_archetypes_for_phase(self._state.current_phase)
@@ -984,13 +1002,26 @@ def _run_curses_loop(
             time.sleep(sleep_time)
 
 
-def _render(
-    stdscr: "curses._CursesWindow",
+def _build_render_lines(
     snapshot: FrameSnapshot,
     width: float,
     height: float,
     translator: Translator,
-) -> None:
+) -> List[str]:
+    width_int = max(2, int(width))
+    height_int = max(2, int(height))
+    buffer = [[" "] * width_int for _ in range(height_int)]
+
+    def draw(y: int, x: int, text: str) -> None:
+        if not text:
+            return
+        if y < 0 or y >= height_int:
+            return
+        for offset, char in enumerate(text):
+            pos = x + offset
+            if 0 <= pos < width_int:
+                buffer[y][pos] = char
+
     status = translator.translate(
         "ui.arcade_status",
         time=snapshot.elapsed,
@@ -1002,7 +1033,7 @@ def _render(
         max_hp=snapshot.max_health,
         score=snapshot.score,
     )
-    stdscr.addstr(0, 0, status[: int(width)])
+    draw(0, 0, status[:width_int])
 
     palette = COLORBLIND_GLYPHS.get(snapshot.colorblind_mode, COLORBLIND_GLYPHS["none"])
     glyphs = palette["high" if snapshot.high_contrast else "standard"]
@@ -1012,55 +1043,135 @@ def _render(
     enemy_char = glyphs["enemy"]
     projectile_char = glyphs["projectile"]
 
-    for y in range(int(height)):
-        stdscr.addstr(y, 0, vertical_border)
-        stdscr.addstr(y, int(width) - 1, vertical_border)
-    for x in range(int(width)):
-        stdscr.addstr(int(height) - 1, x, horizontal_border)
+    for y in range(height_int):
+        draw(y, 0, vertical_border)
+        draw(y, width_int - 1, vertical_border)
+    for x in range(width_int):
+        draw(height_int - 1, x, horizontal_border)
 
-    stdscr.addstr(int(snapshot.player_y), int(snapshot.player_x), player_char)
+    player_y = max(0, min(height_int - 1, int(snapshot.player_y)))
+    player_x = max(0, min(width_int - 1, int(snapshot.player_x)))
+    draw(player_y, player_x, player_char)
 
     for enemy in snapshot.enemies:
         if not enemy.alive:
             continue
-        stdscr.addstr(int(enemy.y), max(1, int(enemy.x)), enemy_char)
+        enemy_y = max(0, min(height_int - 1, int(enemy.y)))
+        enemy_x = max(1, min(width_int - 2, int(enemy.x)))
+        draw(enemy_y, enemy_x, enemy_char)
 
     for projectile in snapshot.projectiles:
-        stdscr.addstr(
-            int(projectile.y),
-            min(int(width) - 2, int(projectile.x)),
-            projectile_char,
-        )
+        proj_y = max(0, min(height_int - 1, int(projectile.y)))
+        proj_x = max(1, min(width_int - 2, int(projectile.x)))
+        draw(proj_y, proj_x, projectile_char)
 
+    max_messages = min(
+        max(1, int(snapshot.message_log_size)),
+        max(1, height_int - 2),
+    )
+    visible_messages = snapshot.messages[-max_messages:]
     row = 1
-    visible_messages = snapshot.messages[-min(
-        max(1, int(snapshot.message_log_size)), max(1, int(height) - 2)
-    ) :]
     for message in visible_messages:
-        stdscr.addstr(row, int(width) // 2, message[: int(width / 2) - 2])
+        draw(row, width_int // 2, message[: max(1, width_int // 2 - 2)])
         row += 1
+        if row >= height_int - 1:
+            break
 
     if snapshot.awaiting_upgrade:
-        stdscr.addstr(2, 2, translator.translate("ui.upgrade_prompt"))
+        prompt = translator.translate("ui.upgrade_prompt")
+        draw(2, 2, prompt[: max(1, width_int - 4)])
         for idx, option in enumerate(snapshot.upgrade_options, start=1):
-            stdscr.addstr(
-                3 + idx,
-                4,
-                translator.translate("ui.upgrade_option", index=idx, name=option.name),
-            )
+            line = translator.translate("ui.upgrade_option", index=idx, name=option.name)
+            draw(3 + idx, 4, line[: max(1, width_int - 6)])
 
     if snapshot.defeated:
-        stdscr.addstr(
-            int(height) // 2,
-            int(width) // 2 - 6,
-            translator.translate("ui.run_failed"),
-        )
+        message = translator.translate("ui.run_failed")
+        draw(height_int // 2, max(0, min(width_int - 1, width_int // 2 - 6)), message)
     elif snapshot.survived:
-        stdscr.addstr(
-            int(height) // 2,
-            int(width) // 2 - 6,
-            translator.translate("ui.run_survived"),
-        )
+        message = translator.translate("ui.run_survived")
+        draw(height_int // 2, max(0, min(width_int - 1, width_int // 2 - 6)), message)
+
+    return ["".join(row) for row in buffer]
+
+
+def _render(
+    stdscr: "curses._CursesWindow",
+    snapshot: FrameSnapshot,
+    width: float,
+    height: float,
+    translator: Translator,
+) -> None:
+    lines = _build_render_lines(snapshot, width, height, translator)
+    for idx, line in enumerate(lines):
+        stdscr.addstr(idx, 0, line[: int(width)])
+
+
+def _render_windows(
+    snapshot: FrameSnapshot,
+    width: float,
+    height: float,
+    translator: Translator,
+) -> None:
+    lines = _build_render_lines(snapshot, width, height, translator)
+    lines.append("")
+    lines.append("[Fallback renderer active - press Q to quit]")
+    sys.stdout.write("\033[2J\033[H")
+    sys.stdout.write("\n".join(lines))
+    sys.stdout.flush()
+
+
+def _run_windows_loop(engine: "ArcadeEngine", fps: float) -> None:
+    import msvcrt
+
+    tick = 1.0 / fps
+    last_time = time.monotonic()
+
+    try:
+        while True:
+            now = time.monotonic()
+            delta = now - last_time
+            last_time = now
+
+            inputs = InputFrame()
+            while msvcrt.kbhit():
+                key = msvcrt.getwch()
+                if key in ("q", "Q"):
+                    return
+                if engine.defeated or engine.state.player.health <= 0:
+                    continue
+                if key in (" ", "d", "D"):
+                    inputs.dash = True
+                elif key in ("u", "U"):
+                    inputs.activate_ultimate = True
+                elif key in ("1", "2", "3") and engine.state.player.health > 0 and engine.awaiting_upgrade:
+                    choice = ord(key) - ord("1")
+                    if choice < len(engine.upgrade_options):
+                        engine.choose_upgrade(choice)
+                elif key in ("\x00", "\xe0"):
+                    arrow = msvcrt.getwch()
+                    if arrow == "K":
+                        inputs.move_left = True
+                    elif arrow == "M":
+                        inputs.move_right = True
+                    elif arrow == "H":
+                        inputs.move_up = True
+                    elif arrow == "P":
+                        inputs.move_down = True
+
+            snapshot = engine.step(max(delta, tick), inputs)
+
+            _render_windows(snapshot, engine.width, engine.height, engine.translator)
+
+            if snapshot.defeated or snapshot.survived:
+                time.sleep(2.0)
+                return
+
+            sleep_time = tick - (time.monotonic() - now)
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+    finally:
+        sys.stdout.write("\033[2J\033[H")
+        sys.stdout.flush()
 
 
 def launch_playable(
@@ -1100,7 +1211,22 @@ def launch_playable(
         state=state,
         profile=active_profile,
     )
-    curses.wrapper(_run_curses_loop, engine, fps)
+    if curses is not None:
+        curses.wrapper(_run_curses_loop, engine, fps)
+        return
+
+    if os.name == "nt":  # pragma: no cover - platform specific
+        _run_windows_loop(engine, fps)
+        return
+
+    message = (
+        "The Nightfall Survivors terminal prototype requires the Python 'curses' module "
+        "which is unavailable on this platform. If you are on Windows, install the "
+        "'windows-curses' package to enable interactive mode."
+    )
+    if _CURSES_IMPORT_ERROR is not None:
+        raise ModuleNotFoundError(message) from _CURSES_IMPORT_ERROR
+    raise ModuleNotFoundError(message)
 
 
 def _profile_from_args(args: argparse.Namespace) -> PlayerProfile:
