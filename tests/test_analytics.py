@@ -81,11 +81,13 @@ def test_aggregate_metrics_computes_kpis() -> None:
     assert summary.survival_rate == pytest.approx(0.5)
     assert summary.average_duration == pytest.approx((720.0 + 480.0) / 2)
     assert summary.environment_death_rate == pytest.approx(0.5)
+    assert summary.average_relics == pytest.approx(1.0)
     assert summary.phase_distribution == {2: 0.5, 3: 0.5}
 
     snapshot = analytics.kpi_snapshot([metric_a, metric_b])
     assert snapshot["survival_rate"] == pytest.approx(0.5)
     assert "average_upgrade_diversity" in snapshot
+    assert snapshot["average_relics"] == pytest.approx(1.0)
 
 
 def test_from_transcripts_and_render_report(tmp_path: Path) -> None:

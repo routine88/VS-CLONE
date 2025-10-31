@@ -52,6 +52,7 @@ def render_report(metrics: Sequence[RunMetrics]) -> str:
         f"Final Boss Rate: {summary.final_boss_rate:.2%}",
         f"Environment Death Rate: {summary.environment_death_rate:.2%}",
         f"Average Sigils: {summary.average_sigils:.1f}",
+        f"Average Relics: {summary.average_relics:.1f}",
         f"Average Salvage: {summary.average_salvage:.1f}",
         "Phase Distribution:",
     ]
