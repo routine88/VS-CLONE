@@ -1,9 +1,11 @@
 import random
 
 from game import config
-from game.entities import GlyphFamily, UpgradeCard, UpgradeType
+from game.combat import CombatSummary
+from game.entities import Encounter, GlyphFamily, UpgradeCard, UpgradeType, WaveDescriptor
 from game.game_state import GameEvent, GameState, default_upgrade_cards
-from game.environment import EnvironmentDirector
+from game.environment import EnvironmentDirector, EnvironmentTickResult, HazardEvent
+from game.relics import get_relic_definition
 from game.systems import EncounterDirector
 
 
@@ -69,6 +71,7 @@ def test_next_encounter_logs_and_awards_relic():
     assert miniboss_encounter.kind == "miniboss"
     assert state.player.relics
     assert any("Relic acquired" in event.message for event in state.event_log)
+    assert any("Relic power" in event.message for event in state.event_log)
 
 
 def test_resolve_encounter_updates_state():
@@ -82,6 +85,81 @@ def test_resolve_encounter_updates_state():
     assert summary.souls_gained > 0
     assert state.player.health <= state.player.max_health
     assert any("Resolved wave" in event.message for event in state.event_log)
+
+
+def test_grant_experience_scales_with_multiplier():
+    state = GameState()
+    state.player.soul_multiplier = 1.5
+    state.player.experience = 0
+    state.grant_experience(20)
+    assert state.player.experience >= 30
+
+
+def test_resolve_encounter_applies_soul_multiplier():
+    class StubResolver:
+        def resolve_wave(self, player, wave):
+            return CombatSummary(
+                kind="wave",
+                enemies_defeated=3,
+                souls_gained=10,
+                damage_taken=0,
+                healing_received=0,
+                duration=1.0,
+                notes=[],
+            )
+
+        def resolve_miniboss(self, player, enemy):
+            return self.resolve_wave(player, None)
+
+        def resolve_final_boss(self, player, phases):
+            return self.resolve_wave(player, None)
+
+    state = GameState()
+    state.player.soul_multiplier = 2.0
+    state.combat_resolver = StubResolver()
+    encounter = Encounter(kind="wave", wave=WaveDescriptor(phase=1, wave_index=0, enemies=[]))
+    summary = state.resolve_encounter(encounter)
+    assert summary.souls_gained == 20
+    assert state.player.experience >= 20
+
+
+def test_relic_regeneration_restores_health():
+    class StaticEnvironment:
+        def update(self, phase, delta_time):
+            return EnvironmentTickResult(hazards=[], barricades=[], resource_drops=[], weather_events=[])
+
+    state = GameState(environment_director=StaticEnvironment())
+    state.player.health = 40
+    definition = get_relic_definition("Verdant Heart")
+    state.player.apply_relic_modifier(definition.modifier)
+    state.tick(5.0)
+    assert state.player.health > 40
+
+
+def test_hazard_resistance_reduces_damage():
+    class HazardEnvironment:
+        def __init__(self):
+            self.triggered = False
+
+        def update(self, phase, delta_time):
+            if not self.triggered:
+                self.triggered = True
+                hazard = HazardEvent(
+                    biome="Test",
+                    name="Shockwave",
+                    description="",
+                    damage=40,
+                    slow=0.0,
+                    duration=1.0,
+                )
+                return EnvironmentTickResult(hazards=[hazard], barricades=[], resource_drops=[], weather_events=[])
+            return EnvironmentTickResult(hazards=[], barricades=[], resource_drops=[], weather_events=[])
+
+    state = GameState(environment_director=HazardEnvironment())
+    state.player.health = 100
+    state.player.hazard_resistance = 0.5
+    state.tick(1.0)
+    assert state.player.health == 80
 
 
 def test_final_encounter_triggers_final_boss_flow():

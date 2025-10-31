@@ -17,6 +17,7 @@
     "game.wave_incoming": "Wave {number} incoming with {count} foes.",
     "game.miniboss_incoming": "Miniboss {name} approaches!",
     "game.relic_acquired": "Relic acquired: {name}.",
+    "game.relic_empowerment": "Relic power surges: {name} grants {description}.",
     "game.final_boss": "The final boss {name} descends for the last stand.",
     "game.final_boss_generic": "The final confrontation begins.",
     "game.encounter_resolved": "Resolved {label} defeating {count} foes in {duration:.1f}s.",

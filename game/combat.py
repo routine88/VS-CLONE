@@ -131,7 +131,8 @@ def _weapon_dps(player: Player) -> float:
         total += tier_stats.dps
     # Apply a light level scaling so leveling feels impactful.
     level_bonus = 1.0 + 0.04 * max(0, player.level - 1)
-    return total * level_bonus
+    damage_multiplier = getattr(player, "damage_multiplier", 1.0)
+    return total * level_bonus * damage_multiplier
 
 
 def _glyph_damage_multiplier(player: Player) -> float:
@@ -146,15 +147,18 @@ def _defense_factor(player: Player) -> float:
     clockwork_bonus = 0.04 * player.glyph_counts[GlyphFamily.CLOCKWORK]
     base = 1.0 + frost_bonus + clockwork_bonus
     # Survival upgrades add to max health which indirectly improves endurance;
-    # reflect that by scaling with remaining health ratio.
+    # reflect that by scaling with remaining health ratio and overall durability.
     endurance = player.health / max(1, player.max_health)
-    return base + 0.5 * endurance
+    health_scaler = max(1.0, player.max_health / 100.0)
+    result = (base + 0.5 * endurance) * health_scaler
+    return result * getattr(player, "defense_multiplier", 1.0)
 
 
 def _lifesteal_ratio(player: Player) -> float:
     sets_completed = player.glyph_sets_awarded[GlyphFamily.BLOOD]
     glyph_bonus = 0.01 * player.glyph_counts[GlyphFamily.BLOOD]
-    return 0.03 * sets_completed + glyph_bonus
+    relic_bonus = getattr(player, "lifesteal_bonus", 0.0)
+    return 0.03 * sets_completed + glyph_bonus + relic_bonus
 
 
 def _souls_from_enemies(enemies: Iterable[Enemy]) -> int:
@@ -233,6 +237,9 @@ class CombatResolver:
             pressure *= lane_multiplier * behavior_multiplier
             expected_damage = pressure * (duration / (duration + mitigation))
             damage_taken = int(expected_damage)
+            if player.max_health:
+                cap = int(player.max_health * 0.85)
+                damage_taken = min(damage_taken, cap)
 
             total_health += phase_health
             total_duration += duration
@@ -292,6 +299,9 @@ class CombatResolver:
         mitigation = _defense_factor(player)
         expected_damage = pressure * (duration / (duration + mitigation))
         damage_taken = int(expected_damage)
+        if player.max_health:
+            cap = int(player.max_health * 0.85)
+            damage_taken = min(damage_taken, cap)
 
         souls = _souls_from_enemies(enemy_list)
 

@@ -18,6 +18,7 @@
     "game.wave_incoming": "Oleada {number} con {count} enemigos.",
     "game.miniboss_incoming": "Minijefe {name} se aproxima!",
     "game.relic_acquired": "Reliquia obtenida: {name}.",
+    "game.relic_empowerment": "El poder de la reliquia aumenta: {name} otorga {description}.",
     "game.final_boss": "El jefe final {name} desciende para el último asalto.",
     "game.final_boss_generic": "Comienza la confrontación final.",
     "game.encounter_resolved": "{label} resuelto eliminando {count} enemigos en {duration:.1f}s.",
