@@ -10,8 +10,10 @@ from .game_state import GameEvent
 from .metrics import (
     AggregateMetrics,
     RunMetrics,
+    aggregate_by_hunter,
     aggregate_metrics,
     derive_metrics,
+    hunter_kpis,
     kpi_snapshot,
 )
 from .prototype import PrototypeTranscript
@@ -21,9 +23,11 @@ from .session import RunResult
 __all__ = [
     "AggregateMetrics",
     "RunMetrics",
+    "aggregate_by_hunter",
     "aggregate_metrics",
     "derive_metrics",
     "from_transcripts",
+    "hunter_kpis",
     "kpi_snapshot",
     "render_report",
 ]
@@ -58,6 +62,18 @@ def render_report(metrics: Sequence[RunMetrics]) -> str:
     ]
     for phase, share in summary.phase_distribution.items():
         lines.append(f"  Phase {phase}: {share:.2%}")
+
+    hunter_breakdown = aggregate_by_hunter(metrics)
+    if hunter_breakdown:
+        lines.append("Hunter Breakdown:")
+        for hunter_id, hunter_summary in hunter_breakdown.items():
+            lines.append(
+                "  "
+                + f"{hunter_id}: runs {hunter_summary.total_runs}, "
+                + f"survival {hunter_summary.survival_rate:.1%}, "
+                + f"avg duration {hunter_summary.average_duration:.1f}s, "
+                + f"avg sigils {hunter_summary.average_sigils:.1f}"
+            )
     return "\n".join(lines)
 
 

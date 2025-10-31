@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from statistics import mean, median
 from typing import Iterable, List, Mapping, MutableMapping, Optional, Sequence
@@ -192,10 +192,53 @@ def aggregate_metrics(metrics: Sequence[RunMetrics]) -> AggregateMetrics:
     )
 
 
+def aggregate_by_hunter(
+    metrics: Sequence[RunMetrics],
+    *,
+    include_unidentified: bool = False,
+    unidentified_key: str = "unknown",
+) -> Mapping[str, AggregateMetrics]:
+    """Group metrics by hunter identifier and aggregate each cohort."""
+
+    grouped: MutableMapping[str, List[RunMetrics]] = defaultdict(list)
+    for metric in metrics:
+        hunter_id = metric.hunter_id
+        if hunter_id is None:
+            if not include_unidentified:
+                continue
+            hunter_id = unidentified_key
+        grouped[hunter_id].append(metric)
+
+    aggregated: MutableMapping[str, AggregateMetrics] = {}
+    for hunter_id, entries in sorted(grouped.items()):
+        aggregated[hunter_id] = aggregate_metrics(entries)
+    return dict(aggregated)
+
+
 def kpi_snapshot(metrics: Sequence[RunMetrics]) -> Mapping[str, float]:
     """Return a JSON-friendly KPI snapshot."""
 
     summary = aggregate_metrics(metrics)
+    return _snapshot_from_summary(summary)
+
+
+def hunter_kpis(
+    metrics: Sequence[RunMetrics],
+    *,
+    include_unidentified: bool = False,
+    unidentified_key: str = "unknown",
+) -> Mapping[str, Mapping[str, float]]:
+    """Return KPI snapshots grouped by hunter."""
+
+    aggregated = aggregate_by_hunter(
+        metrics,
+        include_unidentified=include_unidentified,
+        unidentified_key=unidentified_key,
+    )
+    return {hunter: _snapshot_from_summary(summary) for hunter, summary in aggregated.items()}
+
+
+def _snapshot_from_summary(summary: AggregateMetrics) -> Mapping[str, float]:
     return {
         "total_runs": float(summary.total_runs),
         "survival_rate": summary.survival_rate,
@@ -246,9 +289,11 @@ def format_run_summary(metrics: RunMetrics) -> str:
 __all__ = [
     "AggregateMetrics",
     "RunMetrics",
+    "aggregate_by_hunter",
     "aggregate_metrics",
     "derive_metrics",
     "format_run_summary",
+    "hunter_kpis",
     "kpi_snapshot",
 ]
 

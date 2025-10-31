@@ -103,6 +103,8 @@ def test_from_transcripts_and_render_report(tmp_path: Path) -> None:
 
     report = analytics.render_report(metrics)
     assert "Nightfall Survivors Analytics Report" in report
+    assert "Hunter Breakdown:" in report
+    assert "hunter_mira" in report
 
     exit_code = analytics.main(["--json", str(path)])
     assert exit_code == 0
