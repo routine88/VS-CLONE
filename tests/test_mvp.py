@@ -66,3 +66,16 @@ def test_mvp_cli_invocation(capsys: pytest.CaptureFixture[str]) -> None:
     assert "Nightfall Survivors MVP Run" in captured
     assert "Event Log" in captured
 
+
+def test_mvp_cli_event_limit(capsys: pytest.CaptureFixture[str]) -> None:
+    exit_code = main(
+        ["--seed", "9", "--duration", "90", "--tick", "0.5", "--summary", "--events", "5"]
+    )
+    assert exit_code == 0
+
+    captured = capsys.readouterr().out
+    assert "Event Log (first 5 events):" in captured
+    event_lines = [line for line in captured.splitlines() if line.strip().startswith("-")]
+    assert len(event_lines) <= 5
+    assert event_lines, "Expected at least one event to be printed"
+

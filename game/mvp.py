@@ -342,6 +342,9 @@ def run_mvp_simulation(
     return simulation.run()
 
 
+DEFAULT_SUMMARY_EVENT_COUNT = 15
+
+
 def _format_report(report: MvpReport) -> str:
     enemies = ", ".join(f"{kind}: {count}" for kind, count in report.enemy_type_counts.items())
     upgrades = ", ".join(report.upgrades_applied) if report.upgrades_applied else "None"
@@ -380,6 +383,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Simulation tick rate in seconds.",
     )
     parser.add_argument("--summary", action="store_true", help="Print summary details after the run.")
+    parser.add_argument(
+        "--events",
+        type=int,
+        default=None,
+        help=(
+            "Number of event log entries to include when --summary is used. "
+            "Defaults to 15 and accepts 0 to skip the event log output."
+        ),
+    )
 
     args = parser.parse_args(argv)
 
@@ -387,14 +399,21 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         duration=args.duration if args.duration is not None else MvpConfig.duration,
         tick_rate=args.tick if args.tick is not None else MvpConfig.tick_rate,
     )
+    if args.events is not None and args.events < 0:
+        parser.error("--events must be zero or a positive integer")
+
     report = run_mvp_simulation(seed=args.seed, config=config)
     print(_format_report(report))
 
     if args.summary:
         print()
-        print("Event Log (first 15 events):")
-        for line in report.events[:15]:
-            print(f"  - {line}")
+        events_to_show = args.events if args.events is not None else DEFAULT_SUMMARY_EVENT_COUNT
+        if events_to_show == 0:
+            print("Event Log omitted by request.")
+        else:
+            print(f"Event Log (first {events_to_show} events):")
+            for line in report.events[:events_to_show]:
+                print(f"  - {line}")
 
     return 0
 
