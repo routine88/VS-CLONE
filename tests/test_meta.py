@@ -1,3 +1,5 @@
+import pytest
+
 from game.combat import CombatSummary
 from game.meta import (
     MetaProgressionSystem,
@@ -98,3 +100,25 @@ def test_unlock_requires_sufficient_sigils():
         pass
     else:
         raise AssertionError("expected spending to fail with insufficient sigils")
+
+
+def test_unlock_logging_tracks_requirements_and_progress():
+    ledger = SigilLedger()
+    system = MetaProgressionSystem(ledger=ledger)
+    result = _run_result(survived=True, relics=3, encounters=12, final_boss=True)
+
+    system.record_run(result)
+    system.unlock("hunter_lunara")
+
+    assert system.runs_recorded == 1
+    assert system.total_playtime == pytest.approx(result.duration)
+
+    log = system.unlock_log
+    assert len(log) == 1
+    entry = log[0]
+    assert entry.unlock_id == "hunter_lunara"
+    assert entry.run_index == 1
+    assert entry.total_playtime == pytest.approx(result.duration)
+    kinds = [status.requirement.kind for status in entry.requirements]
+    assert kinds == ["encounters"]
+    assert all(status.met for status in entry.requirements)

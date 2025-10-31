@@ -81,7 +81,9 @@ from .live_ops import (  # noqa: F401
 from .meta import (  # noqa: F401
     MetaProgressionSystem,
     MetaRequirement,
+    RequirementStatus,
     SigilLedger,
+    UnlockTelemetry,
     Unlockable,
     default_unlocks,
 )
