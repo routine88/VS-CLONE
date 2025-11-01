@@ -13,6 +13,7 @@ from .analytics import (  # noqa: F401
 from .audio import (  # noqa: F401
     AudioEngine,
     AudioFrame,
+    AudioManifest,
     MusicInstruction,
     MusicTrack,
     SoundClip,

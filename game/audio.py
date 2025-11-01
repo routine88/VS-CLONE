@@ -53,6 +53,40 @@ class AudioFrame:
     metadata: Mapping[str, object] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class AudioManifest:
+    """Serializable snapshot of the audio routing table."""
+
+    effects: Mapping[str, SoundClip]
+    music: Mapping[str, MusicTrack]
+    event_effects: Mapping[str, Sequence[str]]
+    event_music: Mapping[str, Sequence[str]]
+
+    def to_dict(self) -> Dict[str, object]:
+        """Return a JSON-serialisable representation of the manifest."""
+
+        return {
+            "effects": {
+                effect_id: {"path": clip.path, "volume": clip.volume}
+                for effect_id, clip in self.effects.items()
+            },
+            "music": {
+                track_id: {
+                    "path": track.path,
+                    "volume": track.volume,
+                    "loop": track.loop,
+                }
+                for track_id, track in self.music.items()
+            },
+            "event_effects": {
+                event: list(entries) for event, entries in self.event_effects.items()
+            },
+            "event_music": {
+                event: list(entries) for event, entries in self.event_music.items()
+            },
+        }
+
+
 class AudioEngine:
     """Lightweight router that maps gameplay events to audio instructions."""
 
@@ -122,6 +156,26 @@ class AudioEngine:
         self.register_effect(
             SoundClip(id="effects/enemy.spawn", path="audio/enemy_spawn.ogg", volume=0.55)
         )
+        self.register_effect(
+            SoundClip(id="effects/environment.hazard", path="audio/environment_hazard.ogg", volume=0.8)
+        )
+        self.register_effect(
+            SoundClip(id="effects/environment.salvage", path="audio/environment_salvage.ogg", volume=0.65)
+        )
+        self.register_effect(
+            SoundClip(
+                id="effects/environment.weather_change",
+                path="audio/environment_weather_change.ogg",
+                volume=0.7,
+            )
+        )
+        self.register_effect(
+            SoundClip(
+                id="effects/environment.weather_clear",
+                path="audio/environment_weather_clear.ogg",
+                volume=0.6,
+            )
+        )
         self.register_music(
             MusicTrack(id="music.dusk_theme", path="audio/music_dusk.ogg", volume=0.7, loop=True)
         )
@@ -174,6 +228,16 @@ class AudioEngine:
         self.bind_effect("run.final_boss_defeated", "effects/run.victory")
         self.bind_effect("accessibility.health.low", "effects/ui.prompt")
         self.bind_effect("accessibility.upgrade.prompt", "effects/ui.confirm")
+        self.bind_effect("environment.hazard", "effects/environment.hazard")
+        self.bind_effect("environment.salvage", "effects/environment.salvage")
+        self.bind_effect(
+            "environment.weather.change",
+            "effects/environment.weather_change",
+        )
+        self.bind_effect(
+            "environment.weather.clear",
+            "effects/environment.weather_clear",
+        )
         self.bind_music("music.start", "music.dusk_theme")
         self.bind_music("music.boss", "music.boss_theme")
 
@@ -208,9 +272,21 @@ class AudioEngine:
 
         return AudioFrame(time=time, effects=tuple(effects), music=tuple(music))
 
+    def build_manifest(self) -> AudioManifest:
+        """Return an :class:`AudioManifest` describing registered assets and routes."""
+
+        self.ensure_placeholders()
+        return AudioManifest(
+            effects=dict(self._effects),
+            music=dict(self._music),
+            event_effects={event: tuple(effects) for event, effects in self._event_effects.items()},
+            event_music={event: tuple(tracks) for event, tracks in self._event_music.items()},
+        )
+
 
 __all__ = [
     "AudioEngine",
+    "AudioManifest",
     "AudioFrame",
     "MusicInstruction",
     "MusicTrack",
