@@ -1,4 +1,7 @@
+import json
+
 from game.audio import AudioEngine, SoundClip
+from tools.audio_manifest import dump_manifest
 
 
 def test_audio_engine_placeholders_and_bindings():
@@ -20,3 +23,41 @@ def test_audio_engine_custom_bindings_override_defaults():
     audio.bind_effect("custom.event", "custom.clip")
     frame = audio.build_frame(["custom.event"], time=2.0)
     assert any(instr.clip.id == "custom.clip" for instr in frame.effects)
+
+
+def test_audio_engine_environment_audio_cues():
+    audio = AudioEngine()
+    frame = audio.build_frame(
+        [
+            "environment.hazard",
+            "environment.salvage",
+            "environment.weather.change",
+            "environment.weather.clear",
+        ],
+        time=3.0,
+    )
+    ids = {instruction.clip.id for instruction in frame.effects}
+    assert ids == {
+        "effects/environment.hazard",
+        "effects/environment.salvage",
+        "effects/environment.weather_change",
+        "effects/environment.weather_clear",
+    }
+
+
+def test_audio_manifest_export_includes_routes():
+    audio = AudioEngine()
+    manifest = audio.build_manifest().to_dict()
+
+    assert "effects/environment.hazard" in manifest["effects"]
+    assert "music.dusk_theme" in manifest["music"]
+    assert "environment.hazard" in manifest["event_effects"]
+    assert manifest["event_effects"]["environment.hazard"] == [
+        "effects/environment.hazard"
+    ]
+
+
+def test_audio_manifest_cli_dump_round_trip():
+    payload = dump_manifest()
+    data = json.loads(payload)
+    assert data["event_music"]["music.start"] == ["music.dusk_theme"]
