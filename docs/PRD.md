@@ -2,7 +2,7 @@
 
 ## 1. Overview
 - **Elevator Pitch:** Nightfall Survivors is a 2D side-scrolling horde survival action game where players battle waves of eldritch creatures, collect souls, and upgrade their hunter with branching abilities to survive until dawn.
-- **High-Level Concept:** Fast-paced auto-combat with strategic positioning. The player navigates procedurally stitched arenas, leveraging passive and active upgrades that stack into powerful synergies reminiscent of Vampire Survivors, but with a horizontal scrolling focus.
+- **High-Level Concept:** Fast-paced single-player auto-combat with strategic positioning. The player navigates procedurally stitched arenas, leveraging passive and active upgrades that stack into powerful synergies reminiscent of Vampire Survivors, but with a horizontal scrolling focus.
 - **Target Platforms:** Windows, macOS, and Linux (Steam release). Future stretch goals include handheld consoles.
 - **Game Engine:** Unity (C#) for production; prototype milestone may use an internal gameplay logic sandbox.
 
@@ -95,7 +95,7 @@
 - **Demo:** 10-minute run preview with two hunters.
 
 ## 12. Live Operations & Community
-- **Early Access Roadmap:** Quarterly content updates introducing new hunters, biomes, and glyph sets.
+- **Early Access Roadmap:** Quarterly content updates introducing new hunters, biomes, and glyph sets, with continued focus on the single-player experience.
 - **Events:** Seasonal events (Harvest Moon, Blood Eclipse) with time-limited challenges.
 - **Community Tools:** In-game challenge builder exporting shareable codes.
 
@@ -130,7 +130,7 @@
 - **Implementation Notes:** All numeric inputs clamp to their safe ranges, colorblind modes default back to `none` when an unknown value is supplied, and audio cues piggyback on existing prompt/confirm stingers so they remain informative even with placeholder assets.
 
 ## 16. Open Questions
-- Will co-op be in scope for Early Access? (TBD post vertical slice).
+- Multiplayer support (including co-op) is deferred; Early Access will remain single-player.
 - Playtest colorblind presets with external groups to validate glyph readability.
 - Decide on roguelite meta progression currency pacing.
 
