@@ -1,0 +1,11 @@
+{
+  "name": "Barricade Intact",
+  "width": 192,
+  "height": 128,
+  "description": "Whole barrier tile for the overworld blockout.",
+  "palette": ["#495057", "#adb5bd", "#ced4da"],
+  "notes": [
+    "Designed to pair with the broken barricade descriptor using the same footprint.",
+    "Artists can drop in a hand-painted barrier while keeping the 192x128 bounds."
+  ]
+}

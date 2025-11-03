@@ -1,0 +1,11 @@
+{
+  "name": "Projectile Placeholder",
+  "width": 32,
+  "height": 32,
+  "description": "Glow sprite used for temporary projectile visuals.",
+  "palette": ["#f4d35e", "#ee964b", "#0d3b66"],
+  "notes": [
+    "This 32x32 footprint is referenced by projectile collision tuning.",
+    "Replace with the final missile sprite while keeping the same bounds."
+  ]
+}

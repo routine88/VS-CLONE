@@ -51,6 +51,16 @@ from .graphics import (  # noqa: F401
     SceneNode,
     Sprite,
 )
+from .graphics_assets import (  # noqa: F401
+    LayerDefinition,
+    SpriteAssetManifest,
+    SpriteDefinition,
+    ensure_asset_layout,
+    load_asset_manifest,
+    read_png_dimensions,
+    read_texture_descriptor_dimensions,
+    read_texture_dimensions,
+)
 from .graphics_canvas import CanvasDrawable, CanvasTranslator  # noqa: F401
 from .mvp import (  # noqa: F401
     EnemyArchetype,

@@ -1,0 +1,11 @@
+{
+  "name": "Ability Icon - Dash",
+  "width": 96,
+  "height": 96,
+  "description": "UI icon placeholder for the dash ability slot.",
+  "palette": ["#00b4d8", "#90e0ef", "#caf0f8"],
+  "notes": [
+    "HUD layouts assume a square 96px icon canvas.",
+    "Swap this descriptor for exported UI art while keeping the same bounds."
+  ]
+}

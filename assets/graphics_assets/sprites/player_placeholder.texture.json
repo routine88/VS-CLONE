@@ -1,0 +1,11 @@
+{
+  "name": "Player Placeholder",
+  "width": 96,
+  "height": 96,
+  "description": "Hero silhouette that communicates the gameplay footprint until final art arrives.",
+  "palette": ["#577590", "#f7b267", "#f79d65"],
+  "notes": [
+    "The animation pivot and collider volumes assume a 96x96 canvas.",
+    "Update this descriptor after exporting a sprite sheet that preserves the same dimensions."
+  ]
+}

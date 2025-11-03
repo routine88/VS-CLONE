@@ -1,0 +1,11 @@
+{
+  "name": "Soul Pickup",
+  "width": 80,
+  "height": 80,
+  "description": "Collectible energy swirl placeholder.",
+  "palette": ["#00a896", "#02c39a", "#f0f3bd"],
+  "notes": [
+    "Spawn logic expects an 80x80 canvas for this pickup.",
+    "The descriptor can be replaced with a glow animation once final effects are available."
+  ]
+}
