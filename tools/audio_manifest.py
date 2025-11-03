@@ -1,4 +1,4 @@
-"""Export the audio routing manifest to aid external clients (e.g. Unity)."""
+"""Export the audio routing manifest to aid external clients of the runtime."""
 
 from __future__ import annotations
 

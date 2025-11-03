@@ -9,7 +9,7 @@ This roadmap translates the PRD milestones into concrete, trackable tasks.
   - [x] Text simulation of core loop (`game.prototype`)
   - [x] Interactive terminal slice (`game.interactive`)
   - [x] Graphics engine + placeholder pipeline (`game.graphics`, `tools.graphics_manifest`)
-  - [x] Unity bridge schema and exporter (`docs/UNITY_BRIDGE.md`, `game.export`)
+  - [x] Runtime bridge schema and exporter (`docs/ENGINE_RUNTIME.md`, `game.export`)
 
 - Vertical Slice (12 weeks)
   - [ ] Graveyard biome content pass (enemies, hazards, props)
@@ -17,7 +17,7 @@ This roadmap translates the PRD milestones into concrete, trackable tasks.
   - [ ] 4 weapons with upgrade tiers and glyph synergies
   - [x] MVP visualizer and viewer (`game.mvp_graphics`, `game.mvp_viewer`)
   - [ ] Audio cue table wired to events in viewer
-  - [ ] Asset drop-in parity for Unity stub scene
+  - [ ] Asset drop-in parity for runtime harness
 
 - Content Expansion (16 weeks)
   - [ ] Additional biomes (Abandoned Village, Moonlit Forest)
@@ -42,7 +42,7 @@ This roadmap translates the PRD milestones into concrete, trackable tasks.
 - [x] CI workflow for automated tests
 - [ ] Package metadata (`pyproject.toml`) and console scripts
 - [ ] Performance benchmarks and nightly run artifacts
-- [ ] Unity JSON exporter sample and import stub in engine repo
+- [ ] Runtime JSON exporter sample and ingestion stub in engine repo
 
 ## Art & Audio Intake
 

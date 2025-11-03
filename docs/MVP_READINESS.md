@@ -30,12 +30,12 @@ To reach a “controller-in-hand” prototype as quickly as possible, focus on t
    - Integrate debug overlays to monitor spawn rates and performance.
 
 6. **Rapid Build Pipeline**
-   - Establish a Unity prototype project with automated builds (editor play mode is acceptable for the MVP checkpoint).
+   - Stand up the in-house runtime harness with automated builds (a desktop harness is acceptable for the MVP checkpoint).
    - Daily smoke-test checklist covering input, spawning, upgrades, and failure condition.
 
 ## Next Tasks to Reach MVP State
-1. **Create Unity prototype project** configured with 2D URP template and repo structure for prototype scenes and scripts.
-2. **Implement player controller** handling movement, dash, health, and collision in the prototype scene.
+1. **Create runtime harness project** configured with our proprietary renderer template and repo structure for scenes and systems.
+2. **Implement player controller** handling movement, dash, health, and collision in the harness scene.
 3. **Set up enemy spawner** with two enemy prefabs, simple chase AI, and timed spawn escalation.
 4. **Add experience and upgrade flow** including soul shard pickups, XP thresholds, and one upgrade option UI.
 5. **Wire placeholder art/audio** leveraging simple sprites, tilemap background, and temporary sound cues.

@@ -12,13 +12,13 @@ Sprite resolution goes through `_resolve_sprite`, which first honours explicit s
 ## Integration points
 Gameplay systems (for example `ArcadeEngine`) produce `SceneNode` collections representing the current world state, then delegate to `GraphicsEngine.build_frame` to obtain a renderable frame. This bridge also positions the camera around the player and forwards gameplay messages for overlays.
 
-Downstream tooling such as the Unity bridge consumes the emitted JSON payload (sprites, transforms, metadata) to drive actual rendering in the target client.
+Downstream tooling such as the runtime bridge consumes the emitted JSON payload (sprites, transforms, metadata) to drive actual rendering in the target client.
 
 ## Validation
 Unit tests exercise animation selection, placeholder resolution, and integration with the interactive prototype, demonstrating the intended behaviours and providing a safety net for future changes.
 
 ## 2D asset requirements
-The following assets should be delivered into an upcoming `assets/graphics_assets` directory. Keep pivots consistent so the prototype and Unity bridge align on positioning.
+The following assets should be delivered into an upcoming `assets/graphics_assets` directory. Keep pivots consistent so the prototype and runtime bridge align on positioning.
 
 | Asset ID | Purpose | Texture Path | Dimensions (px) | Shape & Notes | Pivot | Animation Guidance |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -39,7 +39,7 @@ The following assets should be delivered into an upcoming `assets/graphics_asset
 - Ensure animation frame counts match durations specified in code (two-frame run loops and three-frame effects work best for MVP).
 
 ### Asset manifest tooling
-Run `python -m tools.graphics_manifest` to print the current manifest as JSON. Pass `--output path/to/file.json` to save it for art or Unity teams.
+Run `python -m tools.graphics_manifest` to print the current manifest as JSON. Pass `--output path/to/file.json` to share with art or runtime teams.
 
 The same CLI also supports `--format markdown`, which emits the high-level asset brief consumed by AI concept pipelines. The checked-in `docs/GRAPHICS_ASSET_BRIEF.md` file is regenerated with:
 
