@@ -21,15 +21,15 @@ Actionable tasks to reach a playable, controller-in-hand MVP slice.
 - [x] Text simulation CLI (`game.prototype`)
 - [x] Interactive terminal slice (`game.interactive`)
 - [x] MVP viewer with Tk (`game.mvp_viewer`)
-- [x] Unity export payloads (`game.export`)
+- [x] Runtime export payloads (`game.export`)
 - [x] Windows launchers (`LAUNCHMVP.bat`, `RUN_*` scripts)
 - [x] Test suite green locally
 - [ ] CI green on pushes/PRs
 
-## Unity Prototype (External Repo)
+## Runtime Harness (External Repo)
 
-- [ ] URP 2D project seeded with placeholder scene
-- [ ] JSON importer for `UnityFrameExporter` payloads
+- [ ] Renderer project seeded with placeholder scene
+- [ ] JSON importer for `EngineFrameExporter` payloads
 - [ ] Sprite/audio lookup maps for placeholder assets
 - [ ] Playback loop that applies frames deterministically
 

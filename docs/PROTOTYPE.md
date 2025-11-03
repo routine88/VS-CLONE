@@ -1,7 +1,7 @@
 # Nightfall Survivors Text Prototype
 
 The Python logic stack now ships with a small text-mode harness so designers can
-prototype Nightfall Survivors runs without waiting for the Unity client. The
+prototype Nightfall Survivors runs without waiting for the in-house runtime. The
 entrypoint can be executed directly from the repository root:
 
 ```bash
@@ -100,7 +100,7 @@ python -m game.challenges --decode NSC1-...
 
 Codes capture run seeds, optional duration overrides, difficulty labels,
 modifiers, and curated reward or restriction lists so designers can circulate
-weekly challenge briefs before the Unity client is playable.
+weekly challenge briefs before the in-house runtime is playable.
 
 ## Transcript Export & Analytics
 
@@ -132,7 +132,7 @@ runs to get an immediate pulse on performance without leaving the terminal.
 ## Steam Cloud Simulation
 
 A lightweight Steam Cloud façade is available to sync encrypted saves between
-machines while the Unity client is under construction. Upload your local save
+machines while the in-house runtime is under construction. Upload your local save
 into a named slot:
 
 ```bash
@@ -167,13 +167,13 @@ store.purchase("dlc_founders", wallet, inventory)
 inventory.equip(next(item for item in store.get_pack("dlc_founders").items if item.category == "hunter_skin"))
 ```
 
-Equipped cosmetics flow into the profile so future runs and the Unity client can
+Equipped cosmetics flow into the profile so future runs and the runtime client can
 reflect owned skins and VFX.
 
 ## Steam Cloud Simulation
 
 A lightweight Steam Cloud façade is available to sync encrypted saves between
-machines while the Unity client is under construction. Upload your local save
+machines while the runtime client is under construction. Upload your local save
 into a named slot:
 
 ```bash
@@ -208,7 +208,7 @@ store.purchase("dlc_founders", wallet, inventory)
 inventory.equip(next(item for item in store.get_pack("dlc_founders").items if item.category == "hunter_skin"))
 ```
 
-Equipped cosmetics flow into the profile so future runs and the Unity client can
+Equipped cosmetics flow into the profile so future runs and the runtime client can
 reflect owned skins and VFX.
 
 ## Arcade Playable Prototype
@@ -244,14 +244,14 @@ feedback on how mixed-lane waves tax the player.
 
 Enemy spawns escalate with time, use the full enemy library, and award souls to
 drive level-ups. The UI renders health, phase, XP, and upgrade prompts so
-playtesters can exercise the core loop before the Unity client lands.
+playtesters can exercise the core loop before the runtime client lands.
 
 ## Audio Routing Bridge
 
 `game.audio` mirrors the graphics bridge by emitting sound and music cues for
 each frame. The `AudioEngine` class ships with placeholder assets, event
-bindings, and a simple state tracker so downstream presenters (whether Pygame,
-Unity, or middleware like FMOD) can translate gameplay events into audible
+bindings, and a simple state tracker so downstream presenters (whether Pygame or
+middleware like FMOD) can translate gameplay events into audible
 feedback:
 
 ```python
@@ -267,6 +267,6 @@ audio_frame = engine.build_audio_frame(audio, snapshot=snapshot)
 
 `audio_frame.effects` lists the triggered sound effects (level-up stings,
 weapon fire, victory cues), while `audio_frame.music` surfaces play/refresh
-instructions for the looping dusk and boss themes. As the Unity client comes
+instructions for the looping dusk and boss themes. As the runtime client comes
 online, the same cues can be wired into actual assets without rewriting the
 gameplay loop.

@@ -1,10 +1,16 @@
-# Unity Bridge Integration Blueprint
+# In-House Engine Runtime Blueprint
+
+The Nightfall Survivors runtime consumes JSON frame bundles emitted by the Python
+sandbox so that content and simulation code can be exercised before native
+rendering systems are complete. This document captures the contract between the
+prototype (`game.export.EngineFrameExporter`) and the bespoke renderer.
 
 ## Frame Payload Catalog
 
 ### Render Frames
 
-Render frames originate from `game.graphics.GraphicsEngine.build_frame` and carry all data required for sprite-based rendering.
+Render frames originate from `game.graphics.GraphicsEngine.build_frame` and
+carry all data required for sprite-based rendering.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -39,7 +45,8 @@ A sprite descriptor resolves as:
 
 ### Audio Frames
 
-Audio frames are produced by `game.audio.AudioEngine.build_audio_frame` and represent all sound actions for a tick.
+Audio frames are produced by `game.audio.AudioEngine.build_audio_frame` and
+represent all sound actions for a tick.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -61,7 +68,7 @@ Music instructions expand to:
 | Field | Type | Description |
 | --- | --- | --- |
 | `track` | `TrackDescriptor \| null` | Target music track; `null` for stop commands. |
-| `action` | `str` | `"play"`, `"refresh"`, `"stop"`, etc., telling Unity how to update state. |
+| `action` | `str` | `"play"`, `"refresh"`, `"stop"`, etc., telling the runtime how to update state. |
 | `volume` | `float \| null` | Optional override for track volume. |
 
 Clip and track descriptors map directly to registered assets:
@@ -75,26 +82,48 @@ Clip and track descriptors map directly to registered assets:
 
 ## Serialization Strategy
 
-1. **Structure Preservation** – The exporter mirrors the dataclass layout while converting tuples to lists and dataclass objects to plain dictionaries so Unity can decode the payload with `JsonUtility` or a custom reader.
-2. **Deterministic Keys** – Sorting dictionary keys in JSON output ensures diff-friendly payloads and consistent hashing for network transport.
-3. **Extensibility** – Metadata blobs remain dictionaries so gameplay teams can add fields without changing the contract, while consumers should ignore unknown keys.
+1. **Structure Preservation** – The exporter mirrors the dataclass layout while
+   converting tuples to lists and dataclass objects to plain dictionaries so
+   native readers can decode the payload with minimal ceremony.
+2. **Deterministic Keys** – Sorting dictionary keys in JSON output ensures
+   diff-friendly payloads and consistent hashing for network transport.
+3. **Extensibility** – Metadata blobs remain dictionaries so gameplay teams can
+   add fields without changing the contract, while consumers should ignore
+   unknown keys.
 
 ## Asset Mapping
 
-- Maintain a central lookup table that maps sprite `id` values to Unity `Sprite` or `Texture2D` assets and audio identifiers to `AudioClip` objects.
-- Use the `texture`/`path` strings as fallback resource locations when the identifier is unknown, enabling rapid iteration without strict asset bundles.
-- Populate placeholder assets mirroring the prototype defaults (`placeholders/player`, `effects/ui.confirm`, etc.) so early integration keeps parity even before final content is authored.
+- Maintain a central lookup table that maps sprite `id` values to renderer
+  sprite objects and audio identifiers to `Sound`/`Music` instances.
+- Use the `texture`/`path` strings as fallback resource locations when the
+  identifier is unknown, enabling rapid iteration without strict asset bundles.
+- Populate placeholder assets mirroring the prototype defaults
+  (`placeholders/player`, `effects/ui.confirm`, etc.) so early integration keeps
+  parity even before final content is authored.
 
 ## Update Loop Integration
 
-1. **Frame Polling** – Fetch synchronized render and audio JSON blobs once per Unity frame. Deserialize into lightweight DTOs.
-2. **Graphics Application** – Iterate `instructions`, resolve sprites via the lookup table, and spawn or reuse pooled `GameObject` instances. Apply `position`, `scale`, `rotation`, and flip flags (by adjusting local scale) before rendering.
-3. **Audio Routing** – For each effect instruction, request the associated `AudioClip` from the asset map and play it via an audio pool. Inspect music instructions to start, refresh, or fade tracks using Unity's `AudioSource` components.
-4. **Messaging Hooks** – Surface `messages` in debug overlays or logs to match prototype tooling.
-5. **Loopback Telemetry** – When Unity determines the frame is fully applied, send acknowledgements or performance metrics back to the prototype if required to keep the simulation authoritative.
+1. **Frame Polling** – Fetch synchronized render and audio JSON blobs once per
+   runtime frame. Deserialize into lightweight DTOs.
+2. **Graphics Application** – Iterate `instructions`, resolve sprites via the
+   lookup table, and spawn or reuse pooled render objects. Apply `position`,
+   `scale`, `rotation`, and flip flags (by adjusting local scale) before
+   rendering.
+3. **Audio Routing** – For each effect instruction, request the associated
+   audio clip from the asset map and play it via an audio pool. Inspect music
+   instructions to start, refresh, or fade tracks using the runtime's audio
+   mixer.
+4. **Messaging Hooks** – Surface `messages` in debug overlays or logs to match
+   prototype tooling.
+5. **Loopback Telemetry** – Send acknowledgements or performance metrics back to
+   the simulation if required to keep the Python sandbox authoritative.
 
 ## Testing with the Prototype Exporter
 
-- Use `game.export.UnityFrameExporter` to generate JSON payloads for render and audio frames.
-- Validate the structure through unit tests or editor scripts before wiring into gameplay scenes.
-- The included Unity stub validator in the test suite demonstrates the minimal requirements Unity must satisfy to consume the payload without schema mismatches.
+- Use `game.export.EngineFrameExporter` to generate JSON payloads for render and
+  audio frames.
+- Validate the structure through unit tests or runtime harnesses before wiring
+  into gameplay scenes.
+- The included runtime stub validator in the Python test suite demonstrates the
+  minimal requirements consumers must satisfy to ingest the payload without
+  schema mismatches.

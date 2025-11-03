@@ -1,12 +1,12 @@
 import json
 
 from game.audio import AudioEngine
-from game.export import UnityFrameExporter
+from game.export import EngineFrameExporter
 from game.graphics import GraphicsEngine, SceneNode, Sprite
 
 
-class UnityFrameStub:
-    """Minimal Unity-side expectations for exported payloads."""
+class RuntimeFrameStub:
+    """Minimal runtime-side expectations for exported payloads."""
 
     def validate_render(self, payload):
         assert set(payload.keys()) == {"time", "viewport", "messages", "instructions"}
@@ -81,18 +81,18 @@ def make_audio_frame():
 
 def test_render_export_serialises_payload():
     frame = make_render_frame()
-    exporter = UnityFrameExporter()
+    exporter = EngineFrameExporter()
     payload = exporter.render_payload(frame)
-    stub = UnityFrameStub()
+    stub = RuntimeFrameStub()
     stub.validate_render(payload)
     assert json.loads(exporter.render_json(frame)) == payload
 
 
 def test_audio_export_serialises_payload():
     frame = make_audio_frame()
-    exporter = UnityFrameExporter()
+    exporter = EngineFrameExporter()
     payload = exporter.audio_payload(frame)
-    stub = UnityFrameStub()
+    stub = RuntimeFrameStub()
     stub.validate_audio(payload)
     assert json.loads(exporter.audio_json(frame)) == payload
 
@@ -100,8 +100,8 @@ def test_audio_export_serialises_payload():
 def test_bundle_export_matches_unity_stub():
     render_frame = make_render_frame()
     audio_frame = make_audio_frame()
-    exporter = UnityFrameExporter()
+    exporter = EngineFrameExporter()
     payload = exporter.frame_bundle(render_frame=render_frame, audio_frame=audio_frame)
-    stub = UnityFrameStub()
+    stub = RuntimeFrameStub()
     stub.validate_bundle(payload)
     assert json.loads(exporter.bundle_json(render_frame=render_frame, audio_frame=audio_frame)) == payload

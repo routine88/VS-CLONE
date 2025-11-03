@@ -20,12 +20,14 @@ See `docs/GIT_SETUP.md` for instructions on configuring Git so you can pull and 
   - Windows works without curses; on other platforms install `curses` if needed.
 - Graphical MVP Viewer (Tkinter):
   - `python -m game.mvp_viewer --duration 120 --playback 1.25`
+- Arcade Prototype Viewer (Tkinter):
+  - `python -m game.arcade_viewer --duration 180 --fps 45 --playback 1.0`
 
-## Unity Bridge Export
+## Runtime Frame Export
 
-- Export render/audio payloads for Unity integration using the CLI in `tools`:
+- Export render/audio payloads for the in-house runtime using the CLI in `tools`:
   - `python -m tools.graphics_manifest --format json > manifest.json`
-  - `python -m tools.export_unity_frames --frames 120 --output exports/mvp_frames.jsonl`
+  - `python -m tools.export_runtime_frames --frames 120 --output exports/mvp_frames.jsonl`
 
 ## Developer Workflow
 

@@ -19,7 +19,7 @@ from .audio import (  # noqa: F401
     SoundClip,
     SoundInstruction,
 )
-from .export import UnityFrameExporter  # noqa: F401
+from .export import EngineFrameExporter  # noqa: F401
 from .challenges import (  # noqa: F401
     ChallengeConfig,
     build_config,
@@ -51,6 +51,7 @@ from .graphics import (  # noqa: F401
     SceneNode,
     Sprite,
 )
+from .graphics_canvas import CanvasDrawable, CanvasTranslator  # noqa: F401
 from .mvp import (  # noqa: F401
     EnemyArchetype,
     MvpConfig,
@@ -65,11 +66,12 @@ from .mvp_graphics import (  # noqa: F401
     MvpVisualSettings,
     MvpVisualizer,
 )
-from .mvp_viewer import (  # noqa: F401
-    CanvasDrawable,
-    CanvasTranslator,
-    MvpViewerApp,
-    run_viewer,
+from .mvp_viewer import MvpViewerApp, run_viewer  # noqa: F401
+from .arcade_viewer import (  # noqa: F401
+    ArcadeVisualizationResult,
+    ArcadeVisualizer,
+    ArcadeViewerApp,
+    run_arcade_viewer,
 )
 from .game_state import GameState  # noqa: F401
 from .live_ops import (  # noqa: F401

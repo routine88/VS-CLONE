@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-"""CLI: export MVP render/audio frames as Unity-friendly JSON bundles.
+"""CLI: export MVP render/audio frames as runtime-friendly JSON bundles.
 
-Writes one JSON object per line (JSONL) so downstream tools can stream frames.
+Writes one JSON object per line (JSONL) so the in-house engine can stream frames.
 """
 
 import argparse
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
-from game.export import UnityFrameExporter
+from game.export import EngineFrameExporter
 from game.mvp_graphics import MvpVisualizer
 from game.mvp import MvpConfig
 
@@ -17,7 +17,7 @@ from game.mvp import MvpConfig
 def _iter_frame_bundles(*, seed: Optional[int], cfg: MvpConfig):
     vis = MvpVisualizer()
     result = vis.run(seed=seed, config=cfg)
-    exporter = UnityFrameExporter()
+    exporter = EngineFrameExporter()
     if len(result.frames) != len(result.audio_frames):
         raise RuntimeError(
             "render/audio frame count mismatch: "
@@ -28,7 +28,9 @@ def _iter_frame_bundles(*, seed: Optional[int], cfg: MvpConfig):
 
 
 def _parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Export MVP frames to JSONL for Unity integration.")
+    p = argparse.ArgumentParser(
+        description="Export MVP frames to JSONL for the in-house runtime integration."
+    )
     p.add_argument("--seed", type=int, help="Random seed for deterministic runs.")
     p.add_argument("--frames", type=int, default=300, help="Max frames to export (default: 300).")
     p.add_argument("--duration", type=float, help="Override simulation duration (seconds).")

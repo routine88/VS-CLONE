@@ -1,4 +1,4 @@
-"""Utilities for exporting prototype frames to JSON for Unity integration."""
+"""Utilities for exporting prototype frames to JSON for the in-house runtime."""
 
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ from .audio import AudioFrame, MusicInstruction, SoundInstruction
 from .graphics import RenderFrame, RenderInstruction, Sprite
 
 
-class UnityFrameExporter:
-    """Serialize render and audio frames into Unity-friendly JSON payloads."""
+class EngineFrameExporter:
+    """Serialize render and audio frames into runtime-friendly JSON payloads."""
 
     def render_payload(self, frame: RenderFrame) -> Dict[str, Any]:
         """Return a JSON-serialisable dict describing a :class:`RenderFrame`."""
@@ -64,7 +64,11 @@ class UnityFrameExporter:
     ) -> str:
         """Dump the combined render/audio payload to JSON."""
 
-        return json.dumps(self.frame_bundle(render_frame=render_frame, audio_frame=audio_frame), sort_keys=sort_keys, separators=(",", ":"))
+        return json.dumps(
+            self.frame_bundle(render_frame=render_frame, audio_frame=audio_frame),
+            sort_keys=sort_keys,
+            separators=(",", ":"),
+        )
 
     def _render_instruction_payload(self, instruction: RenderInstruction) -> Dict[str, Any]:
         return {
@@ -130,4 +134,4 @@ class UnityFrameExporter:
         return payload
 
 
-__all__ = ["UnityFrameExporter"]
+__all__ = ["EngineFrameExporter"]
