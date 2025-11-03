@@ -4,7 +4,7 @@
 - **Elevator Pitch:** Nightfall Survivors is a 2D side-scrolling horde survival action game where players battle waves of eldritch creatures, collect souls, and upgrade their hunter with branching abilities to survive until dawn.
 - **High-Level Concept:** Fast-paced single-player auto-combat with strategic positioning. The player navigates procedurally stitched arenas, leveraging passive and active upgrades that stack into powerful synergies reminiscent of Vampire Survivors, but with a horizontal scrolling focus.
 - **Target Platforms:** Windows, macOS, and Linux (Steam release). Future stretch goals include handheld consoles.
-- **Game Engine:** Unity (C#) for production; prototype milestone may use an internal gameplay logic sandbox.
+- **Game Engine:** Proprietary in-house 2D engine with full directional (up/down/left/right/diagonal) support; existing sandbox prototypes inform implementation.
 
 ## 2. Objectives & Success Metrics
 - **Primary Objective:** Deliver a compelling 20-30 minute survival session with escalating tension and replayable upgrade builds.
@@ -83,10 +83,11 @@
 - **Audio:** Adaptive synth-wave soundtrack, layered enemy FX, responsive hit cues, accessibility toggles.
 
 ## 10. Technical Requirements
-- **Engine:** Unity 2022 LTS, URP.
+- **Engine:** Custom in-house 2D rendering and simulation stack built for Nightfall Survivors. Core capabilities must include orthogonal and diagonal movement, sprite batching, particle effects, and extensible shader-like post-processing hooks.
+- **Tooling & Pipeline:** Integrated asset import/export pipeline shared with prototype sandbox to minimize rework, plus automated regression scenes for diagonal movement and particle timing.
 - **Multiplatform Build Targets:** PC first, future mobile in evaluation.
 - **Save System:** Encrypted JSON with cloud sync via Steam.
-- **Performance Targets:** 60 FPS on low-spec laptops (GTX 1050 equivalent).
+- **Performance Targets:** 60 FPS on low-spec laptops (GTX 1050 equivalent) within the proprietary renderer.
 - **Localization:** English at launch; support for subtitles and UI strings localization ready.
 
 ## 11. Monetization & Pricing
@@ -103,6 +104,7 @@
 | Milestone | Duration | Deliverables |
 |-----------|----------|--------------|
 | Concept Validation | 4 weeks | Paper design, graybox prototype of movement/combat. |
+| Engine Foundations | 8 weeks | Build proprietary 2D engine core (renderer, input pipeline, content tooling) and validate diagonal movement fidelity. |
 | Vertical Slice | 12 weeks | Playable graveyard biome, 2 hunters, 4 weapons, core upgrade loop. |
 | Content Expansion | 16 weeks | Additional biomes, weapons, enemy variants, meta progression systems. |
 | Polish & Launch Prep | 8 weeks | Optimization, QA, localization, marketing assets. |
@@ -110,6 +112,7 @@
 
 ## 14. Risks & Mitigations
 - **Scope Creep:** Prioritize vertical slice; use modular content pipeline.
+- **In-house Engine Maturity:** Dedicate engine QA milestones and cross-discipline reviews to ensure parity with prototype feel and avoid regressions.
 - **Replayability Burnout:** Invest in glyph synergy system and dynamic events.
 - **Technical Debt:** Establish code standards, weekly refactor windows.
 
@@ -133,4 +136,5 @@
 - Multiplayer support (including co-op) is deferred; Early Access will remain single-player.
 - Playtest colorblind presets with external groups to validate glyph readability.
 - Decide on roguelite meta progression currency pacing.
+- Finalize tooling pipeline and language stack for the proprietary 2D engine and editor extensions.
 
