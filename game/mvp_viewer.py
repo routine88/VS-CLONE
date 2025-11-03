@@ -6,9 +6,10 @@ import argparse
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Mapping, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence
 
 from .graphics import RenderFrame
+from .graphics_canvas import CanvasDrawable, CanvasTranslator
 from .mvp import MvpConfig, MvpReport
 from .mvp_graphics import MvpVisualizationResult, MvpVisualizer
 
@@ -19,55 +20,6 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency on some pl
 
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class CanvasDrawable:
-    """Simple drawing instruction for the Tkinter canvas."""
-
-    kind: str
-    bounds: Tuple[float, float, float, float]
-    color: str
-    metadata: Mapping[str, object]
-
-
-class CanvasTranslator:
-    """Translate render instructions into canvas-friendly drawables."""
-
-    def __init__(self, *, palette: Optional[Mapping[str, str]] = None) -> None:
-        default_palette = {
-            "background": "#0c0f1e",
-            "player": "#57d9ff",
-            "enemy": "#ff7676",
-            "projectile": "#ffe066",
-            "ui": "#9fa6c2",
-        }
-        self.palette = dict(default_palette)
-        if palette:
-            self.palette.update(palette)
-
-    def translate(self, frame: RenderFrame) -> Sequence[CanvasDrawable]:
-        drawables: List[CanvasDrawable] = []
-        for instruction in frame.instructions:
-            kind = str(instruction.metadata.get("kind", "sprite"))
-            width = instruction.sprite.size[0] * instruction.scale
-            height = instruction.sprite.size[1] * instruction.scale
-            x, y = instruction.position
-            left = x - width * 0.5
-            top = y - height * 0.5
-            right = x + width * 0.5
-            bottom = y + height * 0.5
-            color = self.palette.get(kind, "#9aa1bd")
-            drawables.append(
-                CanvasDrawable(
-                    kind=kind,
-                    bounds=(left, top, right, bottom),
-                    color=color,
-                    metadata=instruction.metadata,
-                )
-            )
-        return tuple(drawables)
-
 
 class MvpViewerApp:
     """Tkinter viewer that replays MVP simulation frames."""
