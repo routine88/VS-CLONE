@@ -1,0 +1,11 @@
+{
+  "name": "Hit Flash",
+  "width": 96,
+  "height": 96,
+  "description": "Radial burst shown when enemies take damage.",
+  "palette": ["#ffba08", "#faa307", "#6a040f"],
+  "notes": [
+    "This effect overlays the player and enemies so the square canvas simplifies blending.",
+    "Replace with hand-drawn frames when final VFX arrive, ensuring the footprint remains 96x96."
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Experience Bar",
+  "width": 512,
+  "height": 64,
+  "description": "HUD progress bar placeholder for player experience.",
+  "palette": ["#495867", "#577399", "#bdd5ea"],
+  "notes": [
+    "The UI layout engine anchors this bar to a 512x64 rectangle.",
+    "Replace this descriptor with final UI art or an SVG export that fits the same region."
+  ]
+}

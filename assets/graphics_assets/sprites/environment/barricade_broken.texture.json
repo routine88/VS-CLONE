@@ -1,0 +1,11 @@
+{
+  "name": "Barricade Broken",
+  "width": 192,
+  "height": 128,
+  "description": "Destroyed barrier tile for the overworld blockout.",
+  "palette": ["#6d6875", "#b5838d", "#e5989b"],
+  "notes": [
+    "Environment kits snap these barricades on a 64px grid; maintain the 192x128 canvas.",
+    "Replace with a detailed asset or tile strip while keeping bounding dimensions."
+  ]
+}

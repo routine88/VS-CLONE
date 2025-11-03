@@ -1,0 +1,16 @@
+{
+  "name": "Missing Texture",
+  "width": 64,
+  "height": 64,
+  "description": "Fallback checkerboard used when a sprite texture cannot be located.",
+  "palette": ["#3c1053", "#df6589"],
+  "pattern": [
+    "ABABABAB",
+    "BABABABA",
+    "ABABABAB",
+    "BABABABA"
+  ],
+  "notes": [
+    "Replace this descriptor with a production-ready texture that keeps the 64x64 footprint."
+  ]
+}

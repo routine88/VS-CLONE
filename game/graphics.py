@@ -259,7 +259,7 @@ class GraphicsEngine:
         seed_sprites = (
             Sprite(
                 id=self._fallback_sprite_id,
-                texture="sprites/missing.png",
+                texture="sprites/missing.texture.json",
                 size=(64, 64),
                 pivot=(0.5, 0.5),
                 display_name="Missing Asset Placeholder",
@@ -274,7 +274,7 @@ class GraphicsEngine:
             ),
             Sprite(
                 id="placeholders/player",
-                texture="sprites/player_placeholder.png",
+                texture="sprites/player_placeholder.texture.json",
                 size=(96, 96),
                 display_name="Hunter Vanguard Placeholder",
                 role="Player character stand-in",
@@ -296,7 +296,7 @@ class GraphicsEngine:
             ),
             Sprite(
                 id="placeholders/enemy",
-                texture="sprites/enemy_placeholder.png",
+                texture="sprites/enemy_placeholder.texture.json",
                 size=(96, 96),
                 display_name="Cultist Brute Placeholder",
                 role="Enemy stand-in",
@@ -318,7 +318,7 @@ class GraphicsEngine:
             ),
             Sprite(
                 id="placeholders/projectile",
-                texture="sprites/projectile_placeholder.png",
+                texture="sprites/projectile_placeholder.texture.json",
                 size=(32, 32),
                 display_name="Arc Bolt Placeholder",
                 role="Projectile stand-in",
@@ -336,7 +336,7 @@ class GraphicsEngine:
             ),
             Sprite(
                 id="placeholders/background",
-                texture="sprites/background_placeholder.png",
+                texture="sprites/background_placeholder.texture.json",
                 size=(1280, 720),
                 pivot=(0.0, 0.0),
                 display_name="Neon Graveyard Backdrop",
@@ -360,7 +360,7 @@ class GraphicsEngine:
             ),
             Sprite(
                 id="sprites/ui/health_orb",
-                texture="sprites/ui/health_orb.png",
+                texture="sprites/ui/health_orb.texture.json",
                 size=(64, 64),
                 display_name="HUD Health Orb",
                 role="UI health indicator",
@@ -382,7 +382,7 @@ class GraphicsEngine:
             ),
             Sprite(
                 id="sprites/ui/experience_bar",
-                texture="sprites/ui/experience_bar.png",
+                texture="sprites/ui/experience_bar.texture.json",
                 size=(512, 64),
                 pivot=(0.0, 0.5),
                 display_name="HUD Experience Bar",
@@ -405,7 +405,7 @@ class GraphicsEngine:
             ),
             Sprite(
                 id="sprites/ui/ability_icon_dash",
-                texture="sprites/ui/ability_icon_dash.png",
+                texture="sprites/ui/ability_icon_dash.texture.json",
                 size=(96, 96),
                 display_name="Ability Icon - Dash",
                 role="UI ability icon",
@@ -427,7 +427,7 @@ class GraphicsEngine:
             ),
             Sprite(
                 id="sprites/effects/dash_trail",
-                texture="sprites/effects/dash_trail.png",
+                texture="sprites/effects/dash_trail.texture.json",
                 size=(128, 64),
                 pivot=(0.2, 0.5),
                 display_name="Dash Trail",
@@ -449,7 +449,7 @@ class GraphicsEngine:
             ),
             Sprite(
                 id="sprites/effects/hit_flash",
-                texture="sprites/effects/hit_flash.png",
+                texture="sprites/effects/hit_flash.texture.json",
                 size=(96, 96),
                 display_name="Hit Flash",
                 role="Damage feedback VFX",
@@ -468,7 +468,7 @@ class GraphicsEngine:
             ),
             Sprite(
                 id="sprites/effects/soul_pickup",
-                texture="sprites/effects/soul_pickup.png",
+                texture="sprites/effects/soul_pickup.texture.json",
                 size=(80, 80),
                 display_name="Soul Shard Pickup",
                 role="Collectible VFX",
@@ -486,7 +486,7 @@ class GraphicsEngine:
             ),
             Sprite(
                 id="sprites/environment/barricade_intact",
-                texture="sprites/environment/barricade_intact.png",
+                texture="sprites/environment/barricade_intact.texture.json",
                 size=(192, 128),
                 display_name="Gravestone Barricade - Intact",
                 role="Breakable obstacle",
@@ -508,7 +508,7 @@ class GraphicsEngine:
             ),
             Sprite(
                 id="sprites/environment/barricade_broken",
-                texture="sprites/environment/barricade_broken.png",
+                texture="sprites/environment/barricade_broken.texture.json",
                 size=(192, 128),
                 display_name="Gravestone Barricade - Broken",
                 role="Breakable obstacle debris",
@@ -549,6 +549,11 @@ class GraphicsEngine:
     @property
     def viewport(self) -> Tuple[int, int]:
         return self._viewport
+
+    def set_viewport(self, viewport: Tuple[int, int]) -> None:
+        """Override the active viewport dimensions."""
+
+        self._viewport = viewport
 
     def register_sprite(self, sprite: Sprite) -> None:
         self._sprites[sprite.id] = sprite

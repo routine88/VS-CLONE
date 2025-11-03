@@ -1,0 +1,11 @@
+{
+  "name": "Enemy Placeholder",
+  "width": 96,
+  "height": 96,
+  "description": "Simple enemy silhouette used during gameplay prototyping.",
+  "palette": ["#9b2226", "#0a0908", "#f2f4f3"],
+  "notes": [
+    "Maintain the 96x96 canvas so hurtboxes and projectile logic stay aligned.",
+    "Swap this file with production art when ready; the manifest pivot values are already tuned."
+  ]
+}

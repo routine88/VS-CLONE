@@ -3,9 +3,14 @@
 Comprehensive requirements for 2D art assets referenced by the simulation graphics engine.
 Each section lists the context needed for concept and production teams as well as AI image generation pipelines.
 
+> Placeholder textures are committed as `.texture.json` descriptors so the
+> repository remains review-friendly on GitHub. Swap each entry to point at a
+> rendered PNG (or equivalent runtime format) once production art is ready,
+> keeping the documented canvas dimensions and pivots intact.
+
 ## Missing Asset Placeholder (`__fallback__`)
 
-- **Texture path**: `sprites/missing.png`
+- **Texture path**: `sprites/missing.texture.json`
 - **Display size**: 64 × 64 px (pivot 0.50, 0.50)
 - **Purpose**: Fallback / debug
 - **Description**: High-contrast error tile shown whenever an expected sprite is absent.
@@ -19,7 +24,7 @@ Each section lists the context needed for concept and production teams as well a
 
 ## Neon Graveyard Backdrop (`placeholders/background`)
 
-- **Texture path**: `sprites/background_placeholder.png`
+- **Texture path**: `sprites/background_placeholder.texture.json`
 - **Display size**: 1280 × 720 px (pivot 0.00, 0.00)
 - **Purpose**: Level background
 - **Description**: Layered parallax city of gothic spires with neon signage and misty foreground graves.
@@ -34,7 +39,7 @@ Each section lists the context needed for concept and production teams as well a
 
 ## Cultist Brute Placeholder (`placeholders/enemy`)
 
-- **Texture path**: `sprites/enemy_placeholder.png`
+- **Texture path**: `sprites/enemy_placeholder.texture.json`
 - **Display size**: 96 × 96 px (pivot 0.50, 0.50)
 - **Purpose**: Enemy stand-in
 - **Description**: Broad-shouldered cultist with glowing void mask and heavy melee weapon.
@@ -49,7 +54,7 @@ Each section lists the context needed for concept and production teams as well a
 
 ## Hunter Vanguard Placeholder (`placeholders/player`)
 
-- **Texture path**: `sprites/player_placeholder.png`
+- **Texture path**: `sprites/player_placeholder.texture.json`
 - **Display size**: 96 × 96 px (pivot 0.50, 0.50)
 - **Purpose**: Player character stand-in
 - **Description**: Agile hunter with arc pistol, cloak fluttering back, facing three-quarter right.
@@ -64,7 +69,7 @@ Each section lists the context needed for concept and production teams as well a
 
 ## Arc Bolt Placeholder (`placeholders/projectile`)
 
-- **Texture path**: `sprites/projectile_placeholder.png`
+- **Texture path**: `sprites/projectile_placeholder.texture.json`
 - **Display size**: 32 × 32 px (pivot 0.50, 0.50)
 - **Purpose**: Projectile stand-in
 - **Description**: Diamond-shaped energy bolt with trailing sparks moving left to right.
@@ -78,7 +83,7 @@ Each section lists the context needed for concept and production teams as well a
 
 ## Dash Trail (`sprites/effects/dash_trail`)
 
-- **Texture path**: `sprites/effects/dash_trail.png`
+- **Texture path**: `sprites/effects/dash_trail.texture.json`
 - **Display size**: 128 × 64 px (pivot 0.20, 0.50)
 - **Purpose**: Movement VFX
 - **Description**: Elongated energy swoosh tapering to wisps, oriented left-to-right motion blur.
@@ -93,7 +98,7 @@ Each section lists the context needed for concept and production teams as well a
 
 ## Hit Flash (`sprites/effects/hit_flash`)
 
-- **Texture path**: `sprites/effects/hit_flash.png`
+- **Texture path**: `sprites/effects/hit_flash.texture.json`
 - **Display size**: 96 × 96 px (pivot 0.50, 0.50)
 - **Purpose**: Damage feedback VFX
 - **Description**: Radial burst with jagged spikes and central flash to overlay on struck enemies.
@@ -107,7 +112,7 @@ Each section lists the context needed for concept and production teams as well a
 
 ## Soul Shard Pickup (`sprites/effects/soul_pickup`)
 
-- **Texture path**: `sprites/effects/soul_pickup.png`
+- **Texture path**: `sprites/effects/soul_pickup.texture.json`
 - **Display size**: 80 × 80 px (pivot 0.50, 0.50)
 - **Purpose**: Collectible VFX
 - **Description**: Floating crystal shard orbiting smaller motes with ethereal glow.
@@ -121,7 +126,7 @@ Each section lists the context needed for concept and production teams as well a
 
 ## Gravestone Barricade - Broken (`sprites/environment/barricade_broken`)
 
-- **Texture path**: `sprites/environment/barricade_broken.png`
+- **Texture path**: `sprites/environment/barricade_broken.texture.json`
 - **Display size**: 192 × 128 px (pivot 0.50, 0.50)
 - **Purpose**: Breakable obstacle debris
 - **Description**: Fragments of gravestones scattered with fading chain energy and dust.
@@ -135,7 +140,7 @@ Each section lists the context needed for concept and production teams as well a
 
 ## Gravestone Barricade - Intact (`sprites/environment/barricade_intact`)
 
-- **Texture path**: `sprites/environment/barricade_intact.png`
+- **Texture path**: `sprites/environment/barricade_intact.texture.json`
 - **Display size**: 192 × 128 px (pivot 0.50, 0.50)
 - **Purpose**: Breakable obstacle
 - **Description**: Cluster of ruined gravestones bound by arcane chains blocking the lane.
@@ -150,7 +155,7 @@ Each section lists the context needed for concept and production teams as well a
 
 ## Ability Icon - Dash (`sprites/ui/ability_icon_dash`)
 
-- **Texture path**: `sprites/ui/ability_icon_dash.png`
+- **Texture path**: `sprites/ui/ability_icon_dash.texture.json`
 - **Display size**: 96 × 96 px (pivot 0.50, 0.50)
 - **Purpose**: UI ability icon
 - **Description**: Icon depicting motion-blurred boots streaking forward with cyan energy trail.
@@ -165,7 +170,7 @@ Each section lists the context needed for concept and production teams as well a
 
 ## HUD Experience Bar (`sprites/ui/experience_bar`)
 
-- **Texture path**: `sprites/ui/experience_bar.png`
+- **Texture path**: `sprites/ui/experience_bar.texture.json`
 - **Display size**: 512 × 64 px (pivot 0.00, 0.50)
 - **Purpose**: UI progression indicator
 - **Description**: Horizontal bar with ornate frame and inner neon fill mask progressing left to right.
@@ -180,7 +185,7 @@ Each section lists the context needed for concept and production teams as well a
 
 ## HUD Health Orb (`sprites/ui/health_orb`)
 
-- **Texture path**: `sprites/ui/health_orb.png`
+- **Texture path**: `sprites/ui/health_orb.texture.json`
 - **Display size**: 64 × 64 px (pivot 0.50, 0.50)
 - **Purpose**: UI health indicator
 - **Description**: Circular vial with crimson liquid suspended in ornate brass frame and glass shine.

@@ -1,0 +1,14 @@
+{
+  "name": "Background Placeholder",
+  "width": 1280,
+  "height": 720,
+  "description": "Gradient-friendly placeholder for parallax backgrounds in prototype scenes.",
+  "layers": [
+    "Layer 0: muted skyline gradient",
+    "Layer 1: horizon band"
+  ],
+  "notes": [
+    "Artists can replace this descriptor with a rendered matte while keeping 16:9 framing.",
+    "Any replacement should respect the 1280x720 canvas to avoid camera retuning."
+  ]
+}

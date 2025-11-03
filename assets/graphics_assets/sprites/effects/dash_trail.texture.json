@@ -1,0 +1,11 @@
+{
+  "name": "Dash Trail",
+  "width": 128,
+  "height": 64,
+  "description": "Elongated streak used to sell the player's dash movement.",
+  "palette": ["#f8f9fa", "#e9ecef", "#dee2e6"],
+  "notes": [
+    "The effect is stretched by gameplay code, so keep the 128x64 ratio for now.",
+    "Swap in a frame-animated variant later without touching the manifest entry."
+  ]
+}
