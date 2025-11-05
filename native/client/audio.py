@@ -157,11 +157,13 @@ class AudioManifestDTO:
         event_music_payload = payload.get("event_music", {})
 
         effects = {
-            str(effect_id): SoundClipDescriptor.from_dict(entry)
+            str(effect_id): SoundClipDescriptor.from_dict(
+                {"id": effect_id, **entry}
+            )
             for effect_id, entry in effects_payload.items()
         }
         music = {
-            str(track_id): MusicTrackDescriptor.from_dict(entry)
+            str(track_id): MusicTrackDescriptor.from_dict({"id": track_id, **entry})
             for track_id, entry in music_payload.items()
         }
         event_effects = {
@@ -279,11 +281,15 @@ __all__ = [
     "AudioManifestDTO",
     "AudioPlaybackFrame",
     "AudioPlaybackHarness",
+    "AudioMixer",
+    "AppliedAudioFrame",
     "MusicInstructionDTO",
     "MusicTrackDescriptor",
+    "MusicPlaybackEvent",
     "ResolvedEffectInstruction",
     "ResolvedMusicInstruction",
     "SoundClipDescriptor",
     "SoundInstructionDTO",
+    "EffectPlaybackEvent",
 ]
 

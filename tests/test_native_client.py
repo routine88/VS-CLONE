@@ -2,6 +2,8 @@ import copy
 import logging
 from pathlib import Path
 
+import pytest
+
 from game.audio import AudioEngine
 from game.export import EngineFrameExporter
 from game.graphics import GraphicsEngine, SceneNode
@@ -10,6 +12,7 @@ from game.graphics_assets import load_asset_manifest
 from native.client import (
     AudioFrameDTO,
     AudioManifestDTO,
+    AudioMixer,
     AudioPlaybackHarness,
     FramePlaybackHarness,
     GraphicsManifest,
@@ -128,3 +131,25 @@ def test_audio_harness_routes_events_and_logs_unknown(caplog):
     assert len(caplog.records) == 2
     assert routed_unknown.effects[0].clip is None
     assert routed_unknown.music[0].track is None
+
+
+def test_audio_mixer_applies_frames_and_tracks_state():
+    manifest_payload = AudioEngine().build_manifest().to_dict()
+    manifest = AudioManifestDTO.from_dict(manifest_payload)
+    harness = AudioPlaybackHarness(manifest)
+    mixer = AudioMixer(harness)
+
+    result = mixer.apply_payload(_build_audio_payload())
+
+    assert result.time == pytest.approx(1.25)
+    assert any(effect.clip.id == "effects/ui.prompt" for effect in result.effects)
+    assert mixer.current_track == "music.dusk_theme"
+    assert result.music and result.music[0].volume == pytest.approx(
+        manifest.music["music.dusk_theme"].volume
+    )
+
+    stop_frame = AudioFrameDTO.from_dict(
+        {"time": 3.0, "effects": [], "music": [{"track": None, "action": "stop"}]}
+    )
+    mixer.apply(stop_frame)
+    assert mixer.current_track is None

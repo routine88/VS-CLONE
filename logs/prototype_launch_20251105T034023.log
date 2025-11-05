@@ -1,0 +1,48 @@
+$ /root/.pyenv/versions/3.11.12/bin/python -m game.prototype --seed 111 --duration 60.0 --summary
+
+<frozen runpy>:128: RuntimeWarning: 'game.prototype' found in sys.modules after import of package 'game', but prior to execution of 'game.prototype'; this may result in unpredictable behaviour
+Nightfall Survivors Prototype Run
+Hunter: Mira the Stormcaller (hunter_mira)
+Seed: 111
+Outcome: Fallen
+Duration: 4.6s
+Encounters Resolved: 2
+Relics: None
+Sigils Earned: 14
+
+Event Log:
+  [001] Wave 1 incoming with 6 foes.
+  [002] Level up! Reached level 2.
+  [003] Resolved wave defeating 6 foes in 3.4s.
+  [004] Combat aftermath: -56 HP, +0 HP.
+  [005] Player DPS: 45.9
+  [006] Encounter duration: 3.4s
+  [007] Incoming pressure: 82.7
+  [008] Lane modifier applied: x1.05
+  [009] Behavior modifier applied: x1.03
+  [010] Wave 2 incoming with 8 foes.
+  [011] Level up! Reached level 3.
+  [012] Resolved wave defeating 8 foes in 4.7s.
+  [013] Combat aftermath: -89 HP, +0 HP.
+  [014] Player DPS: 47.8
+  [015] Encounter duration: 4.7s
+  [016] Incoming pressure: 136.2
+  [017] Lane modifier applied: x1.05
+  [018] Behavior modifier applied: x1.04
+  [019] The hunter succumbs to the onslaught.
+
+Analytics Summary:
+  Outcome: Fallen
+  Duration: 4.6s
+  Encounters Resolved: 2
+  Max Phase Reached: 1
+  Glyph Sets Completed: 0
+  Upgrades Taken: 0 (0% unique)
+  Relics Collected: 0
+  Hazard Triggers: 0
+  Weather Events: 0
+  Salvage Collected: 0
+  Sigils Earned: 14
+  Faced Final Boss: No
+  Defeat Cause: Environment Overrun
+  Hunter: hunter_mira

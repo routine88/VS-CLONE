@@ -165,6 +165,7 @@ class AudioEngine:
 
         if self._placeholders_registered:
             return
+
         self._placeholders_registered = True
         payload = _load_audio_asset_payload(self.asset_manifest_path)
 

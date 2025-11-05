@@ -31,17 +31,10 @@ cd /d "%SCRIPT_DIR%"
 if errorlevel 1 goto :error
 
 echo.
-echo Updating repository to latest main branch...
->> "%LOG_FILE%" echo.
->> "%LOG_FILE%" echo Updating repository to latest main branch...
-git pull >> "%LOG_FILE%" 2>&1
-if errorlevel 1 goto :error
-
-echo.
 echo Launching graphical MVP...
 >> "%LOG_FILE%" echo.
 >> "%LOG_FILE%" echo Launching graphical MVP...
-python -m game.mvp_viewer --log "%LOG_FILE%" >> "%LOG_FILE%" 2>&1
+python -m tools.launch_game --mode mvp --log "%LOG_FILE%" --update >> "%LOG_FILE%" 2>&1
 if errorlevel 1 goto :error
 
 echo.
