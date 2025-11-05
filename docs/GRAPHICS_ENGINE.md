@@ -17,6 +17,11 @@ Downstream tooling such as the runtime bridge consumes the emitted JSON payload 
 ## Validation
 Unit tests exercise animation selection, placeholder resolution, and integration with the interactive prototype, demonstrating the intended behaviours and providing a safety net for future changes.
 
+### Asset validation check
+Run `pytest tests/test_graphics_assets_validation.py` to confirm that every entry in `assets/graphics_assets/manifest.json` has a matching texture with the expected dimensions. The test wraps `SpriteAssetManifest.validate_assets(Path("assets/graphics_assets"))` and fails if any warnings are emitted so issues are surfaced early to content teams.
+
+If you are working without the optional art pack, set `VS_SKIP_OPTIONAL_ART_PACK_VALIDATION=1` in your environment to skip the check temporarily. Re-enable the test once the pack is available so regression coverage remains intact.
+
 ## 2D asset requirements
 The following assets should be delivered into an upcoming `assets/graphics_assets` directory. Keep pivots consistent so the prototype and runtime bridge align on positioning. Placeholder entries in source control are recorded as `.texture.json` descriptors to avoid binary blobs in the repository.
 
