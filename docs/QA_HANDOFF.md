@@ -7,12 +7,16 @@ and launch the prototype for verification drills.
 ## 1. Retrieve Build Artifacts
 
 1. Navigate to the repository's **Actions** tab and open the latest successful
-   `CI` workflow run on the `main` branch. Push builds now publish two artifact
+   `CI` workflow run on the `main` branch. Push builds now publish four artifact
    bundles:
    - **`frame-bundles`** – JSONL payload exported from `game.mvp` via the
      `ns-runtime-artifacts checksum` tooling.
    - **`native-runtime`** – Zipped harness archive containing the `native`
      package plus a `BUILD_METADATA.json` descriptor.
+   - **`python-distribution`** – Pre-built source distribution (`.tar.gz`) and
+     wheel (`.whl`) generated from `pyproject.toml` for hands-off installation.
+   - **`runtime-metrics`** – JSON/Markdown summary of playback FPS and CPU
+     timings captured during CI for regression tracking.
 2. Download both archives and store them in the handoff directory for the
    current playtest.
 
@@ -31,6 +35,10 @@ ns-runtime-artifacts verify artifacts/frame-bundles/nightfall-mvp.jsonl \
 
 # Confirm the native bundle is intact
 ns-runtime-artifacts checksum artifacts/native/nightfall-runtime.zip
+
+# Verify the published sdist and wheel
+ns-runtime-artifacts checksum python-distribution/nightfall-survivors-prototype-*.tar.gz
+ns-runtime-artifacts checksum python-distribution/nightfall_survivors_prototype-*.whl
 ```
 
 To compare a fresh local export against CI output, re-run the exporter with the
@@ -48,12 +56,18 @@ Both commands will fail with a non-zero exit code if any digests diverge.
 
 Once the artifacts pass verification:
 
-1. Install the package editable (`pip install -e .`) or run from source.
+1. Install the package editable (`pip install -e .`) or install the QA wheel:
+
+   ```bash
+   pip install python-distribution/nightfall_survivors_prototype-*.whl
+   ```
 2. Load the exported frames in the viewer for spot checks:
    - `ns-mvp --duration 180 --tick 0.5`
    - `ns-viewer --duration 180 --playback 1.0`
 3. Exercise the runtime harness against the exported bundle for confidence in
-   downstream ingestion tooling:
+   downstream ingestion tooling. Metrics from CI can be reviewed via
+   `runtime-metrics/nightfall-runtime.md` to compare FPS/frame timing trends
+   before running the harness locally:
 
 ```bash
 ns-runtime-artifacts bundle --output native-runtime-local.zip --build-id qa-local
@@ -69,6 +83,8 @@ For each drop, record the following in the QA tracker:
 - Git commit SHA (from `BUILD_METADATA.json` or workflow summary).
 - Frame bundle checksum (`nightfall-mvp.sha256`).
 - Native archive checksum (output from `ns-runtime-artifacts checksum`).
+- Distribution checksums (`python-distribution/dist.sha256`).
+- Runtime metrics snapshot (`runtime-metrics/nightfall-runtime.json`).
 - Verification operator initials and timestamp.
 
 Capturing this metadata ensures every milestone build can be reproduced and

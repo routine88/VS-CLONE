@@ -39,6 +39,7 @@ ns-graphics-manifest = "tools.graphics_manifest:main"
 ns-audio-manifest = "tools.audio_manifest:main"
 ns-export-frames = "tools.export_runtime_frames:main"
 ns-runtime-artifacts = "native.client.cli:main"
+ns-runtime-harness = "native.runtime.bootstrap:main"
 
 [tool.setuptools.packages.find]
 include = [

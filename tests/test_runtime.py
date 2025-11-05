@@ -95,15 +95,23 @@ def test_frame_playback_loop_uses_clock_and_sleep():
     )
 
     captured: list[tuple[int, float]] = []
-    loop.run(on_frame=lambda idx, render, audio: captured.append((idx, render.time)))
+    metrics = loop.run(on_frame=lambda idx, render, audio: captured.append((idx, render.time)))
 
     assert captured == [(0, 0.0), (1, 0.5)]
     assert fake.sleeps
     assert fake.sleeps[-1] == pytest.approx(0.5, rel=1e-6)
     assert fake.now() == pytest.approx(0.5, rel=1e-6)
+    assert metrics.frame_count == 2
+    assert metrics.total_cpu_time >= 0.0
 
 
 def test_run_demo_non_realtime_populates_tables():
-    importer = run_demo(duration=0.2, fps=10.0, realtime=False, logger=logging.getLogger("test"))
+    importer, metrics = run_demo(
+        duration=0.2,
+        fps=10.0,
+        realtime=False,
+        logger=logging.getLogger("test"),
+    )
     assert importer.sprite_table
     assert importer.effect_table
+    assert metrics.frame_count > 0

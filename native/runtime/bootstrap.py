@@ -14,7 +14,7 @@ from game.graphics import GraphicsEngine, SceneNode
 from game.graphics_assets import load_asset_manifest
 
 from .importer import EngineFrameImporter
-from .loop import FrameBundle, FramePlaybackLoop
+from .loop import FrameBundle, FramePlaybackLoop, PlaybackMetrics
 
 LOGGER = logging.getLogger(__name__)
 ASSET_MANIFEST_PATH = Path("assets/graphics_assets/manifest.json")
@@ -91,7 +91,7 @@ def run_demo(
     fps: float,
     realtime: bool,
     logger: logging.Logger | None = None,
-) -> EngineFrameImporter:
+) -> tuple[EngineFrameImporter, PlaybackMetrics]:
     """Run the placeholder playback demo and return the importer instance."""
 
     target_logger = logger or LOGGER
@@ -123,7 +123,7 @@ def run_demo(
         sleep = fake_clock.sleep
 
     loop = FramePlaybackLoop(bundles, clock=clock, sleep=sleep, logger=target_logger)
-    loop.run()
+    metrics = loop.run()
 
     target_logger.info(
         "Imported %d sprites | %d effect clips | %d music tracks",
@@ -132,7 +132,16 @@ def run_demo(
         len(importer.music_table),
     )
 
-    return importer
+    target_logger.info(
+        "Playback metrics | frames=%d | fps=%.2f | avg_frame=%.4fs | min=%.4fs | max=%.4fs",
+        metrics.frame_count,
+        metrics.fps,
+        metrics.average_frame_time,
+        metrics.min_frame_time,
+        metrics.max_frame_time,
+    )
+
+    return importer, metrics
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -161,7 +170,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         not args.no_realtime,
     )
 
-    run_demo(duration=args.duration, fps=args.fps, realtime=not args.no_realtime, logger=LOGGER)
+    _, metrics = run_demo(
+        duration=args.duration,
+        fps=args.fps,
+        realtime=not args.no_realtime,
+        logger=LOGGER,
+    )
+    LOGGER.info(
+        "Runtime harness complete | frames=%d | fps=%.2f | total=%.2fs",
+        metrics.frame_count,
+        metrics.fps,
+        metrics.total_cpu_time,
+    )
     return 0
 
 
