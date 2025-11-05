@@ -1,108 +1,169 @@
 {
-  "viewport": [
-    1280,
-    720
-  ],
   "layers": {
     "actors": {
-      "z_index": 10,
+      "name": "actors",
       "parallax": 1.0,
       "scroll": [
         0.0,
         0.0
-      ]
+      ],
+      "z_index": 10
     },
     "background": {
-      "z_index": 0,
+      "name": "background",
       "parallax": 0.35,
       "scroll": [
         0.0,
         0.0
-      ]
+      ],
+      "z_index": 0
     },
     "foreground": {
-      "z_index": 18,
+      "name": "foreground",
       "parallax": 1.15,
       "scroll": [
         0.0,
         0.0
-      ]
+      ],
+      "z_index": 18
     },
     "midground": {
-      "z_index": 5,
+      "name": "midground",
       "parallax": 0.7,
       "scroll": [
         0.0,
         0.0
-      ]
+      ],
+      "z_index": 5
     },
     "projectiles": {
-      "z_index": 12,
+      "name": "projectiles",
       "parallax": 1.0,
       "scroll": [
         0.0,
         0.0
-      ]
+      ],
+      "z_index": 12
     },
     "ui": {
-      "z_index": 100,
+      "name": "ui",
       "parallax": 0.0,
       "scroll": [
         0.0,
         0.0
-      ]
+      ],
+      "z_index": 100
     }
   },
   "placeholders": {
-    "player": "placeholders/player",
+    "background": "placeholders/background",
     "enemy": "placeholders/enemy",
-    "projectile": "placeholders/projectile",
-    "background": "placeholders/background"
+    "player": "placeholders/player",
+    "projectile": "placeholders/projectile"
   },
-  "sprites": [
-    {
-      "id": "__fallback__",
-      "texture": "sprites/missing.texture.json",
-      "size": [
-        64,
-        64
+  "sprites": {
+    "__fallback__": {
+      "art_style": "Pixel-perfect checkerboard.",
+      "brief": {
+        "art_style": "Pixel-perfect checkerboard.",
+        "description": "High-contrast error tile shown whenever an expected sprite is absent.",
+        "id": "__fallback__",
+        "lighting": "Flat emission, no shading.",
+        "mood": "Utility glitch",
+        "name": "Missing Asset Placeholder",
+        "notes": [
+          "Should be unmistakable as an error state."
+        ],
+        "palette": [
+          "#FF00FF - neon magenta",
+          "#000000 - absolute black"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "Fallback / debug",
+        "size": [
+          64,
+          64
+        ],
+        "tags": [
+          "placeholder",
+          "debug"
+        ],
+        "texture": "sprites/missing.texture.json"
+      },
+      "description": "High-contrast error tile shown whenever an expected sprite is absent.",
+      "display_name": "Missing Asset Placeholder",
+      "lighting": "Flat emission, no shading.",
+      "mood": "Utility glitch",
+      "notes": [
+        "Should be unmistakable as an error state."
+      ],
+      "palette": [
+        "#FF00FF - neon magenta",
+        "#000000 - absolute black"
       ],
       "pivot": [
         0.5,
         0.5
       ],
-      "display_name": "Missing Asset Placeholder",
       "role": "Fallback / debug",
-      "description": "High-contrast error tile shown whenever an expected sprite is absent.",
-      "palette": [
-        "#FF00FF - neon magenta",
-        "#000000 - absolute black"
-      ],
-      "mood": "Utility glitch",
-      "lighting": "Flat emission, no shading.",
-      "art_style": "Pixel-perfect checkerboard.",
-      "notes": [
-        "Should be unmistakable as an error state."
+      "size": [
+        64,
+        64
       ],
       "tags": [
         "placeholder",
         "debug"
-      ]
+      ],
+      "texture": "sprites/missing.texture.json",
+      "tint": null
     },
-    {
-      "id": "placeholders/background",
-      "texture": "sprites/background_placeholder.texture.json",
-      "size": [
-        1280,
-        720
-      ],
-      "pivot": [
-        0.0,
-        0.0
-      ],
-      "display_name": "Neon Graveyard Backdrop",
-      "role": "Level background",
+    "placeholders/background": {
+      "art_style": "Layered painterly matte with crisp silhouettes.",
+      "brief": {
+        "art_style": "Layered painterly matte with crisp silhouettes.",
+        "description": "Layered parallax city of gothic spires with neon signage and misty foreground graves.",
+        "id": "placeholders/background",
+        "lighting": "Backlit horizon glow with scattered volumetric beams.",
+        "mood": "Moody, supernatural skyline.",
+        "name": "Neon Graveyard Backdrop",
+        "notes": [
+          "Deliver as looping slice suitable for horizontal scrolling.",
+          "Foreground graves should have cutout alpha for parallax stacking."
+        ],
+        "palette": [
+          "#15181F - midnight blue sky",
+          "#2F3E64 - distant architecture",
+          "#6AD7FF - neon signage",
+          "#4CFFB6 - spectral accent",
+          "#1A0F24 - foreground silhouettes"
+        ],
+        "pivot": [
+          0.0,
+          0.0
+        ],
+        "purpose": "Level background",
+        "size": [
+          1280,
+          720
+        ],
+        "tags": [
+          "environment",
+          "background",
+          "parallax"
+        ],
+        "texture": "sprites/background_placeholder.texture.json"
+      },
       "description": "Layered parallax city of gothic spires with neon signage and misty foreground graves.",
+      "display_name": "Neon Graveyard Backdrop",
+      "lighting": "Backlit horizon glow with scattered volumetric beams.",
+      "mood": "Moody, supernatural skyline.",
+      "notes": [
+        "Deliver as looping slice suitable for horizontal scrolling.",
+        "Foreground graves should have cutout alpha for parallax stacking."
+      ],
       "palette": [
         "#15181F - midnight blue sky",
         "#2F3E64 - distant architecture",
@@ -110,374 +171,738 @@
         "#4CFFB6 - spectral accent",
         "#1A0F24 - foreground silhouettes"
       ],
-      "mood": "Moody, supernatural skyline.",
-      "lighting": "Backlit horizon glow with scattered volumetric beams.",
-      "art_style": "Layered painterly matte with crisp silhouettes.",
-      "notes": [
-        "Deliver as looping slice suitable for horizontal scrolling.",
-        "Foreground graves should have cutout alpha for parallax stacking."
+      "pivot": [
+        0.0,
+        0.0
+      ],
+      "role": "Level background",
+      "size": [
+        1280,
+        720
       ],
       "tags": [
         "environment",
         "background",
         "parallax"
-      ]
+      ],
+      "texture": "sprites/background_placeholder.texture.json",
+      "tint": null
     },
-    {
-      "id": "placeholders/enemy",
-      "texture": "sprites/enemy_placeholder.texture.json",
-      "size": [
-        96,
-        96
-      ],
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "display_name": "Cultist Brute Placeholder",
-      "role": "Enemy stand-in",
+    "placeholders/enemy": {
+      "art_style": "Stylised cel-shaded silhouette focus.",
+      "brief": {
+        "art_style": "Stylised cel-shaded silhouette focus.",
+        "description": "Broad-shouldered cultist with glowing void mask and heavy melee weapon.",
+        "id": "placeholders/enemy",
+        "lighting": "Underlit with purple bounce, subtle top rim.",
+        "mood": "Menacing brute",
+        "name": "Cultist Brute Placeholder",
+        "notes": [
+          "Maintain hulking stance distinct from player silhouette.",
+          "Mask glow should read at thumbnail size."
+        ],
+        "palette": [
+          "#341A3A - deep violet cloth",
+          "#7E2F8E - saturated magenta armour",
+          "#E6DADA - bone mask glow",
+          "#2B101F - shadow core"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "Enemy stand-in",
+        "size": [
+          96,
+          96
+        ],
+        "tags": [
+          "enemy",
+          "character",
+          "placeholder"
+        ],
+        "texture": "sprites/enemy_placeholder.texture.json"
+      },
       "description": "Broad-shouldered cultist with glowing void mask and heavy melee weapon.",
+      "display_name": "Cultist Brute Placeholder",
+      "lighting": "Underlit with purple bounce, subtle top rim.",
+      "mood": "Menacing brute",
+      "notes": [
+        "Maintain hulking stance distinct from player silhouette.",
+        "Mask glow should read at thumbnail size."
+      ],
       "palette": [
         "#341A3A - deep violet cloth",
         "#7E2F8E - saturated magenta armour",
         "#E6DADA - bone mask glow",
         "#2B101F - shadow core"
       ],
-      "mood": "Menacing brute",
-      "lighting": "Underlit with purple bounce, subtle top rim.",
-      "art_style": "Stylised cel-shaded silhouette focus.",
-      "notes": [
-        "Maintain hulking stance distinct from player silhouette.",
-        "Mask glow should read at thumbnail size."
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "Enemy stand-in",
+      "size": [
+        96,
+        96
       ],
       "tags": [
         "enemy",
         "character",
         "placeholder"
-      ]
+      ],
+      "texture": "sprites/enemy_placeholder.texture.json",
+      "tint": null
     },
-    {
-      "id": "placeholders/player",
-      "texture": "sprites/player_placeholder.texture.json",
-      "size": [
-        96,
-        96
-      ],
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "display_name": "Hunter Vanguard Placeholder",
-      "role": "Player character stand-in",
+    "placeholders/player": {
+      "art_style": "Stylised cel-shaded character illustration.",
+      "brief": {
+        "art_style": "Stylised cel-shaded character illustration.",
+        "description": "Agile hunter with arc pistol, cloak fluttering back, facing three-quarter right.",
+        "id": "placeholders/player",
+        "lighting": "Strong top-left rim light to emphasise silhouette.",
+        "mood": "Heroic and ready for action.",
+        "name": "Hunter Vanguard Placeholder",
+        "notes": [
+          "Weapon hand forward, muzzle pointing to screen right.",
+          "Cape reads as a separate shape for animation overlap."
+        ],
+        "palette": [
+          "#5CF1FF - arc energy cyan",
+          "#22252B - charcoal armour",
+          "#F5F2E8 - pale fabric highlight",
+          "#EC9C47 - warm accent trims"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "Player character stand-in",
+        "size": [
+          96,
+          96
+        ],
+        "tags": [
+          "player",
+          "character",
+          "placeholder"
+        ],
+        "texture": "sprites/player_placeholder.texture.json"
+      },
       "description": "Agile hunter with arc pistol, cloak fluttering back, facing three-quarter right.",
+      "display_name": "Hunter Vanguard Placeholder",
+      "lighting": "Strong top-left rim light to emphasise silhouette.",
+      "mood": "Heroic and ready for action.",
+      "notes": [
+        "Weapon hand forward, muzzle pointing to screen right.",
+        "Cape reads as a separate shape for animation overlap."
+      ],
       "palette": [
         "#5CF1FF - arc energy cyan",
         "#22252B - charcoal armour",
         "#F5F2E8 - pale fabric highlight",
         "#EC9C47 - warm accent trims"
       ],
-      "mood": "Heroic and ready for action.",
-      "lighting": "Strong top-left rim light to emphasise silhouette.",
-      "art_style": "Stylised cel-shaded character illustration.",
-      "notes": [
-        "Weapon hand forward, muzzle pointing to screen right.",
-        "Cape reads as a separate shape for animation overlap."
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "Player character stand-in",
+      "size": [
+        96,
+        96
       ],
       "tags": [
         "player",
         "character",
         "placeholder"
-      ]
+      ],
+      "texture": "sprites/player_placeholder.texture.json",
+      "tint": null
     },
-    {
-      "id": "placeholders/projectile",
-      "texture": "sprites/projectile_placeholder.texture.json",
-      "size": [
-        32,
-        32
-      ],
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "display_name": "Arc Bolt Placeholder",
-      "role": "Projectile stand-in",
+    "placeholders/projectile": {
+      "art_style": "Minimalist VFX sprite with soft edges.",
+      "brief": {
+        "art_style": "Minimalist VFX sprite with soft edges.",
+        "description": "Diamond-shaped energy bolt with trailing sparks moving left to right.",
+        "id": "placeholders/projectile",
+        "lighting": "Self-illuminated glow with subtle bloom.",
+        "mood": "Fast and crackling.",
+        "name": "Arc Bolt Placeholder",
+        "notes": [
+          "Align long axis horizontally for side-scrolling readability."
+        ],
+        "palette": [
+          "#A6F3FF - electric cyan core",
+          "#174D73 - dark cyan outline",
+          "#FFFFFF - white highlight"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "Projectile stand-in",
+        "size": [
+          32,
+          32
+        ],
+        "tags": [
+          "projectile",
+          "vfx",
+          "placeholder"
+        ],
+        "texture": "sprites/projectile_placeholder.texture.json"
+      },
       "description": "Diamond-shaped energy bolt with trailing sparks moving left to right.",
+      "display_name": "Arc Bolt Placeholder",
+      "lighting": "Self-illuminated glow with subtle bloom.",
+      "mood": "Fast and crackling.",
+      "notes": [
+        "Align long axis horizontally for side-scrolling readability."
+      ],
       "palette": [
         "#A6F3FF - electric cyan core",
         "#174D73 - dark cyan outline",
         "#FFFFFF - white highlight"
       ],
-      "mood": "Fast and crackling.",
-      "lighting": "Self-illuminated glow with subtle bloom.",
-      "art_style": "Minimalist VFX sprite with soft edges.",
-      "notes": [
-        "Align long axis horizontally for side-scrolling readability."
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "Projectile stand-in",
+      "size": [
+        32,
+        32
       ],
       "tags": [
         "projectile",
         "vfx",
         "placeholder"
-      ]
+      ],
+      "texture": "sprites/projectile_placeholder.texture.json",
+      "tint": null
     },
-    {
-      "id": "sprites/effects/dash_trail",
-      "texture": "sprites/effects/dash_trail.texture.json",
-      "size": [
-        128,
-        64
-      ],
-      "pivot": [
-        0.2,
-        0.5
-      ],
-      "display_name": "Dash Trail",
-      "role": "Movement VFX",
+    "sprites/effects/dash_trail": {
+      "art_style": "Soft additive VFX sprite.",
+      "brief": {
+        "art_style": "Soft additive VFX sprite.",
+        "description": "Elongated energy swoosh tapering to wisps, oriented left-to-right motion blur.",
+        "id": "sprites/effects/dash_trail",
+        "lighting": "Self-illuminated with slight transparency gradient.",
+        "mood": "Energetic burst",
+        "name": "Dash Trail",
+        "notes": [
+          "Provide three sequential frames fading out for animation.",
+          "Edge feathering should avoid hard pixels."
+        ],
+        "palette": [
+          "#4FF7FF - bright cyan core",
+          "#1C5B73 - deep teal edge",
+          "#B9FFFF - soft highlight"
+        ],
+        "pivot": [
+          0.2,
+          0.5
+        ],
+        "purpose": "Movement VFX",
+        "size": [
+          128,
+          64
+        ],
+        "tags": [
+          "vfx",
+          "movement",
+          "dash"
+        ],
+        "texture": "sprites/effects/dash_trail.texture.json"
+      },
       "description": "Elongated energy swoosh tapering to wisps, oriented left-to-right motion blur.",
+      "display_name": "Dash Trail",
+      "lighting": "Self-illuminated with slight transparency gradient.",
+      "mood": "Energetic burst",
+      "notes": [
+        "Provide three sequential frames fading out for animation.",
+        "Edge feathering should avoid hard pixels."
+      ],
       "palette": [
         "#4FF7FF - bright cyan core",
         "#1C5B73 - deep teal edge",
         "#B9FFFF - soft highlight"
       ],
-      "mood": "Energetic burst",
-      "lighting": "Self-illuminated with slight transparency gradient.",
-      "art_style": "Soft additive VFX sprite.",
-      "notes": [
-        "Provide three sequential frames fading out for animation.",
-        "Edge feathering should avoid hard pixels."
+      "pivot": [
+        0.2,
+        0.5
+      ],
+      "role": "Movement VFX",
+      "size": [
+        128,
+        64
       ],
       "tags": [
         "vfx",
         "movement",
         "dash"
-      ]
+      ],
+      "texture": "sprites/effects/dash_trail.texture.json",
+      "tint": null
     },
-    {
-      "id": "sprites/effects/hit_flash",
-      "texture": "sprites/effects/hit_flash.texture.json",
-      "size": [
-        96,
-        96
-      ],
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "display_name": "Hit Flash",
-      "role": "Damage feedback VFX",
+    "sprites/effects/hit_flash": {
+      "art_style": "Graphic comic-book style burst.",
+      "brief": {
+        "art_style": "Graphic comic-book style burst.",
+        "description": "Radial burst with jagged spikes and central flash to overlay on struck enemies.",
+        "id": "sprites/effects/hit_flash",
+        "lighting": "Bright center with fast falloff to transparent edges.",
+        "mood": "Sharp impact",
+        "name": "Hit Flash",
+        "notes": [
+          "Two to three frames with diminishing intensity for animation."
+        ],
+        "palette": [
+          "#FFD75C - golden burst",
+          "#FF9147 - orange impact",
+          "#FFFFFF - intense core",
+          "#4D1A0D - dark rim"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "Damage feedback VFX",
+        "size": [
+          96,
+          96
+        ],
+        "tags": [
+          "vfx",
+          "impact",
+          "combat"
+        ],
+        "texture": "sprites/effects/hit_flash.texture.json"
+      },
       "description": "Radial burst with jagged spikes and central flash to overlay on struck enemies.",
+      "display_name": "Hit Flash",
+      "lighting": "Bright center with fast falloff to transparent edges.",
+      "mood": "Sharp impact",
+      "notes": [
+        "Two to three frames with diminishing intensity for animation."
+      ],
       "palette": [
         "#FFD75C - golden burst",
         "#FF9147 - orange impact",
         "#FFFFFF - intense core",
         "#4D1A0D - dark rim"
       ],
-      "mood": "Sharp impact",
-      "lighting": "Bright center with fast falloff to transparent edges.",
-      "art_style": "Graphic comic-book style burst.",
-      "notes": [
-        "Two to three frames with diminishing intensity for animation."
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "Damage feedback VFX",
+      "size": [
+        96,
+        96
       ],
       "tags": [
         "vfx",
         "impact",
         "combat"
-      ]
+      ],
+      "texture": "sprites/effects/hit_flash.texture.json",
+      "tint": null
     },
-    {
-      "id": "sprites/effects/soul_pickup",
-      "texture": "sprites/effects/soul_pickup.texture.json",
-      "size": [
-        80,
-        80
-      ],
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "display_name": "Soul Shard Pickup",
-      "role": "Collectible VFX",
+    "sprites/effects/soul_pickup": {
+      "art_style": "Stylised magical collectible.",
+      "brief": {
+        "art_style": "Stylised magical collectible.",
+        "description": "Floating crystal shard orbiting smaller motes with ethereal glow.",
+        "id": "sprites/effects/soul_pickup",
+        "lighting": "Inner glow with subtle pulsing outer aura.",
+        "mood": "Mystical reward",
+        "name": "Soul Shard Pickup",
+        "notes": [
+          "Supports looping four-frame twinkle animation."
+        ],
+        "palette": [
+          "#7FFFD4 - aqua glow",
+          "#3A1C5E - void core",
+          "#C2FFE9 - pale highlights"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "Collectible VFX",
+        "size": [
+          80,
+          80
+        ],
+        "tags": [
+          "collectible",
+          "vfx",
+          "reward"
+        ],
+        "texture": "sprites/effects/soul_pickup.texture.json"
+      },
       "description": "Floating crystal shard orbiting smaller motes with ethereal glow.",
+      "display_name": "Soul Shard Pickup",
+      "lighting": "Inner glow with subtle pulsing outer aura.",
+      "mood": "Mystical reward",
+      "notes": [
+        "Supports looping four-frame twinkle animation."
+      ],
       "palette": [
         "#7FFFD4 - aqua glow",
         "#3A1C5E - void core",
         "#C2FFE9 - pale highlights"
       ],
-      "mood": "Mystical reward",
-      "lighting": "Inner glow with subtle pulsing outer aura.",
-      "art_style": "Stylised magical collectible.",
-      "notes": [
-        "Supports looping four-frame twinkle animation."
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "Collectible VFX",
+      "size": [
+        80,
+        80
       ],
       "tags": [
         "collectible",
         "vfx",
         "reward"
-      ]
+      ],
+      "texture": "sprites/effects/soul_pickup.texture.json",
+      "tint": null
     },
-    {
-      "id": "sprites/environment/barricade_broken",
-      "texture": "sprites/environment/barricade_broken.texture.json",
-      "size": [
-        192,
-        128
-      ],
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "display_name": "Gravestone Barricade - Broken",
-      "role": "Breakable obstacle debris",
+    "sprites/environment/barricade_broken": {
+      "art_style": "Painterly shards with motion hints.",
+      "brief": {
+        "art_style": "Painterly shards with motion hints.",
+        "description": "Fragments of gravestones scattered with fading chain energy and dust.",
+        "id": "sprites/environment/barricade_broken",
+        "lighting": "Residual glow concentrated near fragments, softer shadows.",
+        "mood": "Aftermath of destruction.",
+        "name": "Gravestone Barricade - Broken",
+        "notes": [
+          "Pairs with intact version; ensure silhouettes align for swap."
+        ],
+        "palette": [
+          "#515B67 - shattered stone",
+          "#161B22 - deep crevice",
+          "#68D7E8 - dissipating magic",
+          "#B7BEC9 - dust motes"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "Breakable obstacle debris",
+        "size": [
+          192,
+          128
+        ],
+        "tags": [
+          "environment",
+          "obstacle",
+          "debris"
+        ],
+        "texture": "sprites/environment/barricade_broken.texture.json"
+      },
       "description": "Fragments of gravestones scattered with fading chain energy and dust.",
+      "display_name": "Gravestone Barricade - Broken",
+      "lighting": "Residual glow concentrated near fragments, softer shadows.",
+      "mood": "Aftermath of destruction.",
+      "notes": [
+        "Pairs with intact version; ensure silhouettes align for swap."
+      ],
       "palette": [
         "#515B67 - shattered stone",
         "#161B22 - deep crevice",
         "#68D7E8 - dissipating magic",
         "#B7BEC9 - dust motes"
       ],
-      "mood": "Aftermath of destruction.",
-      "lighting": "Residual glow concentrated near fragments, softer shadows.",
-      "art_style": "Painterly shards with motion hints.",
-      "notes": [
-        "Pairs with intact version; ensure silhouettes align for swap."
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "Breakable obstacle debris",
+      "size": [
+        192,
+        128
       ],
       "tags": [
         "environment",
         "obstacle",
         "debris"
-      ]
+      ],
+      "texture": "sprites/environment/barricade_broken.texture.json",
+      "tint": null
     },
-    {
-      "id": "sprites/environment/barricade_intact",
-      "texture": "sprites/environment/barricade_intact.texture.json",
-      "size": [
-        192,
-        128
-      ],
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "display_name": "Gravestone Barricade - Intact",
-      "role": "Breakable obstacle",
+    "sprites/environment/barricade_intact": {
+      "art_style": "Painterly environment prop with crisp edges.",
+      "brief": {
+        "art_style": "Painterly environment prop with crisp edges.",
+        "description": "Cluster of ruined gravestones bound by arcane chains blocking the lane.",
+        "id": "sprites/environment/barricade_intact",
+        "lighting": "Top-down moonlight with subsurface glow in runes.",
+        "mood": "Ancient and oppressive.",
+        "name": "Gravestone Barricade - Intact",
+        "notes": [
+          "Design to break cleanly into two halves for destruction state.",
+          "Alpha fringe should remain tight for collision accuracy."
+        ],
+        "palette": [
+          "#5F6B7A - weathered stone",
+          "#1D242C - deep cracks",
+          "#8FF2FF - arcane chain glow",
+          "#2B1A33 - damp earth base"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "Breakable obstacle",
+        "size": [
+          192,
+          128
+        ],
+        "tags": [
+          "environment",
+          "obstacle",
+          "breakable"
+        ],
+        "texture": "sprites/environment/barricade_intact.texture.json"
+      },
       "description": "Cluster of ruined gravestones bound by arcane chains blocking the lane.",
+      "display_name": "Gravestone Barricade - Intact",
+      "lighting": "Top-down moonlight with subsurface glow in runes.",
+      "mood": "Ancient and oppressive.",
+      "notes": [
+        "Design to break cleanly into two halves for destruction state.",
+        "Alpha fringe should remain tight for collision accuracy."
+      ],
       "palette": [
         "#5F6B7A - weathered stone",
         "#1D242C - deep cracks",
         "#8FF2FF - arcane chain glow",
         "#2B1A33 - damp earth base"
       ],
-      "mood": "Ancient and oppressive.",
-      "lighting": "Top-down moonlight with subsurface glow in runes.",
-      "art_style": "Painterly environment prop with crisp edges.",
-      "notes": [
-        "Design to break cleanly into two halves for destruction state.",
-        "Alpha fringe should remain tight for collision accuracy."
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "Breakable obstacle",
+      "size": [
+        192,
+        128
       ],
       "tags": [
         "environment",
         "obstacle",
         "breakable"
-      ]
+      ],
+      "texture": "sprites/environment/barricade_intact.texture.json",
+      "tint": null
     },
-    {
-      "id": "sprites/ui/ability_icon_dash",
-      "texture": "sprites/ui/ability_icon_dash.texture.json",
-      "size": [
-        96,
-        96
-      ],
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "display_name": "Ability Icon - Dash",
-      "role": "UI ability icon",
+    "sprites/ui/ability_icon_dash": {
+      "art_style": "Painterly icon with hard-edged rim lights.",
+      "brief": {
+        "art_style": "Painterly icon with hard-edged rim lights.",
+        "description": "Icon depicting motion-blurred boots streaking forward with cyan energy trail.",
+        "id": "sprites/ui/ability_icon_dash",
+        "lighting": "Directional motion blur with bright leading edge.",
+        "mood": "Kinetic speed.",
+        "name": "Ability Icon - Dash",
+        "notes": [
+          "Rounded square canvas with transparent corners.",
+          "Keep icon readable at 48px."
+        ],
+        "palette": [
+          "#3AF2FF - dash energy",
+          "#133649 - deep teal shadow",
+          "#F7F9FB - highlight streak",
+          "#1A0E24 - vignette background"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "UI ability icon",
+        "size": [
+          96,
+          96
+        ],
+        "tags": [
+          "ui",
+          "icon",
+          "ability"
+        ],
+        "texture": "sprites/ui/ability_icon_dash.texture.json"
+      },
       "description": "Icon depicting motion-blurred boots streaking forward with cyan energy trail.",
+      "display_name": "Ability Icon - Dash",
+      "lighting": "Directional motion blur with bright leading edge.",
+      "mood": "Kinetic speed.",
+      "notes": [
+        "Rounded square canvas with transparent corners.",
+        "Keep icon readable at 48px."
+      ],
       "palette": [
         "#3AF2FF - dash energy",
         "#133649 - deep teal shadow",
         "#F7F9FB - highlight streak",
         "#1A0E24 - vignette background"
       ],
-      "mood": "Kinetic speed.",
-      "lighting": "Directional motion blur with bright leading edge.",
-      "art_style": "Painterly icon with hard-edged rim lights.",
-      "notes": [
-        "Rounded square canvas with transparent corners.",
-        "Keep icon readable at 48px."
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "UI ability icon",
+      "size": [
+        96,
+        96
       ],
       "tags": [
         "ui",
         "icon",
         "ability"
-      ]
+      ],
+      "texture": "sprites/ui/ability_icon_dash.texture.json",
+      "tint": null
     },
-    {
-      "id": "sprites/ui/experience_bar",
-      "texture": "sprites/ui/experience_bar.texture.json",
-      "size": [
-        512,
-        64
-      ],
-      "pivot": [
-        0.0,
-        0.5
-      ],
-      "display_name": "HUD Experience Bar",
-      "role": "UI progression indicator",
+    "sprites/ui/experience_bar": {
+      "art_style": "Stylised UI with crisp vector-like edges.",
+      "brief": {
+        "art_style": "Stylised UI with crisp vector-like edges.",
+        "description": "Horizontal bar with ornate frame and inner neon fill mask progressing left to right.",
+        "id": "sprites/ui/experience_bar",
+        "lighting": "Soft inner glow emanating from fill, metallic specular on frame.",
+        "mood": "Arcane progression.",
+        "name": "HUD Experience Bar",
+        "notes": [
+          "Supply separate alpha mask for animated fill if possible.",
+          "Left edge should align at pixel 0 for layout anchoring."
+        ],
+        "palette": [
+          "#2E1A3B - dark frame base",
+          "#8B4CC5 - mystical violet fill",
+          "#F0E6FF - highlight trims",
+          "#1B0F29 - deep shadow"
+        ],
+        "pivot": [
+          0.0,
+          0.5
+        ],
+        "purpose": "UI progression indicator",
+        "size": [
+          512,
+          64
+        ],
+        "tags": [
+          "ui",
+          "hud",
+          "progression"
+        ],
+        "texture": "sprites/ui/experience_bar.texture.json"
+      },
       "description": "Horizontal bar with ornate frame and inner neon fill mask progressing left to right.",
+      "display_name": "HUD Experience Bar",
+      "lighting": "Soft inner glow emanating from fill, metallic specular on frame.",
+      "mood": "Arcane progression.",
+      "notes": [
+        "Supply separate alpha mask for animated fill if possible.",
+        "Left edge should align at pixel 0 for layout anchoring."
+      ],
       "palette": [
         "#2E1A3B - dark frame base",
         "#8B4CC5 - mystical violet fill",
         "#F0E6FF - highlight trims",
         "#1B0F29 - deep shadow"
       ],
-      "mood": "Arcane progression.",
-      "lighting": "Soft inner glow emanating from fill, metallic specular on frame.",
-      "art_style": "Stylised UI with crisp vector-like edges.",
-      "notes": [
-        "Supply separate alpha mask for animated fill if possible.",
-        "Left edge should align at pixel 0 for layout anchoring."
+      "pivot": [
+        0.0,
+        0.5
+      ],
+      "role": "UI progression indicator",
+      "size": [
+        512,
+        64
       ],
       "tags": [
         "ui",
         "hud",
         "progression"
-      ]
+      ],
+      "texture": "sprites/ui/experience_bar.texture.json",
+      "tint": null
     },
-    {
-      "id": "sprites/ui/health_orb",
-      "texture": "sprites/ui/health_orb.texture.json",
-      "size": [
-        64,
-        64
-      ],
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "display_name": "HUD Health Orb",
-      "role": "UI health indicator",
+    "sprites/ui/health_orb": {
+      "art_style": "High-fidelity UI illustration with clean transparency.",
+      "brief": {
+        "art_style": "High-fidelity UI illustration with clean transparency.",
+        "description": "Circular vial with crimson liquid suspended in ornate brass frame and glass shine.",
+        "id": "sprites/ui/health_orb",
+        "lighting": "Glowing internal liquid with specular rim and subtle emissive tick marks.",
+        "mood": "Urgent survival HUD.",
+        "name": "HUD Health Orb",
+        "notes": [
+          "Provide layered source if possible: frame, liquid, highlights.",
+          "Alpha background must be perfectly clean for overlay."
+        ],
+        "palette": [
+          "#C7313F - vibrant blood red",
+          "#571212 - deep burgundy",
+          "#D9B676 - aged brass",
+          "#0A0C10 - near-black background"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "UI health indicator",
+        "size": [
+          64,
+          64
+        ],
+        "tags": [
+          "ui",
+          "hud",
+          "health"
+        ],
+        "texture": "sprites/ui/health_orb.texture.json"
+      },
       "description": "Circular vial with crimson liquid suspended in ornate brass frame and glass shine.",
+      "display_name": "HUD Health Orb",
+      "lighting": "Glowing internal liquid with specular rim and subtle emissive tick marks.",
+      "mood": "Urgent survival HUD.",
+      "notes": [
+        "Provide layered source if possible: frame, liquid, highlights.",
+        "Alpha background must be perfectly clean for overlay."
+      ],
       "palette": [
         "#C7313F - vibrant blood red",
         "#571212 - deep burgundy",
         "#D9B676 - aged brass",
         "#0A0C10 - near-black background"
       ],
-      "mood": "Urgent survival HUD.",
-      "lighting": "Glowing internal liquid with specular rim and subtle emissive tick marks.",
-      "art_style": "High-fidelity UI illustration with clean transparency.",
-      "notes": [
-        "Provide layered source if possible: frame, liquid, highlights.",
-        "Alpha background must be perfectly clean for overlay."
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "UI health indicator",
+      "size": [
+        64,
+        64
       ],
       "tags": [
         "ui",
         "hud",
         "health"
-      ]
+      ],
+      "texture": "sprites/ui/health_orb.texture.json",
+      "tint": null
     }
+  },
+  "viewport": [
+    1280,
+    720
   ]
 }

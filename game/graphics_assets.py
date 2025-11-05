@@ -219,7 +219,18 @@ def load_asset_manifest(path: Path | str) -> SpriteAssetManifest:
     viewport_data = payload.get("viewport", [1280, 720])
     viewport = (int(viewport_data[0]), int(viewport_data[1]))
 
-    sprites = tuple(SpriteDefinition.from_dict(entry) for entry in payload.get("sprites", ()))
+    sprite_entries = payload.get("sprites", ())
+    sprites: list[SpriteDefinition] = []
+    if isinstance(sprite_entries, Mapping):
+        for sprite_id, entry in sprite_entries.items():
+            if not isinstance(entry, Mapping):
+                raise TypeError(f"sprite entry for {sprite_id!r} must be a mapping")
+            entry_payload: dict[str, object] = dict(entry)
+            entry_payload.setdefault("id", sprite_id)
+            sprites.append(SpriteDefinition.from_dict(entry_payload))
+    else:
+        sprites = [SpriteDefinition.from_dict(entry) for entry in (sprite_entries or ())]  # type: ignore[arg-type]
+    sprites = tuple(sprites)
 
     placeholder_mapping: MutableMapping[str, str] = {}
     for kind, sprite_id in payload.get("placeholders", {}).items():
