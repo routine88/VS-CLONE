@@ -33,3 +33,21 @@ ns-graphics-manifest = "tools.graphics_manifest:main"
 ns-audio-manifest = "tools.audio_manifest:main"
 ns-export-frames = "tools.export_runtime_frames:main"
 
+[tool.setuptools.packages.find]
+include = [
+  "game",
+  "game.*",
+  "native",
+  "native.*",
+]
+exclude = [
+  "assets",
+  "assets.*",
+  "logs",
+  "logs.*",
+  "tests",
+  "tests.*",
+  "tools",
+  "tools.*",
+]
+
