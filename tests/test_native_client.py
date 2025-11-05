@@ -102,6 +102,12 @@ def test_audio_harness_routes_events_and_logs_unknown(caplog):
     manifest = AudioManifestDTO.from_dict(manifest_payload)
     harness = AudioPlaybackHarness(manifest)
 
+    asset_root = Path("assets")
+    for descriptor in manifest.effects.values():
+        assert (asset_root / descriptor.path).exists()
+    for track in manifest.music.values():
+        assert (asset_root / track.path).exists()
+
     caplog.set_level(logging.WARNING, logger="native.client.audio")
     frame = AudioFrameDTO.from_dict(_build_audio_payload())
     routed = harness.route(frame)

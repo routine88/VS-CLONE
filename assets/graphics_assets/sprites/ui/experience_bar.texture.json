@@ -1,11 +1,22 @@
 {
-  "name": "Experience Bar",
+  "name": "HUD Experience Bar",
   "width": 512,
   "height": 64,
-  "description": "HUD progress bar placeholder for player experience.",
-  "palette": ["#495867", "#577399", "#bdd5ea"],
+  "description": "Horizontal bar with ornate frame and inner neon fill mask progressing left to right.",
+  "purpose": "UI progression indicator",
+  "pivot": [0.0, 0.5],
+  "palette": [
+    "#2E1A3B - dark frame base",
+    "#8B4CC5 - mystical violet fill",
+    "#F0E6FF - highlight trims",
+    "#1B0F29 - deep shadow"
+  ],
+  "mood": "Arcane progression.",
+  "lighting": "Soft inner glow emanating from fill, metallic specular on frame.",
+  "art_style": "Stylised UI with crisp vector-like edges.",
+  "tags": ["ui", "hud", "progression"],
   "notes": [
-    "The UI layout engine anchors this bar to a 512x64 rectangle.",
-    "Replace this descriptor with final UI art or an SVG export that fits the same region."
+    "Supply separate alpha mask for animated fill if possible.",
+    "Left edge should align at pixel 0 for layout anchoring."
   ]
 }

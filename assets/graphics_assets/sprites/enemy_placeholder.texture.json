@@ -1,11 +1,22 @@
 {
-  "name": "Enemy Placeholder",
+  "name": "Cultist Brute Placeholder",
   "width": 96,
   "height": 96,
-  "description": "Simple enemy silhouette used during gameplay prototyping.",
-  "palette": ["#9b2226", "#0a0908", "#f2f4f3"],
+  "description": "Broad-shouldered cultist with glowing void mask and heavy melee weapon.",
+  "purpose": "Enemy stand-in",
+  "pivot": [0.5, 0.5],
+  "palette": [
+    "#341A3A - deep violet cloth",
+    "#7E2F8E - saturated magenta armour",
+    "#E6DADA - bone mask glow",
+    "#2B101F - shadow core"
+  ],
+  "mood": "Menacing brute",
+  "lighting": "Underlit with purple bounce, subtle top rim.",
+  "art_style": "Stylised cel-shaded silhouette focus.",
+  "tags": ["enemy", "character", "placeholder"],
   "notes": [
-    "Maintain the 96x96 canvas so hurtboxes and projectile logic stay aligned.",
-    "Swap this file with production art when ready; the manifest pivot values are already tuned."
+    "Maintain hulking stance distinct from player silhouette.",
+    "Mask glow should read at thumbnail size."
   ]
 }

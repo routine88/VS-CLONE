@@ -2,10 +2,21 @@
   "name": "Ability Icon - Dash",
   "width": 96,
   "height": 96,
-  "description": "UI icon placeholder for the dash ability slot.",
-  "palette": ["#00b4d8", "#90e0ef", "#caf0f8"],
+  "description": "Icon depicting motion-blurred boots streaking forward with cyan energy trail.",
+  "purpose": "UI ability icon",
+  "pivot": [0.5, 0.5],
+  "palette": [
+    "#3AF2FF - dash energy",
+    "#133649 - deep teal shadow",
+    "#F7F9FB - highlight streak",
+    "#1A0E24 - vignette background"
+  ],
+  "mood": "Kinetic speed.",
+  "lighting": "Directional motion blur with bright leading edge.",
+  "art_style": "Painterly icon with hard-edged rim lights.",
+  "tags": ["ui", "icon", "ability"],
   "notes": [
-    "HUD layouts assume a square 96px icon canvas.",
-    "Swap this descriptor for exported UI art while keeping the same bounds."
+    "Rounded square canvas with transparent corners.",
+    "Keep icon readable at 48px."
   ]
 }

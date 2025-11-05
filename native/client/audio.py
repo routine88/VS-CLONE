@@ -18,6 +18,9 @@ class SoundClipDescriptor:
     id: str
     path: str
     volume: float
+    description: str
+    tags: Tuple[str, ...]
+    length_seconds: Optional[float]
 
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "SoundClipDescriptor":
@@ -25,6 +28,9 @@ class SoundClipDescriptor:
             id=str(payload.get("id", "")),
             path=str(payload.get("path", "")),
             volume=float(payload.get("volume", 1.0)),
+            description=str(payload.get("description", "")),
+            tags=_tuple_of_strings(payload.get("tags")),
+            length_seconds=_optional_float(payload.get("length_seconds")),
         )
 
 
@@ -36,6 +42,10 @@ class MusicTrackDescriptor:
     path: str
     volume: float
     loop: bool
+    description: str
+    tags: Tuple[str, ...]
+    length_seconds: Optional[float]
+    tempo_bpm: Optional[float]
 
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "MusicTrackDescriptor":
@@ -44,6 +54,10 @@ class MusicTrackDescriptor:
             path=str(payload.get("path", "")),
             volume=float(payload.get("volume", 1.0)),
             loop=bool(payload.get("loop", True)),
+            description=str(payload.get("description", "")),
+            tags=_tuple_of_strings(payload.get("tags")),
+            length_seconds=_optional_float(payload.get("length_seconds")),
+            tempo_bpm=_optional_float(payload.get("tempo_bpm")),
         )
 
 
@@ -238,6 +252,26 @@ class AudioPlaybackHarness:
                     instruction.track.path,
                 )
         return ResolvedMusicInstruction(instruction=instruction, track=track)
+
+
+def _tuple_of_strings(value: Any) -> Tuple[str, ...]:
+    if value is None:
+        return tuple()
+    if isinstance(value, (str, bytes, bytearray)):
+        return (str(value),)
+    try:
+        return tuple(str(entry) for entry in value)  # type: ignore[arg-type]
+    except TypeError:
+        return (str(value),)
+
+
+def _optional_float(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 __all__ = [

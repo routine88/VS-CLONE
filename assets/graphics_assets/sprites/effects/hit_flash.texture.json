@@ -2,10 +2,21 @@
   "name": "Hit Flash",
   "width": 96,
   "height": 96,
-  "description": "Radial burst shown when enemies take damage.",
-  "palette": ["#ffba08", "#faa307", "#6a040f"],
+  "description": "Radial burst with jagged spikes and central flash to overlay on struck enemies.",
+  "purpose": "Damage feedback VFX",
+  "pivot": [0.5, 0.5],
+  "palette": [
+    "#FFD75C - golden burst",
+    "#FF9147 - orange impact",
+    "#FFFFFF - intense core",
+    "#4D1A0D - dark rim"
+  ],
+  "mood": "Sharp impact",
+  "lighting": "Bright center with fast falloff to transparent edges.",
+  "art_style": "Graphic comic-book style burst.",
+  "tags": ["vfx", "impact", "combat"],
   "notes": [
-    "This effect overlays the player and enemies so the square canvas simplifies blending.",
-    "Replace with hand-drawn frames when final VFX arrive, ensuring the footprint remains 96x96."
+    "Two to three frames with diminishing intensity for animation.",
+    "Sized to sit cleanly over the enemy placeholder silhouette."
   ]
 }

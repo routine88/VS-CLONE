@@ -1,11 +1,21 @@
 {
-  "name": "Soul Pickup",
+  "name": "Soul Shard Pickup",
   "width": 80,
   "height": 80,
-  "description": "Collectible energy swirl placeholder.",
-  "palette": ["#00a896", "#02c39a", "#f0f3bd"],
+  "description": "Floating crystal shard orbiting smaller motes with ethereal glow.",
+  "purpose": "Collectible VFX",
+  "pivot": [0.5, 0.5],
+  "palette": [
+    "#7FFFD4 - aqua glow",
+    "#3A1C5E - void core",
+    "#C2FFE9 - pale highlights"
+  ],
+  "mood": "Mystical reward",
+  "lighting": "Inner glow with subtle pulsing outer aura.",
+  "art_style": "Stylised magical collectible.",
+  "tags": ["collectible", "vfx", "reward"],
   "notes": [
-    "Spawn logic expects an 80x80 canvas for this pickup.",
-    "The descriptor can be replaced with a glow animation once final effects are available."
+    "Supports looping four-frame twinkle animation.",
+    "Design allows for additive bloom in runtime."
   ]
 }

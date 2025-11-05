@@ -56,7 +56,15 @@ def test_audio_manifest_export_includes_routes():
     manifest = audio.build_manifest().to_dict()
 
     assert "effects/environment.hazard" in manifest["effects"]
+    hazard = manifest["effects"]["effects/environment.hazard"]
+    assert hazard["description"]
+    assert hazard["path"].endswith(".wav")
+    assert "environment" in hazard.get("tags", [])
+
     assert "music.dusk_theme" in manifest["music"]
+    dusk = manifest["music"]["music.dusk_theme"]
+    assert dusk["loop"] is True
+    assert dusk.get("tempo_bpm") == 96
     assert "environment.hazard" in manifest["event_effects"]
     assert manifest["event_effects"]["environment.hazard"] == [
         "effects/environment.hazard"

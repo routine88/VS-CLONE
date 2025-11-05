@@ -1,14 +1,24 @@
 {
-  "name": "Background Placeholder",
+  "name": "Neon Graveyard Backdrop",
   "width": 1280,
   "height": 720,
-  "description": "Gradient-friendly placeholder for parallax backgrounds in prototype scenes.",
-  "layers": [
-    "Layer 0: muted skyline gradient",
-    "Layer 1: horizon band"
+  "description": "Layered parallax city of gothic spires with neon signage and misty foreground graves.",
+  "purpose": "Level background",
+  "pivot": [0.0, 0.0],
+  "palette": [
+    "#15181F - midnight blue sky",
+    "#2F3E64 - distant architecture",
+    "#6AD7FF - neon signage",
+    "#4CFFB6 - spectral accent",
+    "#1A0F24 - foreground silhouettes"
   ],
+  "mood": "Moody, supernatural skyline.",
+  "lighting": "Backlit horizon glow with scattered volumetric beams.",
+  "art_style": "Layered painterly matte with crisp silhouettes.",
+  "tags": ["environment", "background", "parallax"],
   "notes": [
-    "Artists can replace this descriptor with a rendered matte while keeping 16:9 framing.",
-    "Any replacement should respect the 1280x720 canvas to avoid camera retuning."
+    "Deliver as looping slice suitable for horizontal scrolling.",
+    "Foreground graves should have cutout alpha for parallax stacking.",
+    "Maintain the 1280x720 framing to match the default viewport."
   ]
 }

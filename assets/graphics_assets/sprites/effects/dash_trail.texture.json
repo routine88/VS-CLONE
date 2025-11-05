@@ -2,10 +2,21 @@
   "name": "Dash Trail",
   "width": 128,
   "height": 64,
-  "description": "Elongated streak used to sell the player's dash movement.",
-  "palette": ["#f8f9fa", "#e9ecef", "#dee2e6"],
+  "description": "Elongated energy swoosh tapering to wisps, oriented left-to-right motion blur.",
+  "purpose": "Movement VFX",
+  "pivot": [0.2, 0.5],
+  "palette": [
+    "#4FF7FF - bright cyan core",
+    "#1C5B73 - deep teal edge",
+    "#B9FFFF - soft highlight"
+  ],
+  "mood": "Energetic burst",
+  "lighting": "Self-illuminated with slight transparency gradient.",
+  "art_style": "Soft additive VFX sprite.",
+  "tags": ["vfx", "movement", "dash"],
   "notes": [
-    "The effect is stretched by gameplay code, so keep the 128x64 ratio for now.",
-    "Swap in a frame-animated variant later without touching the manifest entry."
+    "Provide three sequential frames fading out for animation.",
+    "Edge feathering should avoid hard pixels.",
+    "Keep the 128x64 canvas to preserve dash timing."
   ]
 }
