@@ -13,9 +13,17 @@ def test_default_translator_returns_english_strings():
 def test_default_catalog_loads_languages_from_assets():
     catalog = default_catalog()
     languages = set(catalog.available_languages())
-    assert {"en", "es"}.issubset(languages)
+    assert {"en", "es", "de", "fr"}.issubset(languages)
     english_entries = catalog.language_entries("en")
     assert english_entries["cli.description"].startswith("Nightfall Survivors")
+
+
+def test_new_languages_override_core_strings():
+    catalog = default_catalog()
+    german = catalog.language_entries("de")
+    french = catalog.language_entries("fr")
+    assert german["ui.upgrade_prompt"].startswith("Wähle")
+    assert french["ui.upgrade_prompt"].startswith("Choisissez")
 
 
 def test_translator_uses_language_and_falls_back():
