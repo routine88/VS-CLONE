@@ -1,11 +1,22 @@
 {
-  "name": "Barricade Broken",
+  "name": "Gravestone Barricade - Broken",
   "width": 192,
   "height": 128,
-  "description": "Destroyed barrier tile for the overworld blockout.",
-  "palette": ["#6d6875", "#b5838d", "#e5989b"],
+  "description": "Fragments of gravestones scattered with fading chain energy and dust.",
+  "purpose": "Breakable obstacle debris",
+  "pivot": [0.5, 0.5],
+  "palette": [
+    "#515B67 - shattered stone",
+    "#161B22 - deep crevice",
+    "#68D7E8 - dissipating magic",
+    "#B7BEC9 - dust motes"
+  ],
+  "mood": "Aftermath of destruction.",
+  "lighting": "Residual glow concentrated near fragments, softer shadows.",
+  "art_style": "Painterly shards with motion hints.",
+  "tags": ["environment", "obstacle", "debris"],
   "notes": [
-    "Environment kits snap these barricades on a 64px grid; maintain the 192x128 canvas.",
-    "Replace with a detailed asset or tile strip while keeping bounding dimensions."
+    "Pairs with intact version; ensure silhouettes align for swap.",
+    "Dust detail should not obscure collision clarity."
   ]
 }

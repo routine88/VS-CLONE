@@ -1,0 +1,526 @@
+{
+  "effects": [
+    {
+      "id": "effects/ui.confirm",
+      "path": "audio/ui_confirm.wav",
+      "volume": 0.75,
+      "description": "Two-tone confirmation chime for menu selections and upgrade picks.",
+      "tags": [
+        "ui",
+        "confirm",
+        "positive"
+      ],
+      "length_seconds": 0.18,
+      "synthesis": {
+        "type": "tone",
+        "frequency": 880,
+        "partials": [
+          1.0,
+          1.5
+        ],
+        "duration_seconds": 0.18,
+        "amplitude": 0.35,
+        "envelope": {
+          "attack": 0.005,
+          "decay": 0.03,
+          "sustain": 0.7,
+          "release": 0.08
+        }
+      }
+    },
+    {
+      "id": "effects/ui.prompt",
+      "path": "audio/ui_prompt.wav",
+      "volume": 0.6,
+      "description": "Rising notification ping used for prompts and warnings.",
+      "tags": [
+        "ui",
+        "prompt",
+        "attention"
+      ],
+      "length_seconds": 0.25,
+      "synthesis": {
+        "type": "sweep",
+        "start_frequency": 440,
+        "end_frequency": 880,
+        "duration_seconds": 0.25,
+        "amplitude": 0.32,
+        "envelope": {
+          "attack": 0.01,
+          "release": 0.12
+        }
+      }
+    },
+    {
+      "id": "effects/combat.hit",
+      "path": "audio/combat_hit.wav",
+      "volume": 0.8,
+      "description": "Crunchy impact burst for player weapon hits.",
+      "tags": [
+        "combat",
+        "hit",
+        "impact"
+      ],
+      "length_seconds": 0.22,
+      "synthesis": {
+        "type": "noise",
+        "duration_seconds": 0.22,
+        "amplitude": 0.5,
+        "lowpass": 2200,
+        "envelope": {
+          "attack": 0.002,
+          "decay": 0.05,
+          "sustain": 0.3,
+          "release": 0.08
+        }
+      }
+    },
+    {
+      "id": "effects/combat.enemy_down",
+      "path": "audio/enemy_down.wav",
+      "volume": 0.9,
+      "description": "Falling cadence that plays when an enemy is defeated.",
+      "tags": [
+        "combat",
+        "enemy",
+        "defeat"
+      ],
+      "length_seconds": 0.35,
+      "synthesis": {
+        "type": "sweep",
+        "start_frequency": 660,
+        "end_frequency": 220,
+        "duration_seconds": 0.35,
+        "amplitude": 0.4,
+        "envelope": {
+          "attack": 0.01,
+          "decay": 0.1,
+          "sustain": 0.6,
+          "release": 0.15
+        }
+      }
+    },
+    {
+      "id": "effects/combat.weapon",
+      "path": "audio/weapon_fire.wav",
+      "volume": 0.65,
+      "description": "Short energy pulse tied to the hunter's primary fire.",
+      "tags": [
+        "combat",
+        "weapon",
+        "fire"
+      ],
+      "length_seconds": 0.16,
+      "synthesis": {
+        "type": "tone",
+        "frequency": 1200,
+        "partials": [
+          1.0,
+          2.0,
+          2.5
+        ],
+        "duration_seconds": 0.16,
+        "amplitude": 0.38,
+        "envelope": {
+          "attack": 0.003,
+          "decay": 0.04,
+          "sustain": 0.5,
+          "release": 0.06
+        }
+      }
+    },
+    {
+      "id": "effects/combat.ultimate",
+      "path": "audio/ultimate.wav",
+      "volume": 1.0,
+      "description": "Expanding chord for the ultimate activation.",
+      "tags": [
+        "combat",
+        "ultimate",
+        "power"
+      ],
+      "length_seconds": 0.9,
+      "synthesis": {
+        "type": "chord",
+        "frequencies": [
+          330,
+          660,
+          990
+        ],
+        "duration_seconds": 0.9,
+        "amplitude": 0.42,
+        "envelope": {
+          "attack": 0.04,
+          "decay": 0.2,
+          "sustain": 0.65,
+          "release": 0.25
+        }
+      }
+    },
+    {
+      "id": "effects/player.damage",
+      "path": "audio/player_damage.wav",
+      "volume": 0.85,
+      "description": "Descending tone cluster when the player takes damage.",
+      "tags": [
+        "player",
+        "damage",
+        "alert"
+      ],
+      "length_seconds": 0.28,
+      "synthesis": {
+        "type": "sweep",
+        "start_frequency": 520,
+        "end_frequency": 240,
+        "duration_seconds": 0.28,
+        "amplitude": 0.38,
+        "envelope": {
+          "attack": 0.005,
+          "decay": 0.06,
+          "sustain": 0.5,
+          "release": 0.12
+        }
+      }
+    },
+    {
+      "id": "effects/player.dash",
+      "path": "audio/player_dash.wav",
+      "volume": 0.8,
+      "description": "Quick bright rise to highlight the dash window.",
+      "tags": [
+        "player",
+        "dash",
+        "mobility"
+      ],
+      "length_seconds": 0.2,
+      "synthesis": {
+        "type": "sweep",
+        "start_frequency": 400,
+        "end_frequency": 960,
+        "duration_seconds": 0.2,
+        "amplitude": 0.36,
+        "envelope": {
+          "attack": 0.004,
+          "release": 0.08
+        }
+      }
+    },
+    {
+      "id": "effects/run.victory",
+      "path": "audio/victory_sting.wav",
+      "volume": 1.0,
+      "description": "Triad flourish to celebrate victory.",
+      "tags": [
+        "run",
+        "victory",
+        "positive"
+      ],
+      "length_seconds": 0.75,
+      "synthesis": {
+        "type": "chord",
+        "frequencies": [
+          440,
+          660,
+          880
+        ],
+        "duration_seconds": 0.75,
+        "amplitude": 0.4,
+        "envelope": {
+          "attack": 0.02,
+          "decay": 0.15,
+          "sustain": 0.6,
+          "release": 0.25
+        }
+      }
+    },
+    {
+      "id": "effects/run.defeat",
+      "path": "audio/defeat_sting.wav",
+      "volume": 1.0,
+      "description": "Somber descending cue for a failed run.",
+      "tags": [
+        "run",
+        "defeat",
+        "negative"
+      ],
+      "length_seconds": 0.7,
+      "synthesis": {
+        "type": "sweep",
+        "start_frequency": 360,
+        "end_frequency": 180,
+        "duration_seconds": 0.7,
+        "amplitude": 0.38,
+        "envelope": {
+          "attack": 0.02,
+          "decay": 0.1,
+          "sustain": 0.55,
+          "release": 0.24
+        }
+      }
+    },
+    {
+      "id": "effects/enemy.spawn",
+      "path": "audio/enemy_spawn.wav",
+      "volume": 0.55,
+      "description": "Eerie swell indicating an enemy materialising.",
+      "tags": [
+        "enemy",
+        "spawn",
+        "warning"
+      ],
+      "length_seconds": 0.4,
+      "synthesis": {
+        "type": "sweep",
+        "start_frequency": 260,
+        "end_frequency": 520,
+        "duration_seconds": 0.4,
+        "amplitude": 0.34,
+        "envelope": {
+          "attack": 0.03,
+          "decay": 0.1,
+          "sustain": 0.6,
+          "release": 0.14
+        }
+      }
+    },
+    {
+      "id": "effects/environment.hazard",
+      "path": "audio/environment_hazard.wav",
+      "volume": 0.8,
+      "description": "Harsh burst representing environmental hazards triggering.",
+      "tags": [
+        "environment",
+        "hazard",
+        "danger"
+      ],
+      "length_seconds": 0.5,
+      "synthesis": {
+        "type": "noise",
+        "duration_seconds": 0.5,
+        "amplitude": 0.48,
+        "lowpass": 3200,
+        "envelope": {
+          "attack": 0.005,
+          "decay": 0.1,
+          "sustain": 0.4,
+          "release": 0.2
+        }
+      }
+    },
+    {
+      "id": "effects/environment.salvage",
+      "path": "audio/environment_salvage.wav",
+      "volume": 0.65,
+      "description": "Soft chime for salvage pickups in the environment.",
+      "tags": [
+        "environment",
+        "salvage",
+        "pickup"
+      ],
+      "length_seconds": 0.42,
+      "synthesis": {
+        "type": "tone",
+        "frequency": 520,
+        "partials": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "duration_seconds": 0.42,
+        "amplitude": 0.33,
+        "envelope": {
+          "attack": 0.01,
+          "decay": 0.08,
+          "sustain": 0.6,
+          "release": 0.18
+        }
+      }
+    },
+    {
+      "id": "effects/environment.weather_change",
+      "path": "audio/environment_weather_change.wav",
+      "volume": 0.7,
+      "description": "Ambient sweep for large-scale weather transitions.",
+      "tags": [
+        "environment",
+        "weather",
+        "transition"
+      ],
+      "length_seconds": 0.9,
+      "synthesis": {
+        "type": "sweep",
+        "start_frequency": 180,
+        "end_frequency": 540,
+        "duration_seconds": 0.9,
+        "amplitude": 0.32,
+        "envelope": {
+          "attack": 0.05,
+          "decay": 0.15,
+          "sustain": 0.6,
+          "release": 0.25
+        }
+      }
+    },
+    {
+      "id": "effects/environment.weather_clear",
+      "path": "audio/environment_weather_clear.wav",
+      "volume": 0.6,
+      "description": "Sparkly cue confirming weather stabilisation.",
+      "tags": [
+        "environment",
+        "weather",
+        "clear"
+      ],
+      "length_seconds": 0.5,
+      "synthesis": {
+        "type": "chord",
+        "frequencies": [
+          660,
+          880,
+          990
+        ],
+        "duration_seconds": 0.5,
+        "amplitude": 0.3,
+        "envelope": {
+          "attack": 0.015,
+          "decay": 0.08,
+          "sustain": 0.55,
+          "release": 0.18
+        }
+      }
+    }
+  ],
+  "music": [
+    {
+      "id": "music.dusk_theme",
+      "path": "audio/music_dusk.wav",
+      "volume": 0.7,
+      "loop": true,
+      "description": "Laid-back synth pad with gentle motion for early evening runs.",
+      "tags": [
+        "music",
+        "dusk",
+        "loop"
+      ],
+      "length_seconds": 8.0,
+      "tempo_bpm": 96,
+      "synthesis": {
+        "type": "chord",
+        "frequencies": [
+          196,
+          246,
+          294,
+          392
+        ],
+        "duration_seconds": 8.0,
+        "amplitude": 0.28,
+        "envelope": {
+          "attack": 0.2,
+          "decay": 0.6,
+          "sustain": 0.7,
+          "release": 0.8
+        }
+      }
+    },
+    {
+      "id": "music.boss_theme",
+      "path": "audio/music_boss.wav",
+      "volume": 0.8,
+      "loop": true,
+      "description": "High-energy synth bass and lead for boss encounters.",
+      "tags": [
+        "music",
+        "boss",
+        "loop"
+      ],
+      "length_seconds": 6.5,
+      "tempo_bpm": 132,
+      "synthesis": {
+        "type": "sweep",
+        "start_frequency": 110,
+        "end_frequency": 440,
+        "duration_seconds": 6.5,
+        "amplitude": 0.3,
+        "envelope": {
+          "attack": 0.15,
+          "decay": 0.5,
+          "sustain": 0.65,
+          "release": 0.6
+        }
+      }
+    }
+  ],
+  "event_effects": {
+    "ui.upgrade_selected": [
+      "effects/ui.confirm"
+    ],
+    "ui.level_up": [
+      "effects/ui.prompt"
+    ],
+    "ui.upgrade_presented": [
+      "effects/ui.prompt"
+    ],
+    "combat.weapon_fire": [
+      "effects/combat.weapon"
+    ],
+    "combat.enemy_down": [
+      "effects/combat.enemy_down"
+    ],
+    "combat.enemy_spawn": [
+      "effects/enemy.spawn"
+    ],
+    "player.damage": [
+      "effects/player.damage"
+    ],
+    "player.dash": [
+      "effects/player.dash"
+    ],
+    "combat.ultimate": [
+      "effects/combat.ultimate"
+    ],
+    "run.victory": [
+      "effects/run.victory"
+    ],
+    "run.defeat": [
+      "effects/run.defeat"
+    ],
+    "run.miniboss_warning": [
+      "effects/ui.prompt"
+    ],
+    "run.relic_acquired": [
+      "effects/ui.confirm"
+    ],
+    "run.final_boss_warning": [
+      "effects/ui.prompt"
+    ],
+    "run.final_boss_defeated": [
+      "effects/run.victory"
+    ],
+    "accessibility.health.low": [
+      "effects/ui.prompt"
+    ],
+    "accessibility.upgrade.prompt": [
+      "effects/ui.confirm"
+    ],
+    "environment.hazard": [
+      "effects/environment.hazard"
+    ],
+    "environment.salvage": [
+      "effects/environment.salvage"
+    ],
+    "environment.weather.change": [
+      "effects/environment.weather_change"
+    ],
+    "environment.weather.clear": [
+      "effects/environment.weather_clear"
+    ]
+  },
+  "event_music": {
+    "music.start": [
+      "music.dusk_theme"
+    ],
+    "music.boss": [
+      "music.boss_theme"
+    ]
+  }
+}

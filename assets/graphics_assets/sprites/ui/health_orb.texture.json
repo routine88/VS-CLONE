@@ -1,11 +1,22 @@
 {
-  "name": "Health Orb",
+  "name": "HUD Health Orb",
   "width": 64,
   "height": 64,
-  "description": "Circular HUD element tracking player health.",
-  "palette": ["#d00000", "#e85d04", "#faa307"],
+  "description": "Circular vial with crimson liquid suspended in ornate brass frame and glass shine.",
+  "purpose": "UI health indicator",
+  "pivot": [0.5, 0.5],
+  "palette": [
+    "#C7313F - vibrant blood red",
+    "#571212 - deep burgundy",
+    "#D9B676 - aged brass",
+    "#0A0C10 - near-black background"
+  ],
+  "mood": "Urgent survival HUD.",
+  "lighting": "Glowing internal liquid with specular rim and subtle emissive tick marks.",
+  "art_style": "High-fidelity UI illustration with clean transparency.",
+  "tags": ["ui", "hud", "health"],
   "notes": [
-    "Keep the 64px square footprint so the HUD grid continues to align.",
-    "When replacing, ensure alpha padding matches to avoid layout shifts."
+    "Provide layered source if possible: frame, liquid, highlights.",
+    "Alpha background must be perfectly clean for overlay."
   ]
 }

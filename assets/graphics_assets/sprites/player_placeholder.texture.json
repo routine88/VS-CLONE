@@ -1,11 +1,23 @@
 {
-  "name": "Player Placeholder",
+  "name": "Hunter Vanguard Placeholder",
   "width": 96,
   "height": 96,
-  "description": "Hero silhouette that communicates the gameplay footprint until final art arrives.",
-  "palette": ["#577590", "#f7b267", "#f79d65"],
+  "description": "Agile hunter with arc pistol, cloak fluttering back, facing three-quarter right.",
+  "purpose": "Player character stand-in",
+  "pivot": [0.5, 0.5],
+  "palette": [
+    "#5CF1FF - arc energy cyan",
+    "#22252B - charcoal armour",
+    "#F5F2E8 - pale fabric highlight",
+    "#EC9C47 - warm accent trims"
+  ],
+  "mood": "Heroic and ready for action.",
+  "lighting": "Strong top-left rim light to emphasise silhouette.",
+  "art_style": "Stylised cel-shaded character illustration.",
+  "tags": ["player", "character", "placeholder"],
   "notes": [
-    "The animation pivot and collider volumes assume a 96x96 canvas.",
-    "Update this descriptor after exporting a sprite sheet that preserves the same dimensions."
+    "Weapon hand forward, muzzle pointing to screen right.",
+    "Cape should read as a separate shape for animation overlap.",
+    "Maintain the 96x96 canvas so existing colliders remain valid."
   ]
 }

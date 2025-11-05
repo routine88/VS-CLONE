@@ -1,11 +1,21 @@
 {
-  "name": "Projectile Placeholder",
+  "name": "Arc Bolt Placeholder",
   "width": 32,
   "height": 32,
-  "description": "Glow sprite used for temporary projectile visuals.",
-  "palette": ["#f4d35e", "#ee964b", "#0d3b66"],
+  "description": "Diamond-shaped energy bolt with trailing sparks moving left to right.",
+  "purpose": "Projectile stand-in",
+  "pivot": [0.5, 0.5],
+  "palette": [
+    "#A6F3FF - electric cyan core",
+    "#174D73 - dark cyan outline",
+    "#FFFFFF - white highlight"
+  ],
+  "mood": "Fast and crackling.",
+  "lighting": "Self-illuminated glow with subtle bloom.",
+  "art_style": "Minimalist VFX sprite with soft edges.",
+  "tags": ["projectile", "vfx", "placeholder"],
   "notes": [
-    "This 32x32 footprint is referenced by projectile collision tuning.",
-    "Replace with the final missile sprite while keeping the same bounds."
+    "Align the long axis horizontally for side-scrolling readability.",
+    "Provides the collision proxy for default projectile tuning."
   ]
 }

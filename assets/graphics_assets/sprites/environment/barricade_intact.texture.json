@@ -1,11 +1,22 @@
 {
-  "name": "Barricade Intact",
+  "name": "Gravestone Barricade - Intact",
   "width": 192,
   "height": 128,
-  "description": "Whole barrier tile for the overworld blockout.",
-  "palette": ["#495057", "#adb5bd", "#ced4da"],
+  "description": "Cluster of ruined gravestones bound by arcane chains blocking the lane.",
+  "purpose": "Breakable obstacle",
+  "pivot": [0.5, 0.5],
+  "palette": [
+    "#5F6B7A - weathered stone",
+    "#1D242C - deep cracks",
+    "#8FF2FF - arcane chain glow",
+    "#2B1A33 - damp earth base"
+  ],
+  "mood": "Ancient and oppressive.",
+  "lighting": "Top-down moonlight with subsurface glow in runes.",
+  "art_style": "Painterly environment prop with crisp edges.",
+  "tags": ["environment", "obstacle", "breakable"],
   "notes": [
-    "Designed to pair with the broken barricade descriptor using the same footprint.",
-    "Artists can drop in a hand-painted barrier while keeping the 192x128 bounds."
+    "Design to break cleanly into two halves for destruction state.",
+    "Alpha fringe should remain tight for collision accuracy."
   ]
 }

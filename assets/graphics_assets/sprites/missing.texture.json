@@ -1,16 +1,26 @@
 {
-  "name": "Missing Texture",
+  "name": "Missing Asset Placeholder",
   "width": 64,
   "height": 64,
-  "description": "Fallback checkerboard used when a sprite texture cannot be located.",
-  "palette": ["#3c1053", "#df6589"],
+  "description": "High-contrast error tile shown whenever an expected sprite is absent.",
+  "purpose": "Fallback / debug",
+  "pivot": [0.5, 0.5],
+  "palette": [
+    "#FF00FF - neon magenta",
+    "#000000 - absolute black"
+  ],
+  "mood": "Utility glitch",
+  "lighting": "Flat emission, no shading.",
+  "art_style": "Pixel-perfect checkerboard.",
+  "tags": ["placeholder", "debug"],
+  "notes": [
+    "Should be unmistakable as an error state.",
+    "Swap this descriptor with the rendered fallback tile once production art is exported."
+  ],
   "pattern": [
     "ABABABAB",
     "BABABABA",
     "ABABABAB",
     "BABABABA"
-  ],
-  "notes": [
-    "Replace this descriptor with a production-ready texture that keeps the 64x64 footprint."
   ]
 }
