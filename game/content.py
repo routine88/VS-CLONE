@@ -364,3 +364,67 @@ def final_boss_phases() -> List[Enemy]:
         )
     return phases
 
+
+def enemy_blueprints(*, include_elites: bool = True) -> Dict[str, Dict[str, object]]:
+    """Return the normalised enemy blueprints keyed by archetype name."""
+
+    names: List[str] = list(_BASE_ENEMY_ARCHETYPES.keys())
+    if include_elites:
+        names.extend(_ELITE_ENEMY_ARCHETYPES.keys())
+
+    payload: Dict[str, Dict[str, object]] = {}
+    for name in names:
+        enemy = instantiate_enemy(name, 1.0)
+        payload[name] = {
+            "name": enemy.name,
+            "health": enemy.health,
+            "damage": enemy.damage,
+            "speed": enemy.speed,
+            "lane": enemy.lane.value,
+            "behaviors": tuple(enemy.behaviors),
+            "category": "elite" if name in _ELITE_ENEMY_ARCHETYPES else "base",
+        }
+    return payload
+
+
+def elite_spawn_chance(phase: int) -> float:
+    """Return the probability of elite substitutions for the supplied phase."""
+
+    return float(_ELITE_SPAWN_CHANCE.get(phase, 0.0))
+
+
+def miniboss_blueprints() -> Sequence[Dict[str, object]]:
+    """Expose the miniboss blueprint payloads."""
+
+    entries: List[Dict[str, object]] = []
+    for blueprint in _MINIBOSS_BLUEPRINTS:
+        entry = dict(blueprint)
+        lane = entry.get("lane", EnemyLane.GROUND)
+        if isinstance(lane, EnemyLane):
+            entry["lane"] = lane.value
+        else:
+            entry["lane"] = str(lane)
+        behaviors = entry.get("behaviors", ())
+        entry["behaviors"] = tuple(behaviors) if isinstance(behaviors, Iterable) else (behaviors,)
+        entries.append(entry)
+    return tuple(entries)
+
+
+def final_boss_blueprint() -> Dict[str, object]:
+    """Return the raw final boss blueprint for downstream export tooling."""
+
+    payload = dict(_FINAL_BOSS_BLUEPRINT)
+    phases: List[Dict[str, object]] = []
+    for phase in _FINAL_BOSS_BLUEPRINT["phases"]:
+        entry = dict(phase)
+        lane = entry.get("lane", EnemyLane.GROUND)
+        if isinstance(lane, EnemyLane):
+            entry["lane"] = lane.value
+        else:
+            entry["lane"] = str(lane)
+        behaviors = entry.get("behaviors", ())
+        entry["behaviors"] = tuple(behaviors) if isinstance(behaviors, Iterable) else (behaviors,)
+        phases.append(entry)
+    payload["phases"] = tuple(phases)
+    return payload
+

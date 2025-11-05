@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
-from typing import List, Sequence
+from typing import Dict, List, Mapping, Sequence
 
 from . import config
 from .combat import CombatResolver, CombatSummary
@@ -388,4 +388,13 @@ def default_upgrade_cards() -> List[UpgradeCard]:
                 )
             )
     return cards
+
+
+def weapon_upgrade_paths() -> Mapping[str, Dict[int, str]]:
+    """Expose the weapon upgrade card descriptions keyed by tier."""
+
+    paths: Dict[str, Dict[int, str]] = {}
+    for weapon, tiers in _WEAPON_CARD_DEFINITIONS.items():
+        paths[weapon] = {tier: str(description) for tier, description in tiers.items()}
+    return paths
 
