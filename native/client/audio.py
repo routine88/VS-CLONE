@@ -256,6 +256,89 @@ class AudioPlaybackHarness:
         return ResolvedMusicInstruction(instruction=instruction, track=track)
 
 
+@dataclass(frozen=True)
+class EffectPlaybackEvent:
+    """Effect playback event derived from routed instructions."""
+
+    clip: SoundClipDescriptor
+    volume: float
+    pan: float
+
+
+@dataclass(frozen=True)
+class MusicPlaybackEvent:
+    """Music playback event capturing the resolved track and state."""
+
+    track: MusicTrackDescriptor
+    volume: float
+    action: str
+
+
+@dataclass(frozen=True)
+class AppliedAudioFrame:
+    """Resulting payload after the mixer applies routing decisions."""
+
+    time: float
+    effects: Tuple[EffectPlaybackEvent, ...]
+    music: Tuple[MusicPlaybackEvent, ...]
+
+
+class AudioMixer:
+    """Apply routed audio frames and maintain playback state."""
+
+    def __init__(self, harness: AudioPlaybackHarness) -> None:
+        self._harness = harness
+        self.current_track: str | None = None
+
+    def apply_payload(self, payload: Mapping[str, Any]) -> AppliedAudioFrame:
+        routed = self._harness.route_payload(payload)
+        return self.apply(routed)
+
+    def apply(self, frame: AudioFrameDTO | AudioPlaybackFrame) -> AppliedAudioFrame:
+        if isinstance(frame, AudioFrameDTO):
+            routed = self._harness.route(frame)
+        else:
+            routed = frame
+
+        effects: list[EffectPlaybackEvent] = []
+        for entry in routed.effects:
+            if entry.clip is None:
+                continue
+            instruction = entry.instruction
+            effects.append(
+                EffectPlaybackEvent(
+                    clip=entry.clip,
+                    volume=float(instruction.volume),
+                    pan=float(instruction.pan),
+                )
+            )
+
+        music_events: list[MusicPlaybackEvent] = []
+        for entry in routed.music:
+            instruction = entry.instruction
+            action = instruction.action or "play"
+            if entry.track is None:
+                if action.lower() == "stop":
+                    self.current_track = None
+                continue
+
+            volume = instruction.volume if instruction.volume is not None else entry.track.volume
+            music_events.append(
+                MusicPlaybackEvent(track=entry.track, volume=float(volume), action=action)
+            )
+
+            if action.lower() == "stop":
+                self.current_track = None
+            else:
+                self.current_track = entry.track.id
+
+        return AppliedAudioFrame(
+            time=routed.frame.time,
+            effects=tuple(effects),
+            music=tuple(music_events),
+        )
+
+
 def _tuple_of_strings(value: Any) -> Tuple[str, ...]:
     if value is None:
         return tuple()
