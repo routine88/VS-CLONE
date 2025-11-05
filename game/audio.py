@@ -148,6 +148,9 @@ class AudioEngine:
             SoundClip(id="effects/player.damage", path="audio/player_damage.ogg", volume=0.85)
         )
         self.register_effect(
+            SoundClip(id="effects/player.dash", path="audio/player_dash.ogg", volume=0.8)
+        )
+        self.register_effect(
             SoundClip(id="effects/run.victory", path="audio/victory_sting.ogg", volume=1.0)
         )
         self.register_effect(
@@ -209,6 +212,10 @@ class AudioEngine:
         self.bind_effect(
             "player.damage",
             "effects/player.damage",
+        )
+        self.bind_effect(
+            "player.dash",
+            "effects/player.dash",
         )
         self.bind_effect(
             "combat.ultimate",
