@@ -16,6 +16,12 @@ def test_audio_engine_placeholders_and_bindings():
     assert any(instr.action == "refresh" for instr in follow_up.music)
 
 
+def test_audio_engine_player_dash_event():
+    audio = AudioEngine()
+    frame = audio.build_frame(["player.dash"], time=0.5)
+    assert any(instruction.clip.id == "effects/player.dash" for instruction in frame.effects)
+
+
 def test_audio_engine_custom_bindings_override_defaults():
     audio = AudioEngine()
     custom = SoundClip(id="custom.clip", path="audio/custom.ogg", volume=0.5)

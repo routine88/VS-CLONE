@@ -16,7 +16,7 @@ This roadmap translates the PRD milestones into concrete, trackable tasks.
   - [ ] 2 starter hunters with signature weapons
   - [ ] 4 weapons with upgrade tiers and glyph synergies
   - [x] MVP visualizer and viewer (`game.mvp_graphics`, `game.mvp_viewer`)
-  - [ ] Audio cue table wired to events in viewer
+  - [x] Audio cue table wired to events in viewer
   - [ ] Asset drop-in parity for runtime harness
 
 - Content Expansion (16 weeks)
