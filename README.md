@@ -28,6 +28,10 @@ See `docs/GIT_SETUP.md` for instructions on configuring Git so you can pull and 
 - Export render/audio payloads for the in-house runtime using the CLI in `tools`:
   - `python -m tools.graphics_manifest --format json > manifest.json`
   - `python -m tools.export_runtime_frames --frames 120 --output exports/mvp_frames.jsonl`
+- Package and validate runtime drops for QA/playtesters:
+  - `ns-runtime-artifacts bundle --output dist/native-runtime.zip`
+  - `ns-runtime-artifacts checksum dist/native-runtime.zip`
+  - See `docs/QA_HANDOFF.md` for the full handoff checklist.
 
 ## Developer Workflow
 

@@ -25,3 +25,58 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
+  artifacts:
+    name: Runtime artifacts
+    if: github.event_name == 'push'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install runtime tooling
+        run: python -m pip install --upgrade pip
+      - name: Export runtime frame bundle
+        run: |
+          python -m tools.export_runtime_frames \
+            --seed 1337 \
+            --frames 300 \
+            --output artifacts/frame-bundles/nightfall-mvp.jsonl
+      - name: Verify reproducible frame bundle
+        run: |
+          python -m tools.export_runtime_frames \
+            --seed 1337 \
+            --frames 300 \
+            --output artifacts/frame-bundles/nightfall-mvp-repeat.jsonl
+          python -m native.client.cli verify \
+            artifacts/frame-bundles/nightfall-mvp.jsonl \
+            artifacts/frame-bundles/nightfall-mvp-repeat.jsonl
+          rm artifacts/frame-bundles/nightfall-mvp-repeat.jsonl
+      - name: Record frame bundle checksum
+        run: |
+          python -m native.client.cli checksum \
+            artifacts/frame-bundles/nightfall-mvp.jsonl \
+            --output artifacts/frame-bundles/nightfall-mvp.sha256
+      - name: Bundle native harness
+        run: |
+          python -m native.client.cli bundle \
+            --output artifacts/native/nightfall-runtime.zip \
+            --build-id "${GITHUB_SHA}" \
+            --platform linux
+      - name: Record native bundle checksum
+        run: |
+          python -m native.client.cli checksum \
+            artifacts/native/nightfall-runtime.zip \
+            --output artifacts/native/nightfall-runtime.sha256
+      - name: Upload frame bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frame-bundles
+          path: artifacts/frame-bundles
+      - name: Upload native runtime artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-runtime
+          path: artifacts/native
+
