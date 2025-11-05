@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Mapping, Tuple
+from collections.abc import Mapping, Sequence
+from typing import Any, Dict, Tuple
 
 from .dto import SpriteDescriptor
 
@@ -76,22 +77,39 @@ class GraphicsManifest:
         placeholders_payload = payload.get("placeholders", {})
 
         sprites: Dict[str, ManifestSprite] = {}
-        for entry in sprites_payload:
+
+        if isinstance(sprites_payload, Mapping):
+            sprite_entries = sprites_payload.items()
+        else:
+            sprite_entries = ((None, entry) for entry in _as_iterable(sprites_payload))
+
+        for explicit_id, entry in sprite_entries:
+            if not isinstance(entry, Mapping):
+                continue
+
+            sprite_id = entry.get("id", explicit_id)
+            if sprite_id is None:
+                continue
+
+            texture = entry.get("texture")
+            if texture is None:
+                continue
+
             sprite = ManifestSprite(
-                id=str(entry["id"]),
-                texture=str(entry["texture"]),
-                size=(int(entry["size"][0]), int(entry["size"][1])),  # type: ignore[index]
-                pivot=(float(entry["pivot"][0]), float(entry["pivot"][1])),  # type: ignore[index]
+                id=str(sprite_id),
+                texture=str(texture),
+                size=_coerce_int_pair(entry.get("size"), default=(0, 0)),
+                pivot=_coerce_float_pair(entry.get("pivot"), default=(0.0, 0.0)),
                 tint=_optional_tint(entry.get("tint")),
                 display_name=entry.get("display_name") or None,
                 role=str(entry.get("role", "")),
                 description=str(entry.get("description", "")),
-                palette=_tuple_of_strings(entry.get("palette", ())),
+                palette=_tuple_of_strings(entry.get("palette")),
                 mood=str(entry.get("mood", "")),
                 lighting=str(entry.get("lighting", "")),
                 art_style=str(entry.get("art_style", "")),
-                notes=_tuple_of_strings(entry.get("notes", ())),
-                tags=_tuple_of_strings(entry.get("tags", ())),
+                notes=_tuple_of_strings(entry.get("notes")),
+                tags=_tuple_of_strings(entry.get("tags")),
                 root=root,
             )
             sprites[sprite.id] = sprite
@@ -106,7 +124,7 @@ class GraphicsManifest:
                 scroll=(float(scroll_payload[0]), float(scroll_payload[1])),  # type: ignore[index]
             )
 
-        placeholders = {str(kind): str(sprite_id) for kind, sprite_id in placeholders_payload.items()}
+        placeholders = _normalise_placeholders(placeholders_payload)
 
         return cls(
             root=root,
@@ -143,13 +161,97 @@ class SpriteRegistry:
 def _optional_tint(payload: Any) -> Tuple[int, int, int] | None:
     if payload is None:
         return None
-    return (int(payload[0]), int(payload[1]), int(payload[2]))  # type: ignore[index]
+
+    if isinstance(payload, Mapping):
+        r = payload.get("r") or payload.get("red")
+        g = payload.get("g") or payload.get("green")
+        b = payload.get("b") or payload.get("blue")
+        if r is not None and g is not None and b is not None:
+            return (int(r), int(g), int(b))
+
+    values = _as_iterable(payload)
+    if len(values) >= 3:
+        return (int(values[0]), int(values[1]), int(values[2]))
+    return None
 
 
 def _tuple_of_strings(value: Any) -> Tuple[str, ...]:
     if value is None:
         return tuple()
-    return tuple(str(entry) for entry in value)
+    if isinstance(value, Mapping):
+        iterable = value.values()
+    elif isinstance(value, (str, bytes, bytearray)):
+        return (str(value),)
+    else:
+        iterable = value
+
+    try:
+        return tuple(str(entry) for entry in iterable)
+    except TypeError:
+        return (str(value),)
+
+
+def _coerce_int_pair(payload: Any, *, default: Tuple[int, int]) -> Tuple[int, int]:
+    first, second = _coerce_pair(payload, default=default)
+    return int(first), int(second)
+
+
+def _coerce_float_pair(payload: Any, *, default: Tuple[float, float]) -> Tuple[float, float]:
+    first, second = _coerce_pair(payload, default=default)
+    return float(first), float(second)
+
+
+def _coerce_pair(payload: Any, *, default: Tuple[float, float]) -> Tuple[float, float]:
+    if isinstance(payload, Mapping):
+        first = _first_present(payload, "x", "width", "w")
+        second = _first_present(payload, "y", "height", "h")
+        return (
+            float(default[0]) if first is None else float(first),
+            float(default[1]) if second is None else float(second),
+        )
+
+    values = _as_iterable(payload)
+    if len(values) >= 2:
+        return float(values[0]), float(values[1])
+    if len(values) == 1:
+        single = float(values[0])
+        return single, single
+    return float(default[0]), float(default[1])
+
+
+def _first_present(payload: Mapping[str, Any], *keys: str) -> Any | None:
+    for key in keys:
+        if key in payload:
+            return payload[key]
+    return None
+
+
+def _as_iterable(value: Any) -> Tuple[Any, ...]:
+    if value is None:
+        return tuple()
+    if isinstance(value, (str, bytes, bytearray)):
+        return (value,)
+    if isinstance(value, Sequence):
+        return tuple(value)
+    return (value,)
+
+
+def _normalise_placeholders(payload: Any) -> Dict[str, str]:
+    if isinstance(payload, Mapping):
+        return {str(kind): str(sprite_id) for kind, sprite_id in payload.items()}
+
+    placeholders: Dict[str, str] = {}
+    for entry in _as_iterable(payload):
+        if isinstance(entry, Mapping):
+            kind = entry.get("kind") or entry.get("id")
+            sprite_id = entry.get("sprite") or entry.get("sprite_id") or entry.get("value")
+            if kind is None or sprite_id is None:
+                continue
+            placeholders[str(kind)] = str(sprite_id)
+        elif isinstance(entry, Sequence) and not isinstance(entry, (str, bytes, bytearray)):
+            if len(entry) >= 2:
+                placeholders[str(entry[0])] = str(entry[1])
+    return placeholders
 
 
 __all__ = [
