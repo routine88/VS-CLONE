@@ -132,8 +132,13 @@ class SpriteAssetManifest:
                     pass
             engine.register_sprite(sprite.to_sprite())
 
+        existing_placeholders: Mapping[str, str] = {}
+        if not replace_existing:
+            existing_placeholders = engine.build_manifest().placeholders
+
         for kind, sprite_id in self.placeholders.items():
-            engine.register_placeholder(kind, sprite_id)
+            if replace_existing or kind not in existing_placeholders:
+                engine.register_placeholder(kind, sprite_id)
 
     def validate_assets(self, asset_root: Path) -> Tuple[str, ...]:
         """Return warnings about missing or mismatched sprite textures."""

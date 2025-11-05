@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterable, List, Optional, Sequence
 
 from .audio import AudioEngine, AudioFrame
 from .graphics import Camera, GraphicsEngine, RenderFrame, SceneNode
+from .graphics_assets import load_asset_manifest
 from .mvp import MvpConfig, MvpFrameSnapshot, MvpReport, run_mvp_with_snapshots
 
 
@@ -37,6 +39,20 @@ class MvpVisualizationResult:
     audio_frames: Sequence[AudioFrame]
 
 
+ASSET_MANIFEST_PATH = (
+    Path(__file__).resolve().parent.parent / "assets" / "graphics_assets" / "manifest.json"
+)
+
+
+def bootstrap_graphics(engine: Optional[GraphicsEngine] = None) -> GraphicsEngine:
+    """Load the asset manifest and apply it to ``engine``."""
+
+    target = engine or GraphicsEngine()
+    manifest = load_asset_manifest(ASSET_MANIFEST_PATH)
+    manifest.apply(target, replace_existing=True, update_viewport=True)
+    return target
+
+
 class MvpVisualizer:
     """Bridge that converts MVP simulation snapshots into render frames."""
 
@@ -47,7 +63,7 @@ class MvpVisualizer:
         audio: Optional[AudioEngine] = None,
         settings: Optional[MvpVisualSettings] = None,
     ) -> None:
-        self.graphics = graphics or GraphicsEngine()
+        self.graphics = graphics or bootstrap_graphics()
         self.audio = audio or AudioEngine()
         self.settings = settings or MvpVisualSettings()
 
@@ -176,4 +192,5 @@ __all__ = [
     "MvpVisualSettings",
     "MvpVisualizationResult",
     "MvpVisualizer",
+    "bootstrap_graphics",
 ]
