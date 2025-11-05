@@ -35,7 +35,7 @@ Actionable tasks to reach a playable, controller-in-hand MVP slice.
 
 ## Sign-off
 
-- [ ] Playable for 5 minutes, repeatable outcomes with same seed
-- [ ] Basic feel targets OK: pacing, density, responsiveness
-- [ ] Owner sign-off captured in `logs/` and build notes
+- [x] Playable for 5 minutes, repeatable outcomes with same seed
+- [x] Basic feel targets OK: pacing, density, responsiveness
+- [x] Owner sign-off captured in `logs/` and build notes
 

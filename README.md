@@ -7,6 +7,7 @@ See `docs/GIT_SETUP.md` for instructions on configuring Git so you can pull and 
 ## Quickstart
 
 - Prerequisites: Python 3.11+ (3.13 tested), no external deps required for the text/graphics MVP. Optional: Tk support for the viewer GUI.
+- Launch the graphical MVP with one command: `python -m tools.launch_game --mode mvp --duration 300`
 - Clone and run a quick smoke test:
   - `python -m pytest -q` (installs: `pip install pytest` if missing)
   - `python -m game.prototype --seed 123 --duration 60 --tick-step 5 --summary`
@@ -19,7 +20,7 @@ See `docs/GIT_SETUP.md` for instructions on configuring Git so you can pull and 
   - `python -m game.interactive --duration 180 --fps 45`
   - Windows works without curses; on other platforms install `curses` if needed.
 - Graphical MVP Viewer (Tkinter):
-  - `python -m game.mvp_viewer --duration 120 --playback 1.25`
+  - `python -m tools.launch_game --mode mvp --duration 120 --playback 1.25`
 - Arcade Prototype Viewer (Tkinter):
   - `python -m game.arcade_viewer --duration 180 --fps 45 --playback 1.0`
 
@@ -37,9 +38,15 @@ See `docs/GIT_SETUP.md` for instructions on configuring Git so you can pull and 
 
 - Run tests: `python -m pytest -q`
 - Regenerate the graphics brief: `python -m tools.graphics_manifest --format markdown --output docs/GRAPHICS_ASSET_BRIEF.md`
+- Launch supported builds (`mvp`, `prototype`, `interactive`) without platform-specific scripts: `python -m tools.launch_game --mode mvp`
 - Launchers (Windows):
   - `LAUNCHMVP.bat` launches the graphical MVP and logs to `logs/mvp_last_run.log`.
   - `RUN_TESTS.bat`, `RUN_INTERACTIVE.bat`, `RUN_PROTOTYPE.bat` provide one‑click flows.
+
+## Repeatability Checks
+
+- Run the deterministic five-minute validation sweep: `python -m tools.repeatability_check --repeat 2 --duration 300`
+- Results are written to `logs/repeatability_<timestamp>.json` plus a Markdown summary for quick review.
 
 ## Roadmap & MVP
 
