@@ -143,11 +143,13 @@ class AudioManifestDTO:
         event_music_payload = payload.get("event_music", {})
 
         effects = {
-            str(effect_id): SoundClipDescriptor.from_dict(entry)
+            str(effect_id): SoundClipDescriptor.from_dict(
+                {"id": effect_id, **entry}
+            )
             for effect_id, entry in effects_payload.items()
         }
         music = {
-            str(track_id): MusicTrackDescriptor.from_dict(entry)
+            str(track_id): MusicTrackDescriptor.from_dict({"id": track_id, **entry})
             for track_id, entry in music_payload.items()
         }
         event_effects = {
@@ -240,16 +242,147 @@ class AudioPlaybackHarness:
         return ResolvedMusicInstruction(instruction=instruction, track=track)
 
 
+@dataclass(frozen=True)
+class EffectPlaybackEvent:
+    """Resolved effect instruction ready for playback."""
+
+    clip: SoundClipDescriptor
+    volume: float
+    pan: float
+    time: float
+
+
+@dataclass(frozen=True)
+class MusicPlaybackEvent:
+    """Resolved music instruction with effective mix information."""
+
+    track: Optional[MusicTrackDescriptor]
+    action: str
+    volume: Optional[float]
+    time: float
+
+
+@dataclass(frozen=True)
+class AppliedAudioFrame:
+    """Playback-ready frame returned by :class:`AudioMixer`."""
+
+    frame: AudioFrameDTO
+    effects: Tuple[EffectPlaybackEvent, ...]
+    music: Tuple[MusicPlaybackEvent, ...]
+
+    @property
+    def time(self) -> float:
+        """Convenience accessor for the frame timestamp."""
+
+        return self.frame.time
+
+
+class AudioMixer:
+    """Apply routed audio frames and track playback state."""
+
+    def __init__(
+        self,
+        harness: AudioPlaybackHarness,
+        *,
+        logger: logging.Logger | None = None,
+    ) -> None:
+        self._harness = harness
+        self._logger = logger or LOGGER
+        self._current_track: Optional[str] = None
+
+    @property
+    def current_track(self) -> Optional[str]:
+        """Identifier of the currently playing track, if any."""
+
+        return self._current_track
+
+    @property
+    def manifest(self) -> AudioManifestDTO:
+        return self._harness.manifest
+
+    def apply_playback_frame(self, playback_frame: AudioPlaybackFrame) -> AppliedAudioFrame:
+        """Consume a routed frame and return playback events."""
+
+        time = playback_frame.frame.time
+        effects: list[EffectPlaybackEvent] = []
+        for entry in playback_frame.effects:
+            clip = entry.clip
+            if clip is None:
+                continue
+            effects.append(
+                EffectPlaybackEvent(
+                    clip=clip,
+                    volume=entry.instruction.volume,
+                    pan=entry.instruction.pan,
+                    time=time,
+                )
+            )
+
+        music_events: list[MusicPlaybackEvent] = []
+        for entry in playback_frame.music:
+            instruction = entry.instruction
+            track = entry.track
+            action = instruction.action
+            if action.lower() == "play" and track is not None:
+                self._current_track = track.id
+            elif action.lower() == "refresh" and track is not None:
+                # Keep the same track active but refresh state.
+                self._current_track = track.id
+            elif action.lower() == "stop":
+                self._current_track = None
+
+            if instruction.volume is not None:
+                effective_volume: Optional[float] = instruction.volume
+            elif track is not None:
+                effective_volume = track.volume
+            else:
+                effective_volume = None
+
+            music_events.append(
+                MusicPlaybackEvent(
+                    track=track,
+                    action=action,
+                    volume=effective_volume,
+                    time=time,
+                )
+            )
+
+        return AppliedAudioFrame(
+            frame=playback_frame.frame,
+            effects=tuple(effects),
+            music=tuple(music_events),
+        )
+
+    def apply(self, frame: AudioFrameDTO) -> AppliedAudioFrame:
+        """Route and apply a decoded DTO."""
+
+        return self.apply_playback_frame(self._harness.route(frame))
+
+    def apply_payload(self, payload: Mapping[str, Any]) -> AppliedAudioFrame:
+        """Route and apply a raw mapping payload."""
+
+        return self.apply_playback_frame(self._harness.route_payload(payload))
+
+    def apply_json(self, payload: str) -> AppliedAudioFrame:
+        """Route and apply a JSON payload."""
+
+        return self.apply_playback_frame(self._harness.route_json(payload))
+
+
 __all__ = [
     "AudioFrameDTO",
     "AudioManifestDTO",
     "AudioPlaybackFrame",
     "AudioPlaybackHarness",
+    "AudioMixer",
+    "AppliedAudioFrame",
     "MusicInstructionDTO",
     "MusicTrackDescriptor",
+    "MusicPlaybackEvent",
     "ResolvedEffectInstruction",
     "ResolvedMusicInstruction",
     "SoundClipDescriptor",
     "SoundInstructionDTO",
+    "EffectPlaybackEvent",
 ]
 
