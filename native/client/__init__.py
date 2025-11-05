@@ -13,6 +13,7 @@ from .audio import (
     SoundInstructionDTO,
 )
 from .dto import RenderFrameDTO, RenderInstructionDTO, SpriteDescriptor
+from .cli import ChecksumResult, bundle_native_client, checksum_files, verify_digests
 from .harness import FramePlaybackHarness, PlaybackFrame, ResolvedInstruction
 from .manifest import GraphicsManifest, LayerDefinition, ManifestSprite, SpriteRegistry
 
@@ -37,4 +38,8 @@ __all__ = [
     "FramePlaybackHarness",
     "PlaybackFrame",
     "ResolvedInstruction",
+    "ChecksumResult",
+    "bundle_native_client",
+    "checksum_files",
+    "verify_digests",
 ]
