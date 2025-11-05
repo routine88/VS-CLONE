@@ -1,11 +1,15 @@
 """Data transfer objects and utilities for consuming prototype exports."""
 
 from .audio import (
+    AppliedAudioFrame,
     AudioFrameDTO,
     AudioManifestDTO,
+    AudioMixer,
     AudioPlaybackFrame,
     AudioPlaybackHarness,
+    EffectPlaybackEvent,
     MusicInstructionDTO,
+    MusicPlaybackEvent,
     MusicTrackDescriptor,
     ResolvedEffectInstruction,
     ResolvedMusicInstruction,
@@ -18,11 +22,15 @@ from .harness import FramePlaybackHarness, PlaybackFrame, ResolvedInstruction
 from .manifest import GraphicsManifest, LayerDefinition, ManifestSprite, SpriteRegistry
 
 __all__ = [
+    "AppliedAudioFrame",
     "AudioFrameDTO",
     "AudioManifestDTO",
+    "AudioMixer",
     "AudioPlaybackFrame",
     "AudioPlaybackHarness",
+    "EffectPlaybackEvent",
     "MusicInstructionDTO",
+    "MusicPlaybackEvent",
     "MusicTrackDescriptor",
     "SoundClipDescriptor",
     "SoundInstructionDTO",

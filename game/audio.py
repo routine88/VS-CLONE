@@ -3,7 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence
+from typing import (
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Tuple,
+    TypedDict,
+)
 
 
 @dataclass(frozen=True)
@@ -125,128 +135,29 @@ class AudioEngine:
 
         if self._placeholders_registered:
             return
+
         self._placeholders_registered = True
-        self.register_effect(
-            SoundClip(id="effects/ui.confirm", path="audio/ui_confirm.ogg", volume=0.75)
-        )
-        self.register_effect(
-            SoundClip(id="effects/ui.prompt", path="audio/ui_prompt.ogg", volume=0.6)
-        )
-        self.register_effect(
-            SoundClip(id="effects/combat.hit", path="audio/combat_hit.ogg", volume=0.8)
-        )
-        self.register_effect(
-            SoundClip(id="effects/combat.enemy_down", path="audio/enemy_down.ogg", volume=0.9)
-        )
-        self.register_effect(
-            SoundClip(id="effects/combat.weapon", path="audio/weapon_fire.ogg", volume=0.65)
-        )
-        self.register_effect(
-            SoundClip(id="effects/combat.ultimate", path="audio/ultimate.ogg", volume=1.0)
-        )
-        self.register_effect(
-            SoundClip(id="effects/player.damage", path="audio/player_damage.ogg", volume=0.85)
-        )
-        self.register_effect(
-            SoundClip(id="effects/player.dash", path="audio/player_dash.ogg", volume=0.8)
-        )
-        self.register_effect(
-            SoundClip(id="effects/run.victory", path="audio/victory_sting.ogg", volume=1.0)
-        )
-        self.register_effect(
-            SoundClip(id="effects/run.defeat", path="audio/defeat_sting.ogg", volume=1.0)
-        )
-        self.register_effect(
-            SoundClip(id="effects/enemy.spawn", path="audio/enemy_spawn.ogg", volume=0.55)
-        )
-        self.register_effect(
-            SoundClip(id="effects/environment.hazard", path="audio/environment_hazard.ogg", volume=0.8)
-        )
-        self.register_effect(
-            SoundClip(id="effects/environment.salvage", path="audio/environment_salvage.ogg", volume=0.65)
-        )
-        self.register_effect(
-            SoundClip(
-                id="effects/environment.weather_change",
-                path="audio/environment_weather_change.ogg",
-                volume=0.7,
+        for effect_id, definition in DEFAULT_AUDIO_CUE_TABLE["effects"].items():
+            self.register_effect(
+                SoundClip(
+                    id=effect_id,
+                    path=definition["path"],
+                    volume=definition["volume"],
+                )
             )
-        )
-        self.register_effect(
-            SoundClip(
-                id="effects/environment.weather_clear",
-                path="audio/environment_weather_clear.ogg",
-                volume=0.6,
+        for track_id, definition in DEFAULT_AUDIO_CUE_TABLE["music"].items():
+            self.register_music(
+                MusicTrack(
+                    id=track_id,
+                    path=definition["path"],
+                    volume=definition["volume"],
+                    loop=definition["loop"],
+                )
             )
-        )
-        self.register_music(
-            MusicTrack(id="music.dusk_theme", path="audio/music_dusk.ogg", volume=0.7, loop=True)
-        )
-        self.register_music(
-            MusicTrack(id="music.boss_theme", path="audio/music_boss.ogg", volume=0.8, loop=True)
-        )
-        self.bind_effect(
-            "ui.upgrade_selected",
-            "effects/ui.confirm",
-        )
-        self.bind_effect(
-            "ui.level_up",
-            "effects/ui.prompt",
-        )
-        self.bind_effect(
-            "ui.upgrade_presented",
-            "effects/ui.prompt",
-        )
-        self.bind_effect(
-            "combat.weapon_fire",
-            "effects/combat.weapon",
-        )
-        self.bind_effect(
-            "combat.enemy_down",
-            "effects/combat.enemy_down",
-        )
-        self.bind_effect(
-            "combat.enemy_spawn",
-            "effects/enemy.spawn",
-        )
-        self.bind_effect(
-            "player.damage",
-            "effects/player.damage",
-        )
-        self.bind_effect(
-            "player.dash",
-            "effects/player.dash",
-        )
-        self.bind_effect(
-            "combat.ultimate",
-            "effects/combat.ultimate",
-        )
-        self.bind_effect(
-            "run.victory",
-            "effects/run.victory",
-        )
-        self.bind_effect(
-            "run.defeat",
-            "effects/run.defeat",
-        )
-        self.bind_effect("run.miniboss_warning", "effects/ui.prompt")
-        self.bind_effect("run.relic_acquired", "effects/ui.confirm")
-        self.bind_effect("run.final_boss_warning", "effects/ui.prompt")
-        self.bind_effect("run.final_boss_defeated", "effects/run.victory")
-        self.bind_effect("accessibility.health.low", "effects/ui.prompt")
-        self.bind_effect("accessibility.upgrade.prompt", "effects/ui.confirm")
-        self.bind_effect("environment.hazard", "effects/environment.hazard")
-        self.bind_effect("environment.salvage", "effects/environment.salvage")
-        self.bind_effect(
-            "environment.weather.change",
-            "effects/environment.weather_change",
-        )
-        self.bind_effect(
-            "environment.weather.clear",
-            "effects/environment.weather_clear",
-        )
-        self.bind_music("music.start", "music.dusk_theme")
-        self.bind_music("music.boss", "music.boss_theme")
+        for event, routes in DEFAULT_AUDIO_CUE_TABLE["event_effects"].items():
+            self.bind_effect(event, *routes)
+        for event, routes in DEFAULT_AUDIO_CUE_TABLE["event_music"].items():
+            self.bind_music(event, *routes)
 
     def build_frame(
         self,
@@ -291,6 +202,143 @@ class AudioEngine:
         )
 
 
+class EffectDefinition(TypedDict):
+    """Schema for an effect entry in the default cue table."""
+
+    path: str
+    volume: float
+
+
+class MusicDefinition(TypedDict):
+    """Schema for a music entry in the default cue table."""
+
+    path: str
+    volume: float
+    loop: bool
+
+
+class AudioCueTable(TypedDict):
+    """Mapping describing the built-in audio cues and routing."""
+
+    effects: Dict[str, EffectDefinition]
+    music: Dict[str, MusicDefinition]
+    event_effects: Dict[str, Tuple[str, ...]]
+    event_music: Dict[str, Tuple[str, ...]]
+
+
+DEFAULT_AUDIO_CUE_TABLE: AudioCueTable = {
+    "effects": {
+        "effects/ui.confirm": {"path": "audio/ui_confirm.ogg", "volume": 0.75},
+        "effects/ui.prompt": {"path": "audio/ui_prompt.ogg", "volume": 0.6},
+        "effects/combat.hit": {"path": "audio/combat_hit.ogg", "volume": 0.8},
+        "effects/combat.enemy_down": {
+            "path": "audio/enemy_down.ogg",
+            "volume": 0.9,
+        },
+        "effects/combat.weapon": {
+            "path": "audio/weapon_fire.ogg",
+            "volume": 0.65,
+        },
+        "effects/combat.ultimate": {"path": "audio/ultimate.ogg", "volume": 1.0},
+        "effects/player.damage": {
+            "path": "audio/player_damage.ogg",
+            "volume": 0.85,
+        },
+        "effects/player.dash": {"path": "audio/player_dash.ogg", "volume": 0.8},
+        "effects/run.victory": {
+            "path": "audio/victory_sting.ogg",
+            "volume": 1.0,
+        },
+        "effects/run.defeat": {"path": "audio/defeat_sting.ogg", "volume": 1.0},
+        "effects/enemy.spawn": {"path": "audio/enemy_spawn.ogg", "volume": 0.55},
+        "effects/environment.hazard": {
+            "path": "audio/environment_hazard.ogg",
+            "volume": 0.8,
+        },
+        "effects/environment.salvage": {
+            "path": "audio/environment_salvage.ogg",
+            "volume": 0.65,
+        },
+        "effects/environment.weather_change": {
+            "path": "audio/environment_weather_change.ogg",
+            "volume": 0.7,
+        },
+        "effects/environment.weather_clear": {
+            "path": "audio/environment_weather_clear.ogg",
+            "volume": 0.6,
+        },
+    },
+    "music": {
+        "music.dusk_theme": {
+            "path": "audio/music_dusk.ogg",
+            "volume": 0.7,
+            "loop": True,
+        },
+        "music.boss_theme": {
+            "path": "audio/music_boss.ogg",
+            "volume": 0.8,
+            "loop": True,
+        },
+    },
+    "event_effects": {
+        "ui.upgrade_selected": ("effects/ui.confirm",),
+        "ui.level_up": ("effects/ui.prompt",),
+        "ui.upgrade_presented": ("effects/ui.prompt",),
+        "combat.weapon_fire": ("effects/combat.weapon",),
+        "combat.enemy_down": ("effects/combat.enemy_down",),
+        "combat.enemy_spawn": ("effects/enemy.spawn",),
+        "combat.hit": ("effects/combat.hit",),
+        "player.damage": ("effects/player.damage",),
+        "player.dash": ("effects/player.dash",),
+        "combat.ultimate": ("effects/combat.ultimate",),
+        "run.victory": ("effects/run.victory",),
+        "run.defeat": ("effects/run.defeat",),
+        "run.miniboss_warning": ("effects/ui.prompt",),
+        "run.relic_acquired": ("effects/ui.confirm",),
+        "run.final_boss_warning": ("effects/ui.prompt",),
+        "run.final_boss_defeated": ("effects/run.victory",),
+        "accessibility.health.low": ("effects/ui.prompt",),
+        "accessibility.upgrade.prompt": ("effects/ui.confirm",),
+        "environment.hazard": ("effects/environment.hazard",),
+        "environment.salvage": ("effects/environment.salvage",),
+        "environment.weather.change": (
+            "effects/environment.weather_change",
+        ),
+        "environment.weather.clear": (
+            "effects/environment.weather_clear",
+        ),
+    },
+    "event_music": {
+        "music.start": ("music.dusk_theme",),
+        "music.boss": ("music.boss_theme",),
+    },
+}
+
+
+def default_audio_cue_table() -> AudioCueTable:
+    """Return a deep copy of the default cue table for external consumers."""
+
+    return {
+        "effects": {
+            effect_id: dict(definition)
+            for effect_id, definition in DEFAULT_AUDIO_CUE_TABLE["effects"].items()
+        },
+        "music": {
+            track_id: dict(definition)
+            for track_id, definition in DEFAULT_AUDIO_CUE_TABLE["music"].items()
+        },
+        "event_effects": {
+            event: tuple(routes)
+            for event, routes in DEFAULT_AUDIO_CUE_TABLE["event_effects"].items()
+        },
+        "event_music": {
+            event: tuple(routes)
+            for event, routes in DEFAULT_AUDIO_CUE_TABLE["event_music"].items()
+        },
+    }
+
+
+
 __all__ = [
     "AudioEngine",
     "AudioManifest",
@@ -299,4 +347,9 @@ __all__ = [
     "MusicTrack",
     "SoundClip",
     "SoundInstruction",
+    "EffectDefinition",
+    "MusicDefinition",
+    "AudioCueTable",
+    "DEFAULT_AUDIO_CUE_TABLE",
+    "default_audio_cue_table",
 ]
