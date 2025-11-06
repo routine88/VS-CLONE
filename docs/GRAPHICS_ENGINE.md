@@ -23,7 +23,7 @@ Run `pytest tests/test_graphics_assets_validation.py` to confirm that every entr
 If you are working without the optional art pack, set `VS_SKIP_OPTIONAL_ART_PACK_VALIDATION=1` in your environment to skip the check temporarily. Re-enable the test once the pack is available so regression coverage remains intact.
 
 ## 2D asset requirements
-The following assets should be delivered into an upcoming `assets/graphics_assets` directory. Keep pivots consistent so the prototype and runtime bridge align on positioning. Placeholder entries in source control are recorded as `.texture.json` descriptors to avoid binary blobs in the repository.
+The following assets should be delivered into an upcoming `assets/graphics_assets` directory. Keep pivots consistent so the prototype and runtime bridge align on positioning. Placeholder entries in source control are recorded as `.texture.json` descriptors, but production teams can now check in the final PNG exports directly—Git LFS keeps the binary payloads manageable inside the repository.
 
 | Asset ID | Purpose | Texture Path | Dimensions (px) | Shape & Notes | Pivot | Animation Guidance |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -39,11 +39,11 @@ The following assets should be delivered into an upcoming `assets/graphics_asset
 | `sprites/environment/barricade_intact.texture.json` | Breakable barricade element (intact). | `assets/graphics_assets/sprites/environment/barricade_intact.texture.json` | 192 × 128 | Rectangular obstacle prior to destruction. | (0.5, 0.5) | Static frame. |
 | `sprites/environment/barricade_broken.texture.json` | Breakable barricade element (destroyed). | `assets/graphics_assets/sprites/environment/barricade_broken.texture.json` | 192 × 128 | Debris silhouette matching intact footprint. | (0.5, 0.5) | Static frame. |
 
-> **Note:** The texture paths reference `.texture.json` descriptors committed to the repository so they remain diff-friendly on GitHub. Replace the descriptor with a real PNG (and update the manifest path) once production art is exported.
+> **Note:** The texture paths reference `.texture.json` descriptors committed to the repository so they remain diff-friendly on GitHub. When production art lands, replace the descriptor with a real PNG (and update the manifest path). The Git LFS configuration automatically stores the binary sprite without inflating the repo size.
 
 ### Palette & export guidance
 - Colour palette: gothic neon with high contrast; avoid muddy mid-tones to maintain readability against dark backgrounds.
-- Provide final sprites as PNG (or preferred runtime format) with transparency. The repository stores `.texture.json` descriptors for review, so swap the manifest entry to a PNG once final art lands while maintaining pixel grid alignment at 1:1 scale to avoid shimmering.
+- Provide final sprites as PNG (or preferred runtime format) with transparency. The repository stores `.texture.json` descriptors for review, and Git LFS now tracks the actual PNG when swapped in—keep pixel grid alignment at 1:1 scale to avoid shimmering.
 - Ensure animation frame counts match durations specified in code (two-frame run loops and three-frame effects work best for MVP).
 
 ### Asset manifest tooling

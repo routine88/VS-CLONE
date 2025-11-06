@@ -49,4 +49,16 @@ git remote -v
 ```
 This should list both fetch and push URLs for your repository.
 
+## 6. Enable Git LFS (Large File Storage)
+The project stores production-ready binary assets (art, audio, release archives) using Git LFS pointers so repository clones
+stay lightweight. Install the Git LFS extension and pull the tracked files after cloning:
+
+```bash
+git lfs install
+git lfs pull
+```
+
+Future clones only require `git lfs pull` to fetch the binaries. Commit new PNG/WAV/ZIP payloads as usual—Git automatically
+stores them through LFS according to the repository’s `.gitattributes` rules.
+
 With these steps completed, the project will be fully set up for command-line Git workflows.
