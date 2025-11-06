@@ -1,0 +1,1672 @@
+{
+  "biomes": [
+    {
+      "description": "A neon-lit necropolis with layered sightlines and relentless undead hordes.",
+      "environment": [
+        {
+          "barricades": [
+            {
+              "description": "Splintered stakes jut from the soil, slowing the hunter's stride.",
+              "durability": 18,
+              "id": "barricade_rotting_palisade",
+              "name": "Rotting Palisade",
+              "salvage_reward": 6
+            },
+            {
+              "description": "Abandoned cart spills decrepit coffins across the lane.",
+              "durability": 24,
+              "id": "barricade_crumbling_coffin_cart",
+              "name": "Crumbling Coffin Cart",
+              "salvage_reward": 8
+            }
+          ],
+          "biome": "Graveyard",
+          "hazards": [
+            {
+              "base_damage": 6,
+              "description": "A chill fog settles in, sapping vitality and obscuring sight.",
+              "duration": 8.0,
+              "id": "hazard_creeping_fog",
+              "name": "Creeping Fog",
+              "slow": 0.1
+            },
+            {
+              "base_damage": 9,
+              "description": "Spectral hands erupt from tombs, clawing at the hunter.",
+              "duration": 4.0,
+              "id": "hazard_spiteful_mausoleum",
+              "name": "Spiteful Mausoleum",
+              "slow": 0.0
+            }
+          ],
+          "phase": 1,
+          "resource_caches": [
+            {
+              "base_amount": 5,
+              "description": "Ceramic urn brimming with reclaimed soul shards.",
+              "id": "cache_soul_jar",
+              "name": "Soul Jar"
+            },
+            {
+              "base_amount": 7,
+              "description": "A flickering candle melts into alchemical wax usable as salvage.",
+              "id": "cache_vigil_candle",
+              "name": "Vigil Candle"
+            }
+          ],
+          "schedules": {
+            "barricade": {
+              "base_interval": 70.0,
+              "interval_variance": 12.0,
+              "reward_scale": 0.12
+            },
+            "hazard": {
+              "base_interval": 45.0,
+              "damage_scale": 0.08,
+              "interval_variance": 10.0
+            },
+            "resource": {
+              "amount_scale": 0.1,
+              "base_interval": 55.0,
+              "interval_variance": 14.0
+            },
+            "weather": {
+              "base_interval": 90.0,
+              "duration_range": [
+                20.0,
+                32.0
+              ],
+              "interval_variance": 15.0
+            }
+          },
+          "weather_patterns": [
+            {
+              "description": "A supernatural cold rolls through, numbing limbs.",
+              "id": "weather_grave_chill",
+              "movement_modifier": -0.1,
+              "name": "Grave Chill",
+              "vision_modifier": -0.05
+            },
+            {
+              "description": "Caretaker spirits illuminate the grounds, easing aim.",
+              "id": "weather_lantern_vigil",
+              "movement_modifier": 0.0,
+              "name": "Lantern Vigil",
+              "vision_modifier": 0.08
+            }
+          ]
+        },
+        {
+          "barricades": [
+            {
+              "description": "Tattered cloth and timber form a makeshift barrier.",
+              "durability": 30,
+              "id": "barricade_collapsed_market_stall",
+              "name": "Collapsed Market Stall",
+              "salvage_reward": 10
+            },
+            {
+              "description": "Barricaded homes block the main thoroughfare.",
+              "durability": 36,
+              "id": "barricade_shuttered_doorway",
+              "name": "Shuttered Doorway",
+              "salvage_reward": 12
+            }
+          ],
+          "biome": "Abandoned Village",
+          "hazards": [
+            {
+              "base_damage": 11,
+              "description": "Crumbling rooftops rain debris across the lane.",
+              "duration": 5.0,
+              "id": "hazard_falling_debris",
+              "name": "Falling Debris",
+              "slow": 0.15
+            },
+            {
+              "base_damage": 13,
+              "description": "Bursting oil lanterns ignite patches of ground.",
+              "duration": 6.0,
+              "id": "hazard_lantern_burst",
+              "name": "Lantern Burst",
+              "slow": 0.05
+            }
+          ],
+          "phase": 2,
+          "resource_caches": [
+            {
+              "base_amount": 8,
+              "description": "Forgotten militia gear yields usable components.",
+              "id": "cache_supply_satchel",
+              "name": "Supply Satchel"
+            },
+            {
+              "base_amount": 10,
+              "description": "A cracked lockbox spills coin and brass fittings.",
+              "id": "cache_merchant_strongbox",
+              "name": "Merchant Strongbox"
+            }
+          ],
+          "schedules": {
+            "barricade": {
+              "base_interval": 65.0,
+              "interval_variance": 10.0,
+              "reward_scale": 0.18
+            },
+            "hazard": {
+              "base_interval": 42.0,
+              "damage_scale": 0.1,
+              "interval_variance": 9.0
+            },
+            "resource": {
+              "amount_scale": 0.16,
+              "base_interval": 50.0,
+              "interval_variance": 12.0
+            },
+            "weather": {
+              "base_interval": 85.0,
+              "duration_range": [
+                22.0,
+                34.0
+              ],
+              "interval_variance": 12.0
+            }
+          },
+          "weather_patterns": [
+            {
+              "description": "Sooty winds whip through the alleys, biting at exposed skin.",
+              "id": "weather_ashen_gusts",
+              "movement_modifier": -0.08,
+              "name": "Ashen Gusts",
+              "vision_modifier": -0.07
+            },
+            {
+              "description": "Clouds part, bathing the village in guiding moonlight.",
+              "id": "weather_moonlit_break",
+              "movement_modifier": 0.05,
+              "name": "Moonlit Break",
+              "vision_modifier": 0.06
+            }
+          ]
+        },
+        {
+          "barricades": [
+            {
+              "description": "Entwined vines bristle with razor thorns.",
+              "durability": 34,
+              "id": "barricade_thorned_bramble_wall",
+              "name": "Thorned Bramble Wall",
+              "salvage_reward": 11
+            },
+            {
+              "description": "Gnarled roots coil from colossal trees, sealing the path.",
+              "durability": 40,
+              "id": "barricade_ancient_root_snare",
+              "name": "Ancient Root Snare",
+              "salvage_reward": 14
+            }
+          ],
+          "biome": "Moonlit Forest",
+          "hazards": [
+            {
+              "base_damage": 14,
+              "description": "Verdant tendrils lash out, hindering movement.",
+              "duration": 7.0,
+              "id": "hazard_snaring_vines",
+              "name": "Snaring Vines",
+              "slow": 0.2
+            },
+            {
+              "base_damage": 16,
+              "description": "Arcane wisps discharge volatile energy in bursts.",
+              "duration": 5.5,
+              "id": "hazard_wisp_surge",
+              "name": "Wisp Surge",
+              "slow": 0.0
+            }
+          ],
+          "phase": 3,
+          "resource_caches": [
+            {
+              "base_amount": 11,
+              "description": "Bioluminescent fungi harvested for potent reagents.",
+              "id": "cache_glowcap_cluster",
+              "name": "Glowcap Cluster"
+            },
+            {
+              "base_amount": 13,
+              "description": "Runed effigy crumbles into empowering glyph dust.",
+              "id": "cache_ancient_effigy",
+              "name": "Ancient Effigy"
+            }
+          ],
+          "schedules": {
+            "barricade": {
+              "base_interval": 60.0,
+              "interval_variance": 9.0,
+              "reward_scale": 0.22
+            },
+            "hazard": {
+              "base_interval": 38.0,
+              "damage_scale": 0.12,
+              "interval_variance": 8.0
+            },
+            "resource": {
+              "amount_scale": 0.2,
+              "base_interval": 46.0,
+              "interval_variance": 10.0
+            },
+            "weather": {
+              "base_interval": 80.0,
+              "duration_range": [
+                24.0,
+                36.0
+              ],
+              "interval_variance": 10.0
+            }
+          },
+          "weather_patterns": [
+            {
+              "description": "Glowing droplets invigorate strides but distort visibility.",
+              "id": "weather_phosphor_rain",
+              "movement_modifier": 0.07,
+              "name": "Phosphor Rain",
+              "vision_modifier": -0.05
+            },
+            {
+              "description": "Cutting winds howl through the canopy, slowing progress.",
+              "id": "weather_silver_gale",
+              "movement_modifier": -0.12,
+              "name": "Silver Gale",
+              "vision_modifier": 0.04
+            }
+          ]
+        },
+        {
+          "barricades": [
+            {
+              "description": "Entwined vines bristle with razor thorns.",
+              "durability": 34,
+              "id": "barricade_thorned_bramble_wall",
+              "name": "Thorned Bramble Wall",
+              "salvage_reward": 11
+            },
+            {
+              "description": "Gnarled roots coil from colossal trees, sealing the path.",
+              "durability": 40,
+              "id": "barricade_ancient_root_snare",
+              "name": "Ancient Root Snare",
+              "salvage_reward": 14
+            }
+          ],
+          "biome": "Moonlit Forest",
+          "hazards": [
+            {
+              "base_damage": 14,
+              "description": "Verdant tendrils lash out, hindering movement.",
+              "duration": 7.0,
+              "id": "hazard_snaring_vines",
+              "name": "Snaring Vines",
+              "slow": 0.2
+            },
+            {
+              "base_damage": 16,
+              "description": "Arcane wisps discharge volatile energy in bursts.",
+              "duration": 5.5,
+              "id": "hazard_wisp_surge",
+              "name": "Wisp Surge",
+              "slow": 0.0
+            }
+          ],
+          "phase": 4,
+          "resource_caches": [
+            {
+              "base_amount": 11,
+              "description": "Bioluminescent fungi harvested for potent reagents.",
+              "id": "cache_glowcap_cluster",
+              "name": "Glowcap Cluster"
+            },
+            {
+              "base_amount": 13,
+              "description": "Runed effigy crumbles into empowering glyph dust.",
+              "id": "cache_ancient_effigy",
+              "name": "Ancient Effigy"
+            }
+          ],
+          "schedules": {
+            "barricade": {
+              "base_interval": 55.0,
+              "interval_variance": 8.0,
+              "reward_scale": 0.28
+            },
+            "hazard": {
+              "base_interval": 34.0,
+              "damage_scale": 0.15,
+              "interval_variance": 7.5
+            },
+            "resource": {
+              "amount_scale": 0.24,
+              "base_interval": 42.0,
+              "interval_variance": 9.0
+            },
+            "weather": {
+              "base_interval": 75.0,
+              "duration_range": [
+                26.0,
+                38.0
+              ],
+              "interval_variance": 10.0
+            }
+          },
+          "weather_patterns": [
+            {
+              "description": "Glowing droplets invigorate strides but distort visibility.",
+              "id": "weather_phosphor_rain",
+              "movement_modifier": 0.07,
+              "name": "Phosphor Rain",
+              "vision_modifier": -0.05
+            },
+            {
+              "description": "Cutting winds howl through the canopy, slowing progress.",
+              "id": "weather_silver_gale",
+              "movement_modifier": -0.12,
+              "name": "Silver Gale",
+              "vision_modifier": 0.04
+            }
+          ]
+        }
+      ],
+      "final_boss": {
+        "id": "boss_dawn_revenant",
+        "name": "Dawn Revenant",
+        "phases": [
+          {
+            "behaviors": [
+              "shockwave"
+            ],
+            "damage": 42,
+            "health": 640,
+            "index": 1,
+            "lane": "ground",
+            "speed": 1.05
+          },
+          {
+            "behaviors": [
+              "ranged",
+              "dash"
+            ],
+            "damage": 50,
+            "health": 520,
+            "index": 2,
+            "lane": "air",
+            "speed": 1.18
+          },
+          {
+            "behaviors": [
+              "clinger",
+              "kamikaze"
+            ],
+            "damage": 60,
+            "health": 460,
+            "index": 3,
+            "lane": "ceiling",
+            "speed": 1.3
+          }
+        ]
+      },
+      "id": "biome_graveyard",
+      "name": "Neon Graveyard",
+      "phases": [
+        {
+          "balance": {
+            "elite": {
+              "scale_multiplier": 1.15,
+              "spawn_chance": 0.0
+            },
+            "spawn_schedule": {
+              "base_interval": 2.4,
+              "interval_decay": 0.92,
+              "max_density": 12
+            },
+            "wave_scaling": {
+              "base_enemy_count": 6,
+              "per_wave_increment": 2,
+              "per_wave_multiplier": 0.06,
+              "phase_multiplier": 1.0
+            }
+          },
+          "elite_roster": [],
+          "enemy_roster": [
+            {
+              "behaviors": [
+                "pursuit"
+              ],
+              "category": "base",
+              "damage": 4,
+              "health": 24,
+              "id": "enemy_swarm_thrall",
+              "lane": "ground",
+              "name": "Swarm Thrall",
+              "speed": 1.6
+            },
+            {
+              "behaviors": [
+                "swoop"
+              ],
+              "category": "base",
+              "damage": 5,
+              "health": 18,
+              "id": "enemy_grave_bat",
+              "lane": "air",
+              "name": "Grave Bat",
+              "speed": 2.0
+            },
+            {
+              "behaviors": [
+                "burrow"
+              ],
+              "category": "base",
+              "damage": 6,
+              "health": 30,
+              "id": "enemy_blight_crawler",
+              "lane": "ground",
+              "name": "Blight Crawler",
+              "speed": 1.5
+            }
+          ],
+          "id": "graveyard_phase_1",
+          "minibosses": [
+            {
+              "behaviors": [
+                "pursuit",
+                "shield"
+              ],
+              "damage": 22,
+              "health": 360,
+              "id": "miniboss_crimson_warden",
+              "lane": "ground",
+              "min_phase": 1,
+              "name": "Crimson Warden",
+              "speed": 0.9
+            }
+          ],
+          "phase": 1
+        },
+        {
+          "balance": {
+            "elite": {
+              "scale_multiplier": 1.15,
+              "spawn_chance": 0.0
+            },
+            "spawn_schedule": {
+              "base_interval": 1.8,
+              "interval_decay": 0.9,
+              "max_density": 18
+            },
+            "wave_scaling": {
+              "base_enemy_count": 8,
+              "per_wave_increment": 2,
+              "per_wave_multiplier": 0.06,
+              "phase_multiplier": 1.18
+            }
+          },
+          "elite_roster": [],
+          "enemy_roster": [
+            {
+              "behaviors": [
+                "pursuit"
+              ],
+              "category": "base",
+              "damage": 4,
+              "health": 24,
+              "id": "enemy_swarm_thrall",
+              "lane": "ground",
+              "name": "Swarm Thrall",
+              "speed": 1.6
+            },
+            {
+              "behaviors": [
+                "swoop"
+              ],
+              "category": "base",
+              "damage": 5,
+              "health": 18,
+              "id": "enemy_grave_bat",
+              "lane": "air",
+              "name": "Grave Bat",
+              "speed": 2.0
+            },
+            {
+              "behaviors": [
+                "burrow"
+              ],
+              "category": "base",
+              "damage": 6,
+              "health": 30,
+              "id": "enemy_blight_crawler",
+              "lane": "ground",
+              "name": "Blight Crawler",
+              "speed": 1.5
+            },
+            {
+              "behaviors": [
+                "pursuit",
+                "shield"
+              ],
+              "category": "base",
+              "damage": 10,
+              "health": 55,
+              "id": "enemy_bone_stalker",
+              "lane": "ground",
+              "name": "Bone Stalker",
+              "speed": 1.1
+            },
+            {
+              "behaviors": [
+                "ranged"
+              ],
+              "category": "base",
+              "damage": 8,
+              "health": 32,
+              "id": "enemy_occultist",
+              "lane": "ground",
+              "name": "Occultist",
+              "speed": 1.2
+            },
+            {
+              "behaviors": [
+                "ranged"
+              ],
+              "category": "base",
+              "damage": 9,
+              "health": 42,
+              "id": "enemy_hollow_archer",
+              "lane": "ground",
+              "name": "Hollow Archer",
+              "speed": 1.3
+            }
+          ],
+          "id": "graveyard_phase_2",
+          "minibosses": [
+            {
+              "behaviors": [
+                "pursuit",
+                "shield"
+              ],
+              "damage": 22,
+              "health": 360,
+              "id": "miniboss_crimson_warden",
+              "lane": "ground",
+              "min_phase": 1,
+              "name": "Crimson Warden",
+              "speed": 0.9
+            },
+            {
+              "behaviors": [
+                "ranged",
+                "dash"
+              ],
+              "damage": 26,
+              "health": 420,
+              "id": "miniboss_storm_herald",
+              "lane": "air",
+              "min_phase": 2,
+              "name": "Storm Herald",
+              "speed": 1.0
+            }
+          ],
+          "phase": 2
+        },
+        {
+          "balance": {
+            "elite": {
+              "scale_multiplier": 1.15,
+              "spawn_chance": 0.12
+            },
+            "spawn_schedule": {
+              "base_interval": 1.4,
+              "interval_decay": 0.88,
+              "max_density": 24
+            },
+            "wave_scaling": {
+              "base_enemy_count": 10,
+              "per_wave_increment": 2,
+              "per_wave_multiplier": 0.06,
+              "phase_multiplier": 1.36
+            }
+          },
+          "elite_roster": [
+            {
+              "behaviors": [
+                "stagger",
+                "shield"
+              ],
+              "category": "elite",
+              "damage": 28,
+              "health": 180,
+              "id": "enemy_crypt_juggernaut",
+              "lane": "ground",
+              "name": "Crypt Juggernaut",
+              "speed": 0.8
+            },
+            {
+              "behaviors": [
+                "ranged",
+                "dash"
+              ],
+              "category": "elite",
+              "damage": 24,
+              "health": 140,
+              "id": "enemy_storm_revenant",
+              "lane": "air",
+              "name": "Storm Revenant",
+              "speed": 1.35
+            }
+          ],
+          "enemy_roster": [
+            {
+              "behaviors": [
+                "pursuit"
+              ],
+              "category": "base",
+              "damage": 4,
+              "health": 24,
+              "id": "enemy_swarm_thrall",
+              "lane": "ground",
+              "name": "Swarm Thrall",
+              "speed": 1.6
+            },
+            {
+              "behaviors": [
+                "swoop"
+              ],
+              "category": "base",
+              "damage": 5,
+              "health": 18,
+              "id": "enemy_grave_bat",
+              "lane": "air",
+              "name": "Grave Bat",
+              "speed": 2.0
+            },
+            {
+              "behaviors": [
+                "burrow"
+              ],
+              "category": "base",
+              "damage": 6,
+              "health": 30,
+              "id": "enemy_blight_crawler",
+              "lane": "ground",
+              "name": "Blight Crawler",
+              "speed": 1.5
+            },
+            {
+              "behaviors": [
+                "pursuit",
+                "shield"
+              ],
+              "category": "base",
+              "damage": 10,
+              "health": 55,
+              "id": "enemy_bone_stalker",
+              "lane": "ground",
+              "name": "Bone Stalker",
+              "speed": 1.1
+            },
+            {
+              "behaviors": [
+                "ranged"
+              ],
+              "category": "base",
+              "damage": 8,
+              "health": 32,
+              "id": "enemy_occultist",
+              "lane": "ground",
+              "name": "Occultist",
+              "speed": 1.2
+            },
+            {
+              "behaviors": [
+                "ranged"
+              ],
+              "category": "base",
+              "damage": 9,
+              "health": 42,
+              "id": "enemy_hollow_archer",
+              "lane": "ground",
+              "name": "Hollow Archer",
+              "speed": 1.3
+            },
+            {
+              "behaviors": [
+                "pursuit",
+                "stagger"
+              ],
+              "category": "base",
+              "damage": 16,
+              "health": 110,
+              "id": "enemy_crypt_bruiser",
+              "lane": "ground",
+              "name": "Crypt Bruiser",
+              "speed": 0.75
+            },
+            {
+              "behaviors": [
+                "wail",
+                "ranged"
+              ],
+              "category": "base",
+              "damage": 12,
+              "health": 40,
+              "id": "enemy_howling_shade",
+              "lane": "air",
+              "name": "Howling Shade",
+              "speed": 1.4
+            },
+            {
+              "behaviors": [
+                "wail",
+                "slow"
+              ],
+              "category": "base",
+              "damage": 13,
+              "health": 58,
+              "id": "enemy_wailing_siren",
+              "lane": "air",
+              "name": "Wailing Siren",
+              "speed": 1.1
+            }
+          ],
+          "id": "graveyard_phase_3",
+          "minibosses": [
+            {
+              "behaviors": [
+                "pursuit",
+                "shield"
+              ],
+              "damage": 22,
+              "health": 360,
+              "id": "miniboss_crimson_warden",
+              "lane": "ground",
+              "min_phase": 1,
+              "name": "Crimson Warden",
+              "speed": 0.9
+            },
+            {
+              "behaviors": [
+                "ranged",
+                "dash"
+              ],
+              "damage": 26,
+              "health": 420,
+              "id": "miniboss_storm_herald",
+              "lane": "air",
+              "min_phase": 2,
+              "name": "Storm Herald",
+              "speed": 1.0
+            },
+            {
+              "behaviors": [
+                "shockwave",
+                "stagger"
+              ],
+              "damage": 32,
+              "health": 520,
+              "id": "miniboss_clockwork_behemoth",
+              "lane": "ground",
+              "min_phase": 3,
+              "name": "Clockwork Behemoth",
+              "speed": 0.8
+            }
+          ],
+          "phase": 3
+        },
+        {
+          "balance": {
+            "elite": {
+              "scale_multiplier": 1.15,
+              "spawn_chance": 0.2
+            },
+            "spawn_schedule": {
+              "base_interval": 1.1,
+              "interval_decay": 0.85,
+              "max_density": 30
+            },
+            "wave_scaling": {
+              "base_enemy_count": 12,
+              "per_wave_increment": 2,
+              "per_wave_multiplier": 0.06,
+              "phase_multiplier": 1.54
+            }
+          },
+          "elite_roster": [
+            {
+              "behaviors": [
+                "stagger",
+                "shield"
+              ],
+              "category": "elite",
+              "damage": 28,
+              "health": 180,
+              "id": "enemy_crypt_juggernaut",
+              "lane": "ground",
+              "name": "Crypt Juggernaut",
+              "speed": 0.8
+            },
+            {
+              "behaviors": [
+                "ranged",
+                "dash"
+              ],
+              "category": "elite",
+              "damage": 24,
+              "health": 140,
+              "id": "enemy_storm_revenant",
+              "lane": "air",
+              "name": "Storm Revenant",
+              "speed": 1.35
+            },
+            {
+              "behaviors": [
+                "shockwave"
+              ],
+              "category": "elite",
+              "damage": 32,
+              "health": 220,
+              "id": "enemy_grave_titan",
+              "lane": "ground",
+              "name": "Grave Titan",
+              "speed": 0.7
+            },
+            {
+              "behaviors": [
+                "clinger",
+                "ranged"
+              ],
+              "category": "elite",
+              "damage": 34,
+              "health": 190,
+              "id": "enemy_infernal_sovereign",
+              "lane": "ceiling",
+              "name": "Infernal Sovereign",
+              "speed": 1.0
+            }
+          ],
+          "enemy_roster": [
+            {
+              "behaviors": [
+                "pursuit"
+              ],
+              "category": "base",
+              "damage": 4,
+              "health": 24,
+              "id": "enemy_swarm_thrall",
+              "lane": "ground",
+              "name": "Swarm Thrall",
+              "speed": 1.6
+            },
+            {
+              "behaviors": [
+                "swoop"
+              ],
+              "category": "base",
+              "damage": 5,
+              "health": 18,
+              "id": "enemy_grave_bat",
+              "lane": "air",
+              "name": "Grave Bat",
+              "speed": 2.0
+            },
+            {
+              "behaviors": [
+                "burrow"
+              ],
+              "category": "base",
+              "damage": 6,
+              "health": 30,
+              "id": "enemy_blight_crawler",
+              "lane": "ground",
+              "name": "Blight Crawler",
+              "speed": 1.5
+            },
+            {
+              "behaviors": [
+                "pursuit",
+                "shield"
+              ],
+              "category": "base",
+              "damage": 10,
+              "health": 55,
+              "id": "enemy_bone_stalker",
+              "lane": "ground",
+              "name": "Bone Stalker",
+              "speed": 1.1
+            },
+            {
+              "behaviors": [
+                "ranged"
+              ],
+              "category": "base",
+              "damage": 8,
+              "health": 32,
+              "id": "enemy_occultist",
+              "lane": "ground",
+              "name": "Occultist",
+              "speed": 1.2
+            },
+            {
+              "behaviors": [
+                "ranged"
+              ],
+              "category": "base",
+              "damage": 9,
+              "health": 42,
+              "id": "enemy_hollow_archer",
+              "lane": "ground",
+              "name": "Hollow Archer",
+              "speed": 1.3
+            },
+            {
+              "behaviors": [
+                "pursuit",
+                "stagger"
+              ],
+              "category": "base",
+              "damage": 16,
+              "health": 110,
+              "id": "enemy_crypt_bruiser",
+              "lane": "ground",
+              "name": "Crypt Bruiser",
+              "speed": 0.75
+            },
+            {
+              "behaviors": [
+                "wail",
+                "ranged"
+              ],
+              "category": "base",
+              "damage": 12,
+              "health": 40,
+              "id": "enemy_howling_shade",
+              "lane": "air",
+              "name": "Howling Shade",
+              "speed": 1.4
+            },
+            {
+              "behaviors": [
+                "wail",
+                "slow"
+              ],
+              "category": "base",
+              "damage": 13,
+              "health": 58,
+              "id": "enemy_wailing_siren",
+              "lane": "air",
+              "name": "Wailing Siren",
+              "speed": 1.1
+            },
+            {
+              "behaviors": [
+                "kamikaze"
+              ],
+              "category": "base",
+              "damage": 14,
+              "health": 65,
+              "id": "enemy_dread_pyre",
+              "lane": "air",
+              "name": "Dread Pyre",
+              "speed": 1.0
+            },
+            {
+              "behaviors": [
+                "dash"
+              ],
+              "category": "base",
+              "damage": 20,
+              "health": 48,
+              "id": "enemy_night_reaper",
+              "lane": "ground",
+              "name": "Night Reaper",
+              "speed": 1.35
+            },
+            {
+              "behaviors": [
+                "clinger",
+                "pounce"
+              ],
+              "category": "base",
+              "damage": 18,
+              "health": 90,
+              "id": "enemy_ashen_rider",
+              "lane": "ceiling",
+              "name": "Ashen Rider",
+              "speed": 1.05
+            }
+          ],
+          "id": "graveyard_phase_4",
+          "minibosses": [
+            {
+              "behaviors": [
+                "pursuit",
+                "shield"
+              ],
+              "damage": 22,
+              "health": 360,
+              "id": "miniboss_crimson_warden",
+              "lane": "ground",
+              "min_phase": 1,
+              "name": "Crimson Warden",
+              "speed": 0.9
+            },
+            {
+              "behaviors": [
+                "ranged",
+                "dash"
+              ],
+              "damage": 26,
+              "health": 420,
+              "id": "miniboss_storm_herald",
+              "lane": "air",
+              "min_phase": 2,
+              "name": "Storm Herald",
+              "speed": 1.0
+            },
+            {
+              "behaviors": [
+                "shockwave",
+                "stagger"
+              ],
+              "damage": 32,
+              "health": 520,
+              "id": "miniboss_clockwork_behemoth",
+              "lane": "ground",
+              "min_phase": 3,
+              "name": "Clockwork Behemoth",
+              "speed": 0.8
+            },
+            {
+              "behaviors": [
+                "clinger",
+                "ranged"
+              ],
+              "damage": 38,
+              "health": 640,
+              "id": "miniboss_infernal_matriarch",
+              "lane": "ceiling",
+              "min_phase": 4,
+              "name": "Infernal Matriarch",
+              "speed": 1.05
+            }
+          ],
+          "phase": 4
+        }
+      ]
+    }
+  ],
+  "hunters": [
+    {
+      "abilities": {
+        "dash": {
+          "cooldown": 2.0,
+          "strength": 26.0
+        }
+      },
+      "description": "Balanced starter wielding the Dusk Repeater.",
+      "id": "hunter_varik",
+      "max_health": 120,
+      "name": "Varik the Nightblade",
+      "signature_glyph": "blood",
+      "starting_glyphs": [
+        "blood"
+      ],
+      "starting_weapon": "Dusk Repeater",
+      "starting_weapon_tier": 1
+    },
+    {
+      "abilities": {
+        "dash": {
+          "cooldown": 2.0,
+          "strength": 26.0
+        }
+      },
+      "description": "Starter hunter specializing in chaining lightning.",
+      "id": "hunter_mira",
+      "max_health": 105,
+      "name": "Mira the Stormcaller",
+      "signature_glyph": "storm",
+      "starting_glyphs": [
+        "storm"
+      ],
+      "starting_weapon": "Storm Siphon",
+      "starting_weapon_tier": 1
+    }
+  ],
+  "progression": {
+    "glyph_set_size": 4,
+    "max_upgrade_options": 3,
+    "run_duration_seconds": 1200
+  },
+  "relics": [
+    {
+      "description": "increases soul gain by 10%",
+      "id": "moonlit_charm",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {},
+        "hazard_resist": 0.0,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.0,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.1
+      },
+      "name": "Moonlit Charm"
+    },
+    {
+      "description": "amplifies weapon damage by 12%",
+      "id": "storm_prism",
+      "modifier": {
+        "damage_scale": 0.12,
+        "defense_scale": 0.0,
+        "glyph_bonus": {},
+        "hazard_resist": 0.0,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.0,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.0
+      },
+      "name": "Storm Prism"
+    },
+    {
+      "description": "adds 4% life steal to all attacks",
+      "id": "blood_chalice",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {},
+        "hazard_resist": 0.0,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.04,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.0
+      },
+      "name": "Blood Chalice"
+    },
+    {
+      "description": "boosts salvage earnings by 20%",
+      "id": "gale_idols",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {},
+        "hazard_resist": 0.0,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.0,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.2,
+        "soul_scale": 0.0
+      },
+      "name": "Gale Idols"
+    },
+    {
+      "description": "fortifies defenses by 15%",
+      "id": "iron_bark_totem",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.15,
+        "glyph_bonus": {},
+        "hazard_resist": 0.0,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.0,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.0
+      },
+      "name": "Iron Bark Totem"
+    },
+    {
+      "description": "grants +15 max health and steady regeneration",
+      "id": "phoenix_ember",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {},
+        "hazard_resist": 0.0,
+        "heal_on_pickup": 30,
+        "lifesteal_bonus": 0.0,
+        "max_health": 15,
+        "regen_per_second": 1.2,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.0
+      },
+      "name": "Phoenix Ember"
+    },
+    {
+      "description": "infuses Verdant glyph energy and 5% hazard resistance",
+      "id": "gravemind_bloom",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {
+          "verdant": 1
+        },
+        "hazard_resist": 0.05,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.0,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.0
+      },
+      "name": "Gravemind Bloom"
+    },
+    {
+      "description": "reduces hazard damage by 8% and increases souls by 5%",
+      "id": "astral_needle",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {},
+        "hazard_resist": 0.08,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.0,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.05
+      },
+      "name": "Astral Needle"
+    },
+    {
+      "description": "dampens hazard harm by 12% and adds 10 max health",
+      "id": "chillwyrm_scale",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {},
+        "hazard_resist": 0.12,
+        "heal_on_pickup": 10,
+        "lifesteal_bonus": 0.0,
+        "max_health": 10,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.0
+      },
+      "name": "Chillwyrm Scale"
+    },
+    {
+      "description": "supercharges damage output by 18%",
+      "id": "inferno_brand",
+      "modifier": {
+        "damage_scale": 0.18,
+        "defense_scale": 0.0,
+        "glyph_bonus": {},
+        "hazard_resist": 0.0,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.0,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.0
+      },
+      "name": "Inferno Brand"
+    },
+    {
+      "description": "adds 25 max health and potent regen",
+      "id": "verdant_heart",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {},
+        "hazard_resist": 0.0,
+        "heal_on_pickup": 25,
+        "lifesteal_bonus": 0.0,
+        "max_health": 25,
+        "regen_per_second": 1.5,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.0
+      },
+      "name": "Verdant Heart"
+    },
+    {
+      "description": "reinforces defenses by 10% and soul gain by 5%",
+      "id": "clockwork_sigil",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.1,
+        "glyph_bonus": {},
+        "hazard_resist": 0.0,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.0,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.05
+      },
+      "name": "Clockwork Sigil"
+    },
+    {
+      "description": "slips past traps with 6% hazard resistance and +10% salvage",
+      "id": "duskwalker_boots",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {},
+        "hazard_resist": 0.06,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.0,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.1,
+        "soul_scale": 0.0
+      },
+      "name": "Duskwalker Boots"
+    },
+    {
+      "description": "cushions hazard damage by 7% and adds 3% life steal",
+      "id": "sirens_locket",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {},
+        "hazard_resist": 0.07,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.03,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.0
+      },
+      "name": "Siren's Locket"
+    },
+    {
+      "description": "adds 40 max health and bolsters defense by 20%",
+      "id": "juggernaut_core",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.2,
+        "glyph_bonus": {},
+        "hazard_resist": 0.0,
+        "heal_on_pickup": 40,
+        "lifesteal_bonus": 0.0,
+        "max_health": 40,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.0
+      },
+      "name": "Juggernaut Core"
+    },
+    {
+      "description": "lures more souls (+12%) and grants a Blood glyph",
+      "id": "wraith_candle",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {
+          "blood": 1
+        },
+        "hazard_resist": 0.0,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.0,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.12
+      },
+      "name": "Wraith Candle"
+    },
+    {
+      "description": "restores 5% hazard resistance and 1.2 regen per second",
+      "id": "lantern_of_dawn",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {},
+        "hazard_resist": 0.05,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.0,
+        "max_health": 0,
+        "regen_per_second": 1.2,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.0
+      },
+      "name": "Lantern of Dawn"
+    },
+    {
+      "description": "raises damage by 8% and defense by 6%",
+      "id": "gauntlet_coil",
+      "modifier": {
+        "damage_scale": 0.08,
+        "defense_scale": 0.06,
+        "glyph_bonus": {},
+        "hazard_resist": 0.0,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.0,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.0
+      },
+      "name": "Gauntlet Coil"
+    },
+    {
+      "description": "cuts hazard damage by 10% and adds 2% life steal",
+      "id": "frostglass_rosary",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {},
+        "hazard_resist": 0.1,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.02,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.0
+      },
+      "name": "Frostglass Rosary"
+    },
+    {
+      "description": "awakens Clockwork glyph insight and 6% soul gain",
+      "id": "umbral_codex",
+      "modifier": {
+        "damage_scale": 0.0,
+        "defense_scale": 0.0,
+        "glyph_bonus": {
+          "clockwork": 1
+        },
+        "hazard_resist": 0.0,
+        "heal_on_pickup": 0,
+        "lifesteal_bonus": 0.0,
+        "max_health": 0,
+        "regen_per_second": 0.0,
+        "salvage_bonus_flat": 0,
+        "salvage_scale": 0.0,
+        "soul_scale": 0.06
+      },
+      "name": "Umbral Codex"
+    }
+  ],
+  "version": "vertical_slice_graveyard_v1",
+  "weapons": [
+    {
+      "description": "Signature repeater that channels blood glyphs into lifesteal volleys.",
+      "glyph_synergy": "blood",
+      "id": "weapon_dusk_repeater",
+      "name": "Dusk Repeater",
+      "role": "ranged_burst",
+      "tiers": [
+        {
+          "cooldown": 0.9,
+          "damage": 18.0,
+          "description": null,
+          "projectiles": 1,
+          "tier": 1
+        },
+        {
+          "cooldown": 0.85,
+          "damage": 22.0,
+          "description": "Upgrade the Dusk Repeater to tier 2, firing extra bolts.",
+          "projectiles": 2,
+          "tier": 2
+        },
+        {
+          "cooldown": 0.8,
+          "damage": 28.0,
+          "description": "Enhance the Dusk Repeater to tier 3, tightening spread and power.",
+          "projectiles": 2,
+          "tier": 3
+        },
+        {
+          "cooldown": 0.75,
+          "damage": 34.0,
+          "description": "Max out the Dusk Repeater at tier 4 for relentless triple volleys.",
+          "projectiles": 3,
+          "tier": 4
+        }
+      ],
+      "ultimate": "Consumes a Blood Sigil set to fire a draining volley that heals for 8% of damage dealt."
+    },
+    {
+      "description": "Arc conduit that leaps between foes, scaling with storm glyphs.",
+      "glyph_synergy": "storm",
+      "id": "weapon_storm_siphon",
+      "name": "Storm Siphon",
+      "role": "piercing_beam",
+      "tiers": [
+        {
+          "cooldown": 0.6,
+          "damage": 14.0,
+          "description": "Harness the Storm Siphon to unleash piercing beams.",
+          "projectiles": 1,
+          "tier": 1
+        },
+        {
+          "cooldown": 0.55,
+          "damage": 17.0,
+          "description": "Amplify the Storm Siphon to tier 2 for chained arcs.",
+          "projectiles": 2,
+          "tier": 2
+        },
+        {
+          "cooldown": 0.5,
+          "damage": 21.0,
+          "description": "Elevate the Storm Siphon to tier 3, multiplying conduits.",
+          "projectiles": 3,
+          "tier": 3
+        },
+        {
+          "cooldown": 0.45,
+          "damage": 26.0,
+          "description": "Overcharge the Storm Siphon to tier 4, releasing tempest barrages.",
+          "projectiles": 4,
+          "tier": 4
+        }
+      ],
+      "ultimate": "With four Storm Sigils active, beams fork twice, chaining to nearby elites automatically."
+    },
+    {
+      "description": "Seeds necrotic blooms whose poison clouds fatten with verdant glyphs.",
+      "glyph_synergy": "verdant",
+      "id": "weapon_gravebloom_staff",
+      "name": "Gravebloom Staff",
+      "role": "area_control",
+      "tiers": [
+        {
+          "cooldown": 1.3,
+          "damage": 20.0,
+          "description": "Channel the Gravebloom Staff, seeding necrotic blooms.",
+          "projectiles": 2,
+          "tier": 1
+        },
+        {
+          "cooldown": 1.2,
+          "damage": 26.0,
+          "description": "Empower the Gravebloom Staff to tier 2 for extra spores.",
+          "projectiles": 3,
+          "tier": 2
+        },
+        {
+          "cooldown": 1.1,
+          "damage": 32.0,
+          "description": "Envenom the Gravebloom Staff to tier 3, lingering longer.",
+          "projectiles": 3,
+          "tier": 3
+        },
+        {
+          "cooldown": 1.0,
+          "damage": 40.0,
+          "description": "Awaken the Gravebloom Staff at tier 4 to carpet the field.",
+          "projectiles": 4,
+          "tier": 4
+        }
+      ],
+      "ultimate": "Completing a Verdant Sigil set causes blooms to explode into healing spores for the hunter."
+    },
+    {
+      "description": "Suspends fire wisps that orbit and scorch lanes, empowered by inferno glyphs.",
+      "glyph_synergy": "inferno",
+      "id": "weapon_inferno_lantern",
+      "name": "Inferno Lantern",
+      "role": "lingering_burn",
+      "tiers": [
+        {
+          "cooldown": 1.6,
+          "damage": 18.0,
+          "description": "Kindle the Inferno Lantern, scattering flame wisps.",
+          "projectiles": 3,
+          "tier": 1
+        },
+        {
+          "cooldown": 1.45,
+          "damage": 24.0,
+          "description": "Stoke the Inferno Lantern to tier 2 for denser embers.",
+          "projectiles": 3,
+          "tier": 2
+        },
+        {
+          "cooldown": 1.3,
+          "damage": 30.0,
+          "description": "Unleash the Inferno Lantern at tier 3, prolonging burns.",
+          "projectiles": 4,
+          "tier": 3
+        },
+        {
+          "cooldown": 1.15,
+          "damage": 38.0,
+          "description": "Overheat the Inferno Lantern to tier 4, flooding fire spirits.",
+          "projectiles": 4,
+          "tier": 4
+        }
+      ],
+      "ultimate": "At four Inferno Sigils, lantern wisps detonate, leaving a burning corridor for 6 seconds."
+    }
+  ]
+}

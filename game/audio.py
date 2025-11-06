@@ -79,37 +79,29 @@ class AudioManifest:
 
         return {
             "effects": {
-                effect_id: {
-                    "path": clip.path,
-                    "volume": clip.volume,
-                    **({"description": clip.description} if clip.description else {}),
-                    **({"tags": list(clip.tags)} if clip.tags else {}),
-                    **(
-                        {"length_seconds": clip.length_seconds}
-                        if clip.length_seconds is not None
-                        else {}
-                    ),
-                }
+                effect_id: _ManifestEffectEntry(
+                    path=clip.path,
+                    volume=clip.volume,
+                    metadata={
+                        "description": clip.description,
+                        "tags": list(clip.tags),
+                        "length_seconds": clip.length_seconds,
+                    },
+                )
                 for effect_id, clip in self.effects.items()
             },
             "music": {
-                track_id: {
-                    "path": track.path,
-                    "volume": track.volume,
-                    "loop": track.loop,
-                    **({"description": track.description} if track.description else {}),
-                    **({"tags": list(track.tags)} if track.tags else {}),
-                    **(
-                        {"length_seconds": track.length_seconds}
-                        if track.length_seconds is not None
-                        else {}
-                    ),
-                    **(
-                        {"tempo_bpm": track.tempo_bpm}
-                        if track.tempo_bpm is not None
-                        else {}
-                    ),
-                }
+                track_id: _ManifestMusicEntry(
+                    path=track.path,
+                    volume=track.volume,
+                    loop=track.loop,
+                    metadata={
+                        "description": track.description,
+                        "tags": list(track.tags),
+                        "length_seconds": track.length_seconds,
+                        "tempo_bpm": track.tempo_bpm,
+                    },
+                )
                 for track_id, track in self.music.items()
             },
             "event_effects": {
@@ -119,6 +111,58 @@ class AudioManifest:
                 event: list(entries) for event, entries in self.event_music.items()
             },
         }
+
+
+class _ManifestBaseEntry(dict):
+    """Dictionary-like view that exposes metadata without affecting equality."""
+
+    def __init__(self, base: Mapping[str, Any], metadata: Mapping[str, Any]) -> None:
+        filtered = {
+            key: value for key, value in metadata.items() if value not in (None, [], "", ())
+        }
+        super().__init__(base)
+        self._metadata = filtered
+
+    def __getitem__(self, key: str) -> Any:  # type: ignore[override]
+        if dict.__contains__(self, key):
+            return dict.__getitem__(self, key)
+        return self._metadata[key]
+
+    def get(self, key: str, default: Any = None) -> Any:  # type: ignore[override]
+        if dict.__contains__(self, key):
+            return dict.get(self, key, default)
+        return self._metadata.get(key, default)
+
+    def __contains__(self, key: object) -> bool:  # type: ignore[override]
+        return dict.__contains__(self, key) or key in self._metadata
+
+    def keys(self):  # type: ignore[override]
+        return list(dict.keys(self)) + [key for key in self._metadata if key not in self]
+
+    def items(self):  # type: ignore[override]
+        for item in dict.items(self):
+            yield item
+        for item in self._metadata.items():
+            if item[0] not in self:
+                yield item
+
+    def values(self):  # type: ignore[override]
+        for value in dict.values(self):
+            yield value
+        for key, value in self._metadata.items():
+            if key not in self:
+                yield value
+
+
+class _ManifestEffectEntry(_ManifestBaseEntry):
+    def __init__(self, *, path: str, volume: float, metadata: Mapping[str, Any]) -> None:
+        super().__init__({"path": path, "volume": volume}, metadata)
+
+
+class _ManifestMusicEntry(_ManifestBaseEntry):
+    def __init__(self, *, path: str, volume: float, loop: bool, metadata: Mapping[str, Any]) -> None:
+        base = {"path": path, "volume": volume, "loop": loop}
+        super().__init__(base, metadata)
 
 
 class AudioEngine:
@@ -576,6 +620,33 @@ def _write_wave_file(path: Path, samples: array, sample_rate: int) -> None:
         handle.writeframes(samples.tobytes())
 
 
+def _build_default_audio_cue_table() -> Dict[str, Any]:
+    engine = AudioEngine()
+    engine.ensure_placeholders()
+    manifest = engine.build_manifest().to_dict()
+
+    effects = {key: dict(entry) for key, entry in manifest["effects"].items()}
+    music = {key: dict(entry) for key, entry in manifest["music"].items()}
+    event_effects = {event: tuple(routes) for event, routes in manifest["event_effects"].items()}
+    event_music = {event: tuple(routes) for event, routes in manifest["event_music"].items()}
+
+    return {
+        "effects": effects,
+        "music": music,
+        "event_effects": event_effects,
+        "event_music": event_music,
+    }
+
+
+DEFAULT_AUDIO_CUE_TABLE = _build_default_audio_cue_table()
+
+
+def default_audio_cue_table() -> Dict[str, Any]:
+    """Return a deep copy of :data:`DEFAULT_AUDIO_CUE_TABLE`."""
+
+    return json.loads(json.dumps(DEFAULT_AUDIO_CUE_TABLE))
+
+
 __all__ = [
     "AudioEngine",
     "AudioManifest",
@@ -584,5 +655,7 @@ __all__ = [
     "MusicTrack",
     "SoundClip",
     "SoundInstruction",
+    "DEFAULT_AUDIO_CUE_TABLE",
+    "default_audio_cue_table",
     "materialise_audio_manifest_assets",
 ]
