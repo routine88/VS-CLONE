@@ -4,17 +4,21 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Callable, Iterable, Optional, Sequence, Tuple
+from typing import Callable, Iterable, Mapping, Optional, Sequence, Tuple
 
-from game.audio import AudioFrame
-from game.graphics import RenderFrame
+from native.client.audio import AudioFrameDTO
+from native.client.dto import RenderFrameDTO
+
+from .project import AppliedFrame, RendererProject
 
 LOGGER = logging.getLogger(__name__)
 
-FrameBundle = Tuple[RenderFrame, Optional[AudioFrame]]
+FrameBundle = Tuple[RenderFrameDTO, Optional[AudioFrameDTO]]
 ClockFn = Callable[[], float]
 SleepFn = Callable[[float], None]
-OnFrameFn = Callable[[int, RenderFrame, Optional[AudioFrame]], None]
+OnFrameFn = Callable[[int, RenderFrameDTO, Optional[AudioFrameDTO]], None]
+OnAppliedFn = Callable[[int, AppliedFrame], None]
+InputOverrideFn = Callable[[RenderFrameDTO, Optional[AudioFrameDTO]], Mapping[str, object] | None]
 
 
 class FramePlaybackLoop:
@@ -37,7 +41,14 @@ class FramePlaybackLoop:
     def frame_count(self) -> int:
         return len(self._frames)
 
-    def run(self, on_frame: OnFrameFn | None = None) -> None:
+    def run(
+        self,
+        project: RendererProject,
+        *,
+        input_override: InputOverrideFn | None = None,
+        on_frame: OnFrameFn | None = None,
+        on_applied: OnAppliedFn | None = None,
+    ) -> None:
         if not self._frames:
             self._logger.warning("No frames scheduled for playback")
             return
@@ -61,6 +72,20 @@ class FramePlaybackLoop:
 
             if on_frame is not None:
                 on_frame(index, render_frame, audio_frame)
+
+            overrides = (
+                input_override(render_frame, audio_frame)
+                if input_override is not None
+                else None
+            )
+            applied = project.apply_frame(
+                render_frame,
+                audio_frame,
+                overrides=overrides,
+            )
+
+            if on_applied is not None:
+                on_applied(index, applied)
 
     def _sync_to_target(self, start: float, target_offset: float) -> None:
         while True:

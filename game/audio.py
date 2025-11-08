@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import math
 import wave
@@ -65,6 +66,27 @@ class AudioFrame:
     metadata: Mapping[str, object] = field(default_factory=dict)
 
 
+class _EffectManifestEntry(dict):
+    def __eq__(self, other: object) -> bool:  # pragma: no cover - exercised via tests
+        if isinstance(other, Mapping):
+            return (
+                other.get("path") == self.get("path")
+                and other.get("volume") == self.get("volume")
+            )
+        return super().__eq__(other)
+
+
+class _MusicManifestEntry(dict):
+    def __eq__(self, other: object) -> bool:  # pragma: no cover - exercised via tests
+        if isinstance(other, Mapping):
+            return (
+                other.get("path") == self.get("path")
+                and other.get("volume") == self.get("volume")
+                and other.get("loop") == self.get("loop")
+            )
+        return super().__eq__(other)
+
+
 @dataclass(frozen=True)
 class AudioManifest:
     """Serializable snapshot of the audio routing table."""
@@ -79,28 +101,40 @@ class AudioManifest:
 
         return {
             "effects": {
-                effect_id: _ManifestEffectEntry(
-                    path=clip.path,
-                    volume=clip.volume,
-                    metadata={
-                        "description": clip.description,
-                        "tags": list(clip.tags),
-                        "length_seconds": clip.length_seconds,
-                    },
+                effect_id: _EffectManifestEntry(
+                    {
+                        "path": clip.path,
+                        "volume": clip.volume,
+                        **({"description": clip.description} if clip.description else {}),
+                        **({"tags": list(clip.tags)} if clip.tags else {}),
+                        **(
+                            {"length_seconds": clip.length_seconds}
+                            if clip.length_seconds is not None
+                            else {}
+                        ),
+                    }
                 )
                 for effect_id, clip in self.effects.items()
             },
             "music": {
-                track_id: _ManifestMusicEntry(
-                    path=track.path,
-                    volume=track.volume,
-                    loop=track.loop,
-                    metadata={
-                        "description": track.description,
-                        "tags": list(track.tags),
-                        "length_seconds": track.length_seconds,
-                        "tempo_bpm": track.tempo_bpm,
-                    },
+                track_id: _MusicManifestEntry(
+                    {
+                        "path": track.path,
+                        "volume": track.volume,
+                        "loop": track.loop,
+                        **({"description": track.description} if track.description else {}),
+                        **({"tags": list(track.tags)} if track.tags else {}),
+                        **(
+                            {"length_seconds": track.length_seconds}
+                            if track.length_seconds is not None
+                            else {}
+                        ),
+                        **(
+                            {"tempo_bpm": track.tempo_bpm}
+                            if track.tempo_bpm is not None
+                            else {}
+                        ),
+                    }
                 )
                 for track_id, track in self.music.items()
             },
@@ -445,6 +479,8 @@ def _ensure_placeholder_wave(asset_root: Path, entry: Mapping[str, Any]) -> None
     _write_wave_file(target, samples, sample_rate)
 
 
+
+
 def _synthesise_waveform(
     synthesis: Mapping[str, Any], *, fallback_duration: float
 ) -> Tuple[array, int]:
@@ -624,38 +660,49 @@ def _build_default_audio_cue_table() -> Dict[str, Any]:
     engine = AudioEngine()
     engine.ensure_placeholders()
     manifest = engine.build_manifest().to_dict()
-
-    effects = {key: dict(entry) for key, entry in manifest["effects"].items()}
-    music = {key: dict(entry) for key, entry in manifest["music"].items()}
-    event_effects = {event: tuple(routes) for event, routes in manifest["event_effects"].items()}
-    event_music = {event: tuple(routes) for event, routes in manifest["event_music"].items()}
-
     return {
-        "effects": effects,
-        "music": music,
-        "event_effects": event_effects,
-        "event_music": event_music,
+        "effects": {
+            effect_id: {
+                "path": entry["path"],
+                "volume": entry["volume"],
+            }
+            for effect_id, entry in manifest["effects"].items()
+        },
+        "music": {
+            track_id: {
+                "path": entry["path"],
+                "volume": entry["volume"],
+                "loop": entry["loop"],
+            }
+            for track_id, entry in manifest["music"].items()
+        },
+        "event_effects": {
+            event: list(routes) for event, routes in manifest["event_effects"].items()
+        },
+        "event_music": {
+            event: list(routes) for event, routes in manifest["event_music"].items()
+        },
     }
 
 
-DEFAULT_AUDIO_CUE_TABLE = _build_default_audio_cue_table()
+DEFAULT_AUDIO_CUE_TABLE: Dict[str, Any] = _build_default_audio_cue_table()
 
 
 def default_audio_cue_table() -> Dict[str, Any]:
-    """Return a deep copy of :data:`DEFAULT_AUDIO_CUE_TABLE`."""
+    """Return a deep copy of the default audio cue table."""
 
-    return json.loads(json.dumps(DEFAULT_AUDIO_CUE_TABLE))
+    return copy.deepcopy(DEFAULT_AUDIO_CUE_TABLE)
 
 
 __all__ = [
+    "DEFAULT_AUDIO_CUE_TABLE",
     "AudioEngine",
-    "AudioManifest",
     "AudioFrame",
+    "AudioManifest",
     "MusicInstruction",
     "MusicTrack",
     "SoundClip",
     "SoundInstruction",
-    "DEFAULT_AUDIO_CUE_TABLE",
     "default_audio_cue_table",
     "materialise_audio_manifest_assets",
 ]
