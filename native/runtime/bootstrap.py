@@ -6,9 +6,9 @@ import argparse
 import logging
 import math
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import List, Sequence, Tuple
 
-from game.audio import AudioEngine, AudioFrame
+from game.audio import AudioEngine
 from game.export import EngineFrameExporter
 from game.graphics import GraphicsEngine, SceneNode
 from game.graphics_assets import load_asset_manifest
@@ -18,6 +18,7 @@ from .loop import FrameBundle, FramePlaybackLoop, PlaybackMetrics
 
 LOGGER = logging.getLogger(__name__)
 ASSET_MANIFEST_PATH = Path("assets/graphics_assets/manifest.json")
+DEFAULT_AUDIO_MANIFEST = Path("assets/audio/manifest.json")
 
 
 def build_placeholder_scene(
@@ -26,10 +27,9 @@ def build_placeholder_scene(
     duration: float,
     fps: float,
     audio: AudioEngine,
-    importer: EngineFrameImporter,
     exporter: EngineFrameExporter,
-) -> List[FrameBundle]:
-    """Generate placeholder frames and return imported render/audio bundles."""
+) -> List[FrameBundleDTO]:
+    """Generate placeholder frames and return decoded DTO bundles."""
 
     total_frames = max(1, int(math.ceil(duration * fps)))
     viewport_width, viewport_height = graphics.viewport
@@ -37,7 +37,7 @@ def build_placeholder_scene(
     background_sprite = placeholders.get("background", "placeholders/background")
     player_sprite = placeholders.get("player", "placeholders/player")
 
-    packets: List[FrameBundle] = []
+    packets: List[FrameBundleDTO] = []
     for index in range(total_frames):
         t = index / fps
         lerp = 0.0 if total_frames <= 1 else index / (total_frames - 1)
@@ -73,14 +73,10 @@ def build_placeholder_scene(
         events: List[str] = []
         if index % max(1, int(fps)) == 0:
             events.append("ui.level_up")
-        audio_frame: Optional[AudioFrame]
-        if events:
-            audio_frame = audio.build_frame(events, time=t)
-        else:
-            audio_frame = audio.build_frame((), time=t)
+        audio_frame = audio.build_frame(events, time=t)
 
         payload = exporter.frame_bundle(render_frame=render_frame, audio_frame=audio_frame)
-        packets.append(importer.frame_bundle(payload))
+        packets.append(decode_bundle(payload))
 
     return packets
 
@@ -90,28 +86,37 @@ def run_demo(
     duration: float,
     fps: float,
     realtime: bool,
+    bundle: Sequence[FrameBundleDTO] | None = None,
     logger: logging.Logger | None = None,
 ) -> tuple[EngineFrameImporter, PlaybackMetrics]:
     """Run the placeholder playback demo and return the importer instance."""
 
     target_logger = logger or LOGGER
-    graphics = GraphicsEngine()
-    manifest = load_asset_manifest(ASSET_MANIFEST_PATH)
-    manifest.apply(graphics, replace_existing=True, update_viewport=True)
+    if bundle is None:
+        graphics = GraphicsEngine()
+        manifest = load_asset_manifest(ASSET_MANIFEST_PATH)
+        manifest.apply(graphics, replace_existing=True, update_viewport=True)
 
-    audio = AudioEngine()
-    audio.ensure_placeholders()
+        audio = AudioEngine()
+        audio.ensure_placeholders()
 
-    importer = EngineFrameImporter(logger=target_logger)
-    exporter = EngineFrameExporter()
+        exporter = EngineFrameExporter()
+        bundles = build_placeholder_scene(
+            graphics,
+            duration=duration,
+            fps=fps,
+            audio=audio,
+            exporter=exporter,
+        )
+    else:
+        bundles = tuple(bundle)
 
-    bundles = build_placeholder_scene(
-        graphics,
-        duration=duration,
-        fps=fps,
-        audio=audio,
-        importer=importer,
-        exporter=exporter,
+    sprite_registry = SpriteRegistry(manifest_path=ASSET_MANIFEST_PATH, logger=target_logger)
+    audio_registry = AudioRegistry(manifest_path=DEFAULT_AUDIO_MANIFEST, logger=target_logger)
+    project = RendererProject(
+        sprite_registry=sprite_registry,
+        audio_registry=audio_registry,
+        logger=target_logger,
     )
 
     if realtime:
@@ -125,11 +130,14 @@ def run_demo(
     loop = FramePlaybackLoop(bundles, clock=clock, sleep=sleep, logger=target_logger)
     metrics = loop.run()
 
+    telemetry = project.telemetry
     target_logger.info(
-        "Imported %d sprites | %d effect clips | %d music tracks",
-        len(importer.sprite_table),
-        len(importer.effect_table),
-        len(importer.music_table),
+        "Playback complete: render=%d audio=%d missing_sprites=%d missing_effects=%d missing_music=%d",
+        telemetry.render_frames,
+        telemetry.audio_frames,
+        telemetry.missing_sprites,
+        telemetry.missing_effects,
+        telemetry.missing_music,
     )
 
     target_logger.info(
@@ -148,6 +156,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--duration", type=float, default=1.5, help="Demo duration in seconds")
     parser.add_argument("--fps", type=float, default=24.0, help="Frame rate used for placeholder scene")
+    parser.add_argument(
+        "--bundle",
+        type=Path,
+        help="Optional JSONL frame bundle exported by tools/export_runtime_frames.py",
+    )
     parser.add_argument(
         "--no-realtime",
         action="store_true",
@@ -183,6 +196,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         metrics.total_cpu_time,
     )
     return 0
+
+
+def load_bundle(path: Path) -> Tuple[FrameBundleDTO, ...]:
+    with path.open("r", encoding="utf-8") as fh:
+        return tuple(iter_jsonl_lines(fh))
 
 
 class _DeterministicClock:

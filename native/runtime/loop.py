@@ -8,15 +8,19 @@ from dataclasses import dataclass
 from statistics import mean
 from typing import Callable, Iterable, Optional, Sequence, Tuple
 
-from game.audio import AudioFrame
-from game.graphics import RenderFrame
+from native.client.audio import AudioFrameDTO
+from native.client.dto import RenderFrameDTO
+
+from .project import AppliedFrame, RendererProject
 
 LOGGER = logging.getLogger(__name__)
 
-FrameBundle = Tuple[RenderFrame, Optional[AudioFrame]]
+FrameBundle = Tuple[RenderFrameDTO, Optional[AudioFrameDTO]]
 ClockFn = Callable[[], float]
 SleepFn = Callable[[float], None]
-OnFrameFn = Callable[[int, RenderFrame, Optional[AudioFrame]], None]
+OnFrameFn = Callable[[int, RenderFrameDTO, Optional[AudioFrameDTO]], None]
+OnAppliedFn = Callable[[int, AppliedFrame], None]
+InputOverrideFn = Callable[[RenderFrameDTO, Optional[AudioFrameDTO]], Mapping[str, object] | None]
 
 
 @dataclass(frozen=True)
