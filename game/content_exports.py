@@ -4,12 +4,22 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Sequence
 
-from . import combat, config, content
+from . import combat, config, content, environment
 from .entities import EnemyLane, GlyphFamily
 from .game_state import weapon_upgrade_paths
 from .profile import default_hunters
+from .relics import relic_definitions
 
 _LAUNCH_HUNTERS: Sequence[str] = ("hunter_varik", "hunter_mira")
+
+_HUNTER_ABILITY_PAYLOADS: Mapping[str, Dict[str, Any]] = {
+    "hunter_varik": {
+        "dash": {"cooldown": 2.0, "strength": 26.0},
+    },
+    "hunter_mira": {
+        "dash": {"cooldown": 2.0, "strength": 26.0},
+    },
+}
 
 _WEAPON_SYNERGIES: Mapping[str, Dict[str, Any]] = {
     "Dusk Repeater": {
@@ -48,9 +58,11 @@ def build_content_bundle() -> Dict[str, Any]:
 
     return {
         "version": "vertical_slice_graveyard_v1",
+        "progression": progression_payload(),
         "biomes": [graveyard_biome_payload()],
         "hunters": launch_hunter_payloads(),
         "weapons": glyph_synergy_weapon_payloads(),
+        "relics": relic_payloads(),
     }
 
 
@@ -58,10 +70,12 @@ def graveyard_biome_payload() -> Dict[str, Any]:
     """Generate the encounter payload for the Graveyard biome."""
 
     phases: List[Dict[str, Any]] = []
+    environment_entries: List[Dict[str, Any]] = []
     enemy_catalog = content.enemy_blueprints(include_elites=True)
     miniboss_entries = content.miniboss_blueprints()
 
     for phase in range(1, 5):
+        environment_entries.append(_environment_phase_payload(phase))
         phases.append(
             {
                 "id": f"graveyard_phase_{phase}",
@@ -86,8 +100,51 @@ def graveyard_biome_payload() -> Dict[str, Any]:
         "name": "Neon Graveyard",
         "description": "A neon-lit necropolis with layered sightlines and relentless undead hordes.",
         "phases": phases,
+        "environment": environment_entries,
         "final_boss": boss,
     }
+
+
+def progression_payload() -> Dict[str, Any]:
+    """Expose progression constants used by the runtime UI."""
+
+    return {
+        "glyph_set_size": int(config.GLYPH_SET_SIZE),
+        "max_upgrade_options": int(config.MAX_UPGRADE_OPTIONS),
+        "run_duration_seconds": int(config.RUN_DURATION_SECONDS),
+    }
+
+
+def relic_payloads() -> List[Dict[str, Any]]:
+    """Return the relic catalogue with modifier breakdowns."""
+
+    payload: List[Dict[str, Any]] = []
+    for definition in relic_definitions():
+        modifier = definition.modifier
+        payload.append(
+            {
+                "id": definition.id,
+                "name": definition.name,
+                "description": definition.description,
+                "modifier": {
+                    "max_health": int(modifier.max_health),
+                    "damage_scale": float(modifier.damage_scale),
+                    "defense_scale": float(modifier.defense_scale),
+                    "hazard_resist": float(modifier.hazard_resist),
+                    "salvage_scale": float(modifier.salvage_scale),
+                    "soul_scale": float(modifier.soul_scale),
+                    "lifesteal_bonus": float(modifier.lifesteal_bonus),
+                    "regen_per_second": float(modifier.regen_per_second),
+                    "glyph_bonus": {
+                        family.value: int(amount)
+                        for family, amount in modifier.glyph_bonus.items()
+                    },
+                    "salvage_bonus_flat": int(modifier.salvage_bonus_flat),
+                    "heal_on_pickup": int(modifier.heal_on_pickup),
+                },
+            }
+        )
+    return payload
 
 
 def launch_hunter_payloads() -> List[Dict[str, Any]]:
@@ -97,6 +154,9 @@ def launch_hunter_payloads() -> List[Dict[str, Any]]:
     payload: List[Dict[str, Any]] = []
     for hunter_id in _LAUNCH_HUNTERS:
         definition = roster[hunter_id]
+        glyph_value = definition.signature_glyph.value if definition.signature_glyph else None
+        starting_glyphs = [glyph_value] if glyph_value else []
+        abilities = dict(_HUNTER_ABILITY_PAYLOADS.get(hunter_id, {}))
         payload.append(
             {
                 "id": definition.id,
@@ -105,7 +165,9 @@ def launch_hunter_payloads() -> List[Dict[str, Any]]:
                 "max_health": int(definition.max_health),
                 "starting_weapon": definition.starting_weapon,
                 "starting_weapon_tier": int(definition.starting_weapon_tier),
-                "signature_glyph": definition.signature_glyph.value if definition.signature_glyph else None,
+                "signature_glyph": glyph_value,
+                "starting_glyphs": starting_glyphs,
+                "abilities": abilities,
             }
         )
     return payload
@@ -216,6 +278,114 @@ def _final_boss_payload(blueprint: Mapping[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _environment_phase_payload(phase: int) -> Dict[str, Any]:
+    biome = config.PHASE_BIOMES[phase]
+    hazards = [
+        _hazard_payload(entry) for entry in environment.hazard_blueprints_for_biome(biome)
+    ]
+    barricades = [
+        _barricade_payload(entry)
+        for entry in environment.barricade_blueprints_for_biome(biome)
+    ]
+    caches = [
+        _resource_cache_payload(entry)
+        for entry in environment.resource_caches_for_biome(biome)
+    ]
+    weather_patterns = [
+        _weather_payload(entry)
+        for entry in environment.weather_patterns_for_biome(biome)
+    ]
+
+    schedules = {
+        "hazard": _hazard_schedule_payload(config.HAZARD_PHASES[phase]),
+        "barricade": _barricade_schedule_payload(config.BARRICADE_PHASES[phase]),
+        "resource": _resource_schedule_payload(config.RESOURCE_PHASES[phase]),
+        "weather": _weather_schedule_payload(config.WEATHER_PHASES[phase]),
+    }
+
+    return {
+        "phase": int(phase),
+        "biome": biome,
+        "hazards": hazards,
+        "barricades": barricades,
+        "resource_caches": caches,
+        "weather_patterns": weather_patterns,
+        "schedules": schedules,
+    }
+
+
+def _hazard_payload(blueprint: environment.HazardBlueprint) -> Dict[str, Any]:
+    return {
+        "id": f"hazard_{_slug(blueprint.name)}",
+        "name": blueprint.name,
+        "description": blueprint.description,
+        "base_damage": int(blueprint.base_damage),
+        "slow": float(blueprint.slow),
+        "duration": float(blueprint.duration),
+    }
+
+
+def _barricade_payload(blueprint: environment.BarricadeBlueprint) -> Dict[str, Any]:
+    return {
+        "id": f"barricade_{_slug(blueprint.name)}",
+        "name": blueprint.name,
+        "description": blueprint.description,
+        "durability": int(blueprint.durability),
+        "salvage_reward": int(blueprint.salvage_reward),
+    }
+
+
+def _resource_cache_payload(cache: environment.ResourceCache) -> Dict[str, Any]:
+    return {
+        "id": f"cache_{_slug(cache.name)}",
+        "name": cache.name,
+        "description": cache.description,
+        "base_amount": int(cache.base_amount),
+    }
+
+
+def _weather_payload(pattern: environment.WeatherPattern) -> Dict[str, Any]:
+    return {
+        "id": f"weather_{_slug(pattern.name)}",
+        "name": pattern.name,
+        "description": pattern.description,
+        "movement_modifier": float(pattern.movement_modifier),
+        "vision_modifier": float(pattern.vision_modifier),
+    }
+
+
+def _hazard_schedule_payload(schedule: config.HazardSchedule) -> Dict[str, Any]:
+    return {
+        "base_interval": float(schedule.base_interval),
+        "interval_variance": float(schedule.interval_variance),
+        "damage_scale": float(schedule.damage_scale),
+    }
+
+
+def _barricade_schedule_payload(schedule: config.BarricadeSchedule) -> Dict[str, Any]:
+    return {
+        "base_interval": float(schedule.base_interval),
+        "interval_variance": float(schedule.interval_variance),
+        "reward_scale": float(schedule.reward_scale),
+    }
+
+
+def _resource_schedule_payload(schedule: config.ResourceSchedule) -> Dict[str, Any]:
+    return {
+        "base_interval": float(schedule.base_interval),
+        "interval_variance": float(schedule.interval_variance),
+        "amount_scale": float(schedule.amount_scale),
+    }
+
+
+def _weather_schedule_payload(schedule: config.WeatherSchedule) -> Dict[str, Any]:
+    return {
+        "base_interval": float(schedule.base_interval),
+        "interval_variance": float(schedule.interval_variance),
+        "duration_range": [float(value) for value in schedule.duration_range],
+    }
+
+
 def _slug(value: str) -> str:
     return value.lower().replace(" ", "_")
 
@@ -224,5 +394,7 @@ __all__ = [
     "build_content_bundle",
     "glyph_synergy_weapon_payloads",
     "graveyard_biome_payload",
+    "progression_payload",
+    "relic_payloads",
     "launch_hunter_payloads",
 ]

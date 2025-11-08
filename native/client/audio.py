@@ -156,15 +156,34 @@ class AudioManifestDTO:
         event_effects_payload = payload.get("event_effects", {})
         event_music_payload = payload.get("event_music", {})
 
+        if isinstance(effects_payload, Mapping):
+            effect_entries = effects_payload.items()
+        else:
+            effect_entries = (
+                (entry.get("id"), entry)
+                for entry in effects_payload  # type: ignore[list-item]
+                if isinstance(entry, Mapping)
+            )
         effects = {
             str(effect_id): SoundClipDescriptor.from_dict(
                 {"id": effect_id, **entry}
             )
-            for effect_id, entry in effects_payload.items()
+            for effect_id, entry in effect_entries
+            if effect_id is not None and isinstance(entry, Mapping)
         }
+
+        if isinstance(music_payload, Mapping):
+            music_entries = music_payload.items()
+        else:
+            music_entries = (
+                (entry.get("id"), entry)
+                for entry in music_payload  # type: ignore[list-item]
+                if isinstance(entry, Mapping)
+            )
         music = {
             str(track_id): MusicTrackDescriptor.from_dict({"id": track_id, **entry})
-            for track_id, entry in music_payload.items()
+            for track_id, entry in music_entries
+            if track_id is not None and isinstance(entry, Mapping)
         }
         event_effects = {
             str(event): tuple(str(item) for item in entries)
@@ -205,6 +224,10 @@ class AudioPlaybackFrame:
     frame: AudioFrameDTO
     effects: Tuple[ResolvedEffectInstruction, ...]
     music: Tuple[ResolvedMusicInstruction, ...]
+
+
+# Backwards compatibility alias used by earlier clients/tests.
+AppliedAudioFrame = AudioPlaybackFrame
 
 
 class AudioPlaybackHarness:
@@ -256,6 +279,92 @@ class AudioPlaybackHarness:
         return ResolvedMusicInstruction(instruction=instruction, track=track)
 
 
+@dataclass(frozen=True)
+class EffectPlaybackEvent:
+    """Mixer-ready effect payload used by the native runtime."""
+
+    clip: SoundClipDescriptor
+    volume: float
+    pan: float
+
+
+@dataclass(frozen=True)
+class MusicPlaybackEvent:
+    """Mixer-ready music payload used by the native runtime."""
+
+    track: Optional[MusicTrackDescriptor]
+    action: str
+    volume: float
+
+
+@dataclass(frozen=True)
+class AudioMixerResult:
+    """Result returned when the audio mixer applies a frame."""
+
+    time: float
+    effects: Tuple[EffectPlaybackEvent, ...]
+    music: Tuple[MusicPlaybackEvent, ...]
+
+
+class AudioMixer:
+    """Apply audio frames and maintain currently playing music state."""
+
+    def __init__(self, harness: AudioPlaybackHarness) -> None:
+        self._harness = harness
+        self._current_track: Optional[str] = None
+
+    @property
+    def current_track(self) -> Optional[str]:
+        return self._current_track
+
+    def apply(self, frame: AudioFrameDTO) -> AudioMixerResult:
+        routed = self._harness.route(frame)
+
+        effects: list[EffectPlaybackEvent] = []
+        for entry in routed.effects:
+            clip = entry.clip or entry.instruction.clip
+            effective_volume = entry.instruction.volume * (clip.volume if clip is not None else 1.0)
+            effects.append(
+                EffectPlaybackEvent(
+                    clip=clip if clip is not None else entry.instruction.clip,
+                    volume=effective_volume,
+                    pan=entry.instruction.pan,
+                )
+            )
+
+        music_events: list[MusicPlaybackEvent] = []
+        for entry in routed.music:
+            instruction = entry.instruction
+            track = entry.track or instruction.track
+
+            if instruction.action == "stop":
+                self._current_track = None
+            elif instruction.track is not None and instruction.action in {"play", "refresh"}:
+                if track is not None:
+                    self._current_track = track.id
+                else:
+                    self._current_track = instruction.track.id
+
+            base_volume = track.volume if track is not None else 1.0
+            effective_volume = instruction.volume if instruction.volume is not None else base_volume
+            music_events.append(
+                MusicPlaybackEvent(
+                    track=track,
+                    action=instruction.action,
+                    volume=effective_volume,
+                )
+            )
+
+        return AudioMixerResult(
+            time=frame.time,
+            effects=tuple(effects),
+            music=tuple(music_events),
+        )
+
+    def apply_payload(self, payload: Mapping[str, Any]) -> AudioMixerResult:
+        return self.apply(AudioFrameDTO.from_dict(payload))
+
+
 def _tuple_of_strings(value: Any) -> Tuple[str, ...]:
     if value is None:
         return tuple()
@@ -282,6 +391,7 @@ __all__ = [
     "AudioPlaybackFrame",
     "AudioPlaybackHarness",
     "AudioMixer",
+    "AudioMixerResult",
     "AppliedAudioFrame",
     "MusicInstructionDTO",
     "MusicTrackDescriptor",

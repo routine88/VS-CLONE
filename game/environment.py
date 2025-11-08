@@ -157,6 +157,15 @@ _BIOME_HAZARDS: Dict[str, Sequence[HazardBlueprint]] = {
 }
 
 
+def hazard_blueprints_for_biome(biome: str) -> Sequence[HazardBlueprint]:
+    """Expose the hazard definitions tied to the supplied biome."""
+
+    try:
+        return _BIOME_HAZARDS[biome]
+    except KeyError as exc:  # pragma: no cover - defensive guard for tooling
+        raise ValueError(f"unknown biome '{biome}'") from exc
+
+
 _BIOME_BARRICADES: Dict[str, Sequence[BarricadeBlueprint]] = {
     "Graveyard": (
         BarricadeBlueprint(
@@ -203,6 +212,15 @@ _BIOME_BARRICADES: Dict[str, Sequence[BarricadeBlueprint]] = {
 }
 
 
+def barricade_blueprints_for_biome(biome: str) -> Sequence[BarricadeBlueprint]:
+    """Return the barricade templates available in the biome."""
+
+    try:
+        return _BIOME_BARRICADES[biome]
+    except KeyError as exc:  # pragma: no cover - defensive guard for tooling
+        raise ValueError(f"unknown biome '{biome}'") from exc
+
+
 _RESOURCE_CACHES: Dict[str, Sequence[ResourceCache]] = {
     "Graveyard": (
         ResourceCache(
@@ -241,6 +259,15 @@ _RESOURCE_CACHES: Dict[str, Sequence[ResourceCache]] = {
         ),
     ),
 }
+
+
+def resource_caches_for_biome(biome: str) -> Sequence[ResourceCache]:
+    """Return ambient caches discoverable within the biome."""
+
+    try:
+        return _RESOURCE_CACHES[biome]
+    except KeyError as exc:  # pragma: no cover - defensive guard for tooling
+        raise ValueError(f"unknown biome '{biome}'") from exc
 
 
 _WEATHER_PATTERNS: Dict[str, Sequence[WeatherPattern]] = {
@@ -287,6 +314,15 @@ _WEATHER_PATTERNS: Dict[str, Sequence[WeatherPattern]] = {
         ),
     ),
 }
+
+
+def weather_patterns_for_biome(biome: str) -> Sequence[WeatherPattern]:
+    """Expose weather shifts that can affect the biome."""
+
+    try:
+        return _WEATHER_PATTERNS[biome]
+    except KeyError as exc:  # pragma: no cover - defensive guard for tooling
+        raise ValueError(f"unknown biome '{biome}'") from exc
 
 
 def hazards_for_phase(phase: int) -> Sequence[HazardBlueprint]:
