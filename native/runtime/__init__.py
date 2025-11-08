@@ -1,19 +1,15 @@
 """Bootstrap helpers for the prototype runtime renderer."""
 
-from .assets import AudioRegistry, SpriteRegistry
-from .bootstrap import build_placeholder_scene, load_bundle, main, run_demo
-from .loop import FrameBundle, FramePlaybackLoop
-from .project import RendererProject, Telemetry
-from .stream import FrameBundleDTO, decode_bundle, iter_jsonl_lines, load_jsonl_file
+from .bootstrap import build_placeholder_scene, main, run_demo
+from .importer import EngineFrameImporter
+from .loop import FrameBundle, FramePlaybackLoop, PlaybackMetrics
 
 __all__ = [
     "AudioRegistry",
     "FrameBundle",
     "FrameBundleDTO",
     "FramePlaybackLoop",
-    "RendererProject",
-    "SpriteRegistry",
-    "Telemetry",
+    "PlaybackMetrics",
     "build_placeholder_scene",
     "decode_bundle",
     "iter_jsonl_lines",

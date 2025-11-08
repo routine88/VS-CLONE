@@ -122,12 +122,15 @@ def test_frame_playback_loop_applies_frames_and_overrides():
     fake = FakeClock()
     loop = FramePlaybackLoop(bundles, clock=fake.now, sleep=fake.sleep)
 
-    applied_frames = []
+    captured: list[tuple[int, float]] = []
+    metrics = loop.run(on_frame=lambda idx, render, audio: captured.append((idx, render.time)))
 
-    def override_callback(render, audio):
-        if render.time == 0.0:
-            return {}
-        return {"frame": render.time}
+    assert captured == [(0, 0.0), (1, 0.5)]
+    assert fake.sleeps
+    assert fake.sleeps[-1] == pytest.approx(0.5, rel=1e-6)
+    assert fake.now() == pytest.approx(0.5, rel=1e-6)
+    assert metrics.frame_count == 2
+    assert metrics.total_cpu_time >= 0.0
 
     loop.run(
         project,
@@ -143,5 +146,13 @@ def test_frame_playback_loop_applies_frames_and_overrides():
     assert project.telemetry.missing_music == 0
     assert project.telemetry.overrides_applied == len(applied_frames) - 1
 
-    assert fake.sleeps
-    assert fake.sleeps[-1] == pytest.approx(bundles[-1][0].time - bundles[-2][0].time, rel=1e-6)
+def test_run_demo_non_realtime_populates_tables():
+    importer, metrics = run_demo(
+        duration=0.2,
+        fps=10.0,
+        realtime=False,
+        logger=logging.getLogger("test"),
+    )
+    assert importer.sprite_table
+    assert importer.effect_table
+    assert metrics.frame_count > 0

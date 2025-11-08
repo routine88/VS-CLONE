@@ -40,7 +40,9 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install runtime tooling
-        run: python -m pip install --upgrade pip
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build
       - name: Export runtime frame bundle
         run: |
           python -m tools.export_runtime_frames \
@@ -73,6 +75,19 @@ jobs:
           python -m native.client.cli checksum \
             artifacts/native/nightfall-runtime.zip \
             --output artifacts/native/nightfall-runtime.sha256
+      - name: Build Python distribution artifacts
+        run: |
+          mkdir -p artifacts/dist
+          python -m build --sdist --wheel --outdir artifacts/dist
+      - name: Record distribution checksums
+        run: |
+          python -m native.client.cli checksum artifacts/dist/* --output artifacts/dist/dist.sha256
+      - name: Capture runtime playback metrics
+        run: |
+          python -m tools.runtime_playback_benchmark \
+            --input artifacts/frame-bundles/nightfall-mvp.jsonl \
+            --output artifacts/metrics/nightfall-runtime.json \
+            --markdown artifacts/metrics/nightfall-runtime.md
       - name: Upload frame bundle artifact
         uses: actions/upload-artifact@v4
         with:
@@ -83,4 +98,13 @@ jobs:
         with:
           name: native-runtime
           path: artifacts/native
-
+      - name: Upload Python distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-distribution
+          path: artifacts/dist
+      - name: Upload runtime metrics artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-metrics
+          path: artifacts/metrics

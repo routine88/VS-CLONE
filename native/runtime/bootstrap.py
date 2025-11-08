@@ -13,10 +13,8 @@ from game.export import EngineFrameExporter
 from game.graphics import GraphicsEngine, SceneNode
 from game.graphics_assets import load_asset_manifest
 
-from .assets import AudioRegistry, SpriteRegistry
-from .loop import FramePlaybackLoop
-from .project import RendererProject
-from .stream import FrameBundleDTO, decode_bundle, iter_jsonl_lines
+from .importer import EngineFrameImporter
+from .loop import FrameBundle, FramePlaybackLoop, PlaybackMetrics
 
 LOGGER = logging.getLogger(__name__)
 ASSET_MANIFEST_PATH = Path("assets/graphics_assets/manifest.json")
@@ -90,8 +88,8 @@ def run_demo(
     realtime: bool,
     bundle: Sequence[FrameBundleDTO] | None = None,
     logger: logging.Logger | None = None,
-) -> RendererProject:
-    """Run the placeholder playback demo and return the renderer project."""
+) -> tuple[EngineFrameImporter, PlaybackMetrics]:
+    """Run the placeholder playback demo and return the importer instance."""
 
     target_logger = logger or LOGGER
     if bundle is None:
@@ -130,15 +128,7 @@ def run_demo(
         sleep = fake_clock.sleep
 
     loop = FramePlaybackLoop(bundles, clock=clock, sleep=sleep, logger=target_logger)
-    loop.run(
-        project,
-        on_applied=lambda idx, applied: target_logger.debug(
-            "Applied frame %d (messages=%d, overrides=%s)",
-            idx,
-            len(applied.render.frame.messages),
-            bool(applied.overrides),
-        ),
-    )
+    metrics = loop.run()
 
     telemetry = project.telemetry
     target_logger.info(
@@ -150,7 +140,16 @@ def run_demo(
         telemetry.missing_music,
     )
 
-    return project
+    target_logger.info(
+        "Playback metrics | frames=%d | fps=%.2f | avg_frame=%.4fs | min=%.4fs | max=%.4fs",
+        metrics.frame_count,
+        metrics.fps,
+        metrics.average_frame_time,
+        metrics.min_frame_time,
+        metrics.max_frame_time,
+    )
+
+    return importer, metrics
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -184,17 +183,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         not args.no_realtime,
     )
 
-    if args.bundle:
-        bundles = load_bundle(args.bundle)
-    else:
-        bundles = None
-
-    run_demo(
+    _, metrics = run_demo(
         duration=args.duration,
         fps=args.fps,
         realtime=not args.no_realtime,
-        bundle=bundles,
         logger=LOGGER,
+    )
+    LOGGER.info(
+        "Runtime harness complete | frames=%d | fps=%.2f | total=%.2fs",
+        metrics.frame_count,
+        metrics.fps,
+        metrics.total_cpu_time,
     )
     return 0
 
