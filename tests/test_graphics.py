@@ -1,3 +1,5 @@
+import pytest
+
 from game.graphics import (
     AnimationClip,
     AnimationFrame,
@@ -71,6 +73,19 @@ def test_graphics_engine_placeholder_resolution():
     assert frame.instructions[0].sprite.id == "placeholders/enemy"
 
 
+def test_graphics_engine_supports_extended_placeholders():
+    graphics = GraphicsEngine()
+    node = SceneNode(
+        id="boss_intro",
+        position=(0.0, 0.0),
+        layer="actors",
+        metadata={"kind": "boss"},
+    )
+
+    frame = graphics.build_frame([node])
+    assert frame.instructions[0].sprite.id == "placeholders/boss"
+
+
 def test_arcade_engine_render_frame_bridge():
     engine = ArcadeEngine(spawn_interval=10.0, target_duration=30.0)
     engine._projectiles.append(Projectile(x=6.0, y=engine.height / 2.0, speed=0.0, damage=6.0))
@@ -99,3 +114,21 @@ def test_graphics_manifest_export():
     assert manifest_dict["sprites"]["placeholders/player"]["size"] == [96, 96]
     assert manifest_dict["placeholders"]["player"] == "placeholders/player"
     assert "actors" in manifest_dict["layers"]
+
+
+def test_scene_node_tint_and_opacity_are_preserved():
+    graphics = GraphicsEngine()
+    node = SceneNode(
+        id="dash_vfx",
+        position=(0.0, 0.0),
+        layer="actors",
+        sprite_id="sprites/effects/dash_trail",
+        tint=(120, 200, 255),
+        opacity=0.35,
+        metadata={"kind": "vfx"},
+    )
+
+    frame = graphics.build_frame([node])
+    instruction = frame.instructions[0]
+    assert instruction.tint == (120, 200, 255)
+    assert instruction.opacity == pytest.approx(0.35)

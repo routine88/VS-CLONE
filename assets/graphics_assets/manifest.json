@@ -57,7 +57,10 @@
   },
   "placeholders": {
     "background": "placeholders/background",
+    "boss": "placeholders/boss",
+    "collectible": "placeholders/collectible",
     "enemy": "placeholders/enemy",
+    "hazard": "placeholders/hazard",
     "player": "placeholders/player",
     "projectile": "placeholders/projectile"
   },
@@ -188,6 +191,134 @@
       "texture": "sprites/background_placeholder.texture.json",
       "tint": null
     },
+    "placeholders/boss": {
+      "art_style": "Stylised boss illustration with layered armour plates.",
+      "brief": {
+        "art_style": "Stylised boss illustration with layered armour plates.",
+        "description": "Towering matriarch cloaked in void silk with radiant halo of runes and twin scythes.",
+        "id": "placeholders/boss",
+        "lighting": "High-contrast rim light with underlit core glow.",
+        "mood": "Ominous and imposing.",
+        "name": "Abyssal Matriarch Placeholder",
+        "notes": [
+          "Silhouette should read clearly at 50% scale.",
+          "Arms extended slightly forward for attack readability."
+        ],
+        "palette": [
+          "#271430 - deep void core",
+          "#7E44C7 - royal violet armor",
+          "#F6D8FF - halo glyphs",
+          "#3CF0FF - arc highlights"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "Boss stand-in",
+        "size": [
+          192,
+          192
+        ],
+        "tags": [
+          "boss",
+          "character",
+          "placeholder"
+        ],
+        "texture": "sprites/boss_placeholder.texture.json"
+      },
+      "description": "Towering matriarch cloaked in void silk with radiant halo of runes and twin scythes.",
+      "display_name": "Abyssal Matriarch Placeholder",
+      "lighting": "High-contrast rim light with underlit core glow.",
+      "mood": "Ominous and imposing.",
+      "notes": [
+        "Silhouette should read clearly at 50% scale.",
+        "Arms extended slightly forward for attack readability."
+      ],
+      "palette": [
+        "#271430 - deep void core",
+        "#7E44C7 - royal violet armor",
+        "#F6D8FF - halo glyphs",
+        "#3CF0FF - arc highlights"
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "Boss stand-in",
+      "size": [
+        192,
+        192
+      ],
+      "tags": [
+        "boss",
+        "character",
+        "placeholder"
+      ],
+      "texture": "sprites/boss_placeholder.texture.json",
+      "tint": null
+    },
+    "placeholders/collectible": {
+      "art_style": "Stylised collectible with particle accents.",
+      "brief": {
+        "art_style": "Stylised collectible with particle accents.",
+        "description": "Cluster of luminous shards orbiting a central crystal core.",
+        "id": "placeholders/collectible",
+        "lighting": "Inner glow with soft outer bloom.",
+        "mood": "Enticing magical reward.",
+        "name": "Soul Cluster Placeholder",
+        "notes": [
+          "Design to tile well for pickup stacks."
+        ],
+        "palette": [
+          "#60FFE3 - teal glow",
+          "#2C4060 - deep shadow",
+          "#C5FFF6 - prismatic sparkles"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "Collectible stand-in",
+        "size": [
+          72,
+          72
+        ],
+        "tags": [
+          "collectible",
+          "vfx",
+          "placeholder"
+        ],
+        "texture": "sprites/collectible_placeholder.texture.json"
+      },
+      "description": "Cluster of luminous shards orbiting a central crystal core.",
+      "display_name": "Soul Cluster Placeholder",
+      "lighting": "Inner glow with soft outer bloom.",
+      "mood": "Enticing magical reward.",
+      "notes": [
+        "Design to tile well for pickup stacks."
+      ],
+      "palette": [
+        "#60FFE3 - teal glow",
+        "#2C4060 - deep shadow",
+        "#C5FFF6 - prismatic sparkles"
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "Collectible stand-in",
+      "size": [
+        72,
+        72
+      ],
+      "tags": [
+        "collectible",
+        "vfx",
+        "placeholder"
+      ],
+      "texture": "sprites/collectible_placeholder.texture.json",
+      "tint": null
+    },
     "placeholders/enemy": {
       "art_style": "Stylised cel-shaded silhouette focus.",
       "brief": {
@@ -252,6 +383,70 @@
         "placeholder"
       ],
       "texture": "sprites/enemy_placeholder.texture.json",
+      "tint": null
+    },
+    "placeholders/hazard": {
+      "art_style": "Stylised VFX disc with layered glow.",
+      "brief": {
+        "art_style": "Stylised VFX disc with layered glow.",
+        "description": "Crackling void rift disc with floating debris and lightning arcs.",
+        "id": "placeholders/hazard",
+        "lighting": "Self-illuminated with pulsating corona.",
+        "mood": "Unstable eldritch energy.",
+        "name": "Void Hazard Placeholder",
+        "notes": [
+          "Alpha falloff should taper smoothly for additive blending."
+        ],
+        "palette": [
+          "#140B1F - abyssal center",
+          "#503A73 - volatile rim",
+          "#9C6BFF - arcing energy",
+          "#4CF2FF - electric highlights"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "Environmental hazard stand-in",
+        "size": [
+          128,
+          128
+        ],
+        "tags": [
+          "hazard",
+          "vfx",
+          "placeholder"
+        ],
+        "texture": "sprites/hazard_placeholder.texture.json"
+      },
+      "description": "Crackling void rift disc with floating debris and lightning arcs.",
+      "display_name": "Void Hazard Placeholder",
+      "lighting": "Self-illuminated with pulsating corona.",
+      "mood": "Unstable eldritch energy.",
+      "notes": [
+        "Alpha falloff should taper smoothly for additive blending."
+      ],
+      "palette": [
+        "#140B1F - abyssal center",
+        "#503A73 - volatile rim",
+        "#9C6BFF - arcing energy",
+        "#4CF2FF - electric highlights"
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "Environmental hazard stand-in",
+      "size": [
+        128,
+        128
+      ],
+      "tags": [
+        "hazard",
+        "vfx",
+        "placeholder"
+      ],
+      "texture": "sprites/hazard_placeholder.texture.json",
       "tint": null
     },
     "placeholders/player": {
@@ -508,6 +703,72 @@
         "combat"
       ],
       "texture": "sprites/effects/hit_flash.texture.json",
+      "tint": null
+    },
+    "sprites/effects/level_up_pulse": {
+      "art_style": "Stylised magical burst with crisp sigil lines.",
+      "brief": {
+        "art_style": "Stylised magical burst with crisp sigil lines.",
+        "description": "Radiant burst with concentric sigils and trailing motes.",
+        "id": "sprites/effects/level_up_pulse",
+        "lighting": "Brilliant center fading to translucent rim.",
+        "mood": "Triumphant surge",
+        "name": "Level Up Pulse",
+        "notes": [
+          "Design to scale from 64px to 160px without losing clarity.",
+          "Include separate alpha channel for additive bloom if available."
+        ],
+        "palette": [
+          "#FFE17A - golden flare",
+          "#FF8B5C - ember edge",
+          "#FFF7E8 - inner highlight",
+          "#5C1E3A - arcane shadow"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "Progression VFX",
+        "size": [
+          128,
+          128
+        ],
+        "tags": [
+          "vfx",
+          "progression",
+          "level_up"
+        ],
+        "texture": "sprites/effects/level_up_pulse.texture.json"
+      },
+      "description": "Radiant burst with concentric sigils and trailing motes.",
+      "display_name": "Level Up Pulse",
+      "lighting": "Brilliant center fading to translucent rim.",
+      "mood": "Triumphant surge",
+      "notes": [
+        "Design to scale from 64px to 160px without losing clarity.",
+        "Include separate alpha channel for additive bloom if available."
+      ],
+      "palette": [
+        "#FFE17A - golden flare",
+        "#FF8B5C - ember edge",
+        "#FFF7E8 - inner highlight",
+        "#5C1E3A - arcane shadow"
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "Progression VFX",
+      "size": [
+        128,
+        128
+      ],
+      "tags": [
+        "vfx",
+        "progression",
+        "level_up"
+      ],
+      "texture": "sprites/effects/level_up_pulse.texture.json",
       "tint": null
     },
     "sprites/effects/soul_pickup": {
@@ -898,6 +1159,72 @@
         "health"
       ],
       "texture": "sprites/ui/health_orb.texture.json",
+      "tint": null
+    },
+    "sprites/ui/soul_counter": {
+      "art_style": "High-fidelity UI ornament with translucent glass.",
+      "brief": {
+        "art_style": "High-fidelity UI ornament with translucent glass.",
+        "description": "Gothic frame containing floating shards and numeric counter window.",
+        "id": "sprites/ui/soul_counter",
+        "lighting": "Backlit crystal cavity with metallic rim lights.",
+        "mood": "Arcane trophy display.",
+        "name": "Soul Shard Counter",
+        "notes": [
+          "Reserve lower third for dynamic text overlay.",
+          "Provide layered PSD if possible for count animation."
+        ],
+        "palette": [
+          "#1C1627 - obsidian frame",
+          "#71FFE5 - shard glow",
+          "#F5F2FF - highlight filigree",
+          "#362A4F - recess shadow"
+        ],
+        "pivot": [
+          0.5,
+          0.5
+        ],
+        "purpose": "UI collectible tracker",
+        "size": [
+          160,
+          128
+        ],
+        "tags": [
+          "ui",
+          "hud",
+          "collectible"
+        ],
+        "texture": "sprites/ui/soul_counter.texture.json"
+      },
+      "description": "Gothic frame containing floating shards and numeric counter window.",
+      "display_name": "Soul Shard Counter",
+      "lighting": "Backlit crystal cavity with metallic rim lights.",
+      "mood": "Arcane trophy display.",
+      "notes": [
+        "Reserve lower third for dynamic text overlay.",
+        "Provide layered PSD if possible for count animation."
+      ],
+      "palette": [
+        "#1C1627 - obsidian frame",
+        "#71FFE5 - shard glow",
+        "#F5F2FF - highlight filigree",
+        "#362A4F - recess shadow"
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "role": "UI collectible tracker",
+      "size": [
+        160,
+        128
+      ],
+      "tags": [
+        "ui",
+        "hud",
+        "collectible"
+      ],
+      "texture": "sprites/ui/soul_counter.texture.json",
       "tint": null
     }
   },

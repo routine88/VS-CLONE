@@ -81,6 +81,49 @@ Each section lists the context needed for concept and production teams as well a
 - **Production notes**:
   - Align long axis horizontally for side-scrolling readability.
 
+## Abyssal Matriarch Placeholder (`placeholders/boss`)
+
+- **Texture path**: `sprites/boss_placeholder.texture.json`
+- **Display size**: 192 × 192 px (pivot 0.50, 0.50)
+- **Purpose**: Boss stand-in
+- **Description**: Towering matriarch cloaked in void silk with radiant halo of runes and twin scythes.
+- **Color palette**: #271430 - deep void core, #7E44C7 - royal violet armor, #F6D8FF - halo glyphs, #3CF0FF - arc highlights
+- **Mood/Story**: Ominous and imposing.
+- **Lighting direction**: High-contrast rim light with underlit core glow.
+- **Art style**: Stylised boss illustration with layered armour plates.
+- **Tags**: boss, character, placeholder
+- **Production notes**:
+  - Silhouette should read clearly at 50% scale.
+  - Arms extended slightly forward for attack readability.
+
+## Void Hazard Placeholder (`placeholders/hazard`)
+
+- **Texture path**: `sprites/hazard_placeholder.texture.json`
+- **Display size**: 128 × 128 px (pivot 0.50, 0.50)
+- **Purpose**: Environmental hazard stand-in
+- **Description**: Crackling void rift disc with floating debris and lightning arcs.
+- **Color palette**: #140B1F - abyssal center, #503A73 - volatile rim, #9C6BFF - arcing energy, #4CF2FF - electric highlights
+- **Mood/Story**: Unstable eldritch energy.
+- **Lighting direction**: Self-illuminated with pulsating corona.
+- **Art style**: Stylised VFX disc with layered glow.
+- **Tags**: hazard, vfx, placeholder
+- **Production notes**:
+  - Alpha falloff should taper smoothly for additive blending.
+
+## Soul Cluster Placeholder (`placeholders/collectible`)
+
+- **Texture path**: `sprites/collectible_placeholder.texture.json`
+- **Display size**: 72 × 72 px (pivot 0.50, 0.50)
+- **Purpose**: Collectible stand-in
+- **Description**: Cluster of luminous shards orbiting a central crystal core.
+- **Color palette**: #60FFE3 - teal glow, #2C4060 - deep shadow, #C5FFF6 - prismatic sparkles
+- **Mood/Story**: Enticing magical reward.
+- **Lighting direction**: Inner glow with soft outer bloom.
+- **Art style**: Stylised collectible with particle accents.
+- **Tags**: collectible, vfx, placeholder
+- **Production notes**:
+  - Design to tile well for pickup stacks.
+
 ## Dash Trail (`sprites/effects/dash_trail`)
 
 - **Texture path**: `sprites/effects/dash_trail.texture.json`
@@ -123,6 +166,21 @@ Each section lists the context needed for concept and production teams as well a
 - **Tags**: collectible, vfx, reward
 - **Production notes**:
   - Supports looping four-frame twinkle animation.
+
+## Level Up Pulse (`sprites/effects/level_up_pulse`)
+
+- **Texture path**: `sprites/effects/level_up_pulse.texture.json`
+- **Display size**: 128 × 128 px (pivot 0.50, 0.50)
+- **Purpose**: Progression VFX
+- **Description**: Radiant burst with concentric sigils and trailing motes.
+- **Color palette**: #FFE17A - golden flare, #FF8B5C - ember edge, #FFF7E8 - inner highlight, #5C1E3A - arcane shadow
+- **Mood/Story**: Triumphant surge
+- **Lighting direction**: Brilliant center fading to translucent rim.
+- **Art style**: Stylised magical burst with crisp sigil lines.
+- **Tags**: vfx, progression, level_up
+- **Production notes**:
+  - Design to scale from 64px to 160px without losing clarity.
+  - Include separate alpha channel for additive bloom if available.
 
 ## Gravestone Barricade - Broken (`sprites/environment/barricade_broken`)
 
@@ -182,6 +240,21 @@ Each section lists the context needed for concept and production teams as well a
 - **Production notes**:
   - Supply separate alpha mask for animated fill if possible.
   - Left edge should align at pixel 0 for layout anchoring.
+
+## Soul Shard Counter (`sprites/ui/soul_counter`)
+
+- **Texture path**: `sprites/ui/soul_counter.texture.json`
+- **Display size**: 160 × 128 px (pivot 0.50, 0.50)
+- **Purpose**: UI collectible tracker
+- **Description**: Gothic frame containing floating shards and numeric counter window.
+- **Color palette**: #1C1627 - obsidian frame, #71FFE5 - shard glow, #F5F2FF - highlight filigree, #362A4F - recess shadow
+- **Mood/Story**: Arcane trophy display.
+- **Lighting direction**: Backlit crystal cavity with metallic rim lights.
+- **Art style**: High-fidelity UI ornament with translucent glass.
+- **Tags**: ui, hud, collectible
+- **Production notes**:
+  - Reserve lower third for dynamic text overlay.
+  - Provide layered PSD if possible for count animation.
 
 ## HUD Health Orb (`sprites/ui/health_orb`)
 

@@ -160,6 +160,8 @@ class SceneNode:
     flip_x: bool = False
     flip_y: bool = False
     parallax: Optional[float] = None
+    tint: Optional[Color] = None
+    opacity: float = 1.0
     metadata: MutableMapping[str, object] = field(default_factory=dict)
 
     @property
@@ -182,6 +184,8 @@ class RenderInstruction:
     layer: str
     z_index: int
     metadata: Mapping[str, object]
+    tint: Optional[Color] = None
+    opacity: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -335,6 +339,67 @@ class GraphicsEngine:
                 tags=("projectile", "vfx", "placeholder"),
             ),
             Sprite(
+                id="placeholders/boss",
+                texture="sprites/boss_placeholder.texture.json",
+                size=(192, 192),
+                display_name="Abyssal Matriarch Placeholder",
+                role="Boss stand-in",
+                description="Towering matriarch cloaked in void silk with radiant halo of runes and twin scythes.",
+                palette=(
+                    "#271430 - deep void core",
+                    "#7E44C7 - royal violet armor",
+                    "#F6D8FF - halo glyphs",
+                    "#3CF0FF - arc highlights",
+                ),
+                mood="Ominous and imposing.",
+                lighting="High-contrast rim light with underlit core glow.",
+                art_style="Stylised boss illustration with layered armour plates.",
+                notes=(
+                    "Silhouette should read clearly at 50% scale.",
+                    "Arms extended slightly forward for attack readability.",
+                ),
+                tags=("boss", "character", "placeholder"),
+            ),
+            Sprite(
+                id="placeholders/hazard",
+                texture="sprites/hazard_placeholder.texture.json",
+                size=(128, 128),
+                display_name="Void Hazard Placeholder",
+                role="Environmental hazard stand-in",
+                description="Crackling void rift disc with floating debris and lightning arcs.",
+                palette=(
+                    "#140B1F - abyssal center",
+                    "#503A73 - volatile rim",
+                    "#9C6BFF - arcing energy",
+                    "#4CF2FF - electric highlights",
+                ),
+                mood="Unstable eldritch energy.",
+                lighting="Self-illuminated with pulsating corona.",
+                art_style="Stylised VFX disc with layered glow.",
+                notes=(
+                    "Alpha falloff should taper smoothly for additive blending.",
+                ),
+                tags=("hazard", "vfx", "placeholder"),
+            ),
+            Sprite(
+                id="placeholders/collectible",
+                texture="sprites/collectible_placeholder.texture.json",
+                size=(72, 72),
+                display_name="Soul Cluster Placeholder",
+                role="Collectible stand-in",
+                description="Cluster of luminous shards orbiting a central crystal core.",
+                palette=(
+                    "#60FFE3 - teal glow",
+                    "#2C4060 - deep shadow",
+                    "#C5FFF6 - prismatic sparkles",
+                ),
+                mood="Enticing magical reward.",
+                lighting="Inner glow with soft outer bloom.",
+                art_style="Stylised collectible with particle accents.",
+                notes=("Design to tile well for pickup stacks.",),
+                tags=("collectible", "vfx", "placeholder"),
+            ),
+            Sprite(
                 id="placeholders/background",
                 texture="sprites/background_placeholder.texture.json",
                 size=(1280, 720),
@@ -404,6 +469,28 @@ class GraphicsEngine:
                 tags=("ui", "hud", "progression"),
             ),
             Sprite(
+                id="sprites/ui/soul_counter",
+                texture="sprites/ui/soul_counter.texture.json",
+                size=(160, 128),
+                display_name="Soul Shard Counter",
+                role="UI collectible tracker",
+                description="Gothic frame containing floating shards and numeric counter window.",
+                palette=(
+                    "#1C1627 - obsidian frame",
+                    "#71FFE5 - shard glow",
+                    "#F5F2FF - highlight filigree",
+                    "#362A4F - recess shadow",
+                ),
+                mood="Arcane trophy display.",
+                lighting="Backlit crystal cavity with metallic rim lights.",
+                art_style="High-fidelity UI ornament with translucent glass.",
+                notes=(
+                    "Reserve lower third for dynamic text overlay.",
+                    "Provide layered PSD if possible for count animation.",
+                ),
+                tags=("ui", "hud", "collectible"),
+            ),
+            Sprite(
                 id="sprites/ui/ability_icon_dash",
                 texture="sprites/ui/ability_icon_dash.texture.json",
                 size=(96, 96),
@@ -424,6 +511,28 @@ class GraphicsEngine:
                     "Keep icon readable at 48px.",
                 ),
                 tags=("ui", "icon", "ability"),
+            ),
+            Sprite(
+                id="sprites/effects/level_up_pulse",
+                texture="sprites/effects/level_up_pulse.texture.json",
+                size=(128, 128),
+                display_name="Level Up Pulse",
+                role="Progression VFX",
+                description="Radiant burst with concentric sigils and trailing motes.",
+                palette=(
+                    "#FFE17A - golden flare",
+                    "#FF8B5C - ember edge",
+                    "#FFF7E8 - inner highlight",
+                    "#5C1E3A - arcane shadow",
+                ),
+                mood="Triumphant surge",
+                lighting="Brilliant center fading to translucent rim.",
+                art_style="Stylised magical burst with crisp sigil lines.",
+                notes=(
+                    "Design to scale from 64px to 160px without losing clarity.",
+                    "Include separate alpha channel for additive bloom if available.",
+                ),
+                tags=("vfx", "progression", "level_up"),
             ),
             Sprite(
                 id="sprites/effects/dash_trail",
@@ -534,6 +643,9 @@ class GraphicsEngine:
         self.register_placeholder("enemy", "placeholders/enemy")
         self.register_placeholder("projectile", "placeholders/projectile")
         self.register_placeholder("background", "placeholders/background")
+        self.register_placeholder("boss", "placeholders/boss")
+        self.register_placeholder("hazard", "placeholders/hazard")
+        self.register_placeholder("collectible", "placeholders/collectible")
 
         default_layers = layers or (
             LayerSettings("background", z_index=0, parallax=0.35),
@@ -616,6 +728,9 @@ class GraphicsEngine:
             screen_x += camera.viewport[0] * 0.5
             screen_y += camera.viewport[1] * 0.5
 
+            tint = node.tint if node.tint is not None else sprite.tint
+            opacity = max(0.0, min(1.0, node.opacity))
+
             instruction = RenderInstruction(
                 node_id=node.id,
                 sprite=sprite,
@@ -627,6 +742,8 @@ class GraphicsEngine:
                 layer=node.layer,
                 z_index=layer.z_index,
                 metadata=dict(node.metadata),
+                tint=tint,
+                opacity=opacity,
             )
             instructions.append(instruction)
 
