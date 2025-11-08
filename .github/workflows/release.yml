@@ -1,0 +1,56 @@
+name: Release binaries
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    name: Build runtime bundles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+      - name: Prepare artifact directories
+        run: |
+          mkdir -p artifacts/frame-bundles
+          mkdir -p artifacts/native
+      - name: Export runtime frame bundle
+        run: |
+          python -m tools.export_runtime_frames \
+            --seed 1337 \
+            --frames 300 \
+            --output artifacts/frame-bundles/nightfall-mvp.jsonl
+      - name: Record frame bundle checksum
+        run: |
+          python -m native.client.cli checksum \
+            artifacts/frame-bundles/nightfall-mvp.jsonl \
+            --output artifacts/frame-bundles/nightfall-mvp.sha256
+      - name: Bundle native harness
+        run: |
+          python -m native.client.cli bundle \
+            --output artifacts/native/nightfall-runtime.zip \
+            --build-id "${{ github.sha }}" \
+            --platform linux
+      - name: Record native bundle checksum
+        run: |
+          python -m native.client.cli checksum \
+            artifacts/native/nightfall-runtime.zip \
+            --output artifacts/native/nightfall-runtime.sha256
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/frame-bundles/nightfall-mvp.jsonl
+            artifacts/frame-bundles/nightfall-mvp.sha256
+            artifacts/native/nightfall-runtime.zip
+            artifacts/native/nightfall-runtime.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
