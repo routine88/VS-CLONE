@@ -38,6 +38,7 @@ ns-liveops = "game.live_ops:main"
 ns-graphics-manifest = "tools.graphics_manifest:main"
 ns-audio-manifest = "tools.audio_manifest:main"
 ns-export-frames = "tools.export_runtime_frames:main"
+ns-export-content = "tools.export_runtime_content:main"
 ns-runtime-artifacts = "native.client.cli:main"
 
 [tool.setuptools.packages.find]

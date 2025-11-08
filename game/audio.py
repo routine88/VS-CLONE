@@ -147,6 +147,58 @@ class AudioManifest:
         }
 
 
+class _ManifestBaseEntry(dict):
+    """Dictionary-like view that exposes metadata without affecting equality."""
+
+    def __init__(self, base: Mapping[str, Any], metadata: Mapping[str, Any]) -> None:
+        filtered = {
+            key: value for key, value in metadata.items() if value not in (None, [], "", ())
+        }
+        super().__init__(base)
+        self._metadata = filtered
+
+    def __getitem__(self, key: str) -> Any:  # type: ignore[override]
+        if dict.__contains__(self, key):
+            return dict.__getitem__(self, key)
+        return self._metadata[key]
+
+    def get(self, key: str, default: Any = None) -> Any:  # type: ignore[override]
+        if dict.__contains__(self, key):
+            return dict.get(self, key, default)
+        return self._metadata.get(key, default)
+
+    def __contains__(self, key: object) -> bool:  # type: ignore[override]
+        return dict.__contains__(self, key) or key in self._metadata
+
+    def keys(self):  # type: ignore[override]
+        return list(dict.keys(self)) + [key for key in self._metadata if key not in self]
+
+    def items(self):  # type: ignore[override]
+        for item in dict.items(self):
+            yield item
+        for item in self._metadata.items():
+            if item[0] not in self:
+                yield item
+
+    def values(self):  # type: ignore[override]
+        for value in dict.values(self):
+            yield value
+        for key, value in self._metadata.items():
+            if key not in self:
+                yield value
+
+
+class _ManifestEffectEntry(_ManifestBaseEntry):
+    def __init__(self, *, path: str, volume: float, metadata: Mapping[str, Any]) -> None:
+        super().__init__({"path": path, "volume": volume}, metadata)
+
+
+class _ManifestMusicEntry(_ManifestBaseEntry):
+    def __init__(self, *, path: str, volume: float, loop: bool, metadata: Mapping[str, Any]) -> None:
+        base = {"path": path, "volume": volume, "loop": loop}
+        super().__init__(base, metadata)
+
+
 class AudioEngine:
     """Lightweight router that maps gameplay events to audio instructions."""
 

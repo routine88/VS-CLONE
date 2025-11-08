@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping, Tuple
+from typing import Any, Dict, Mapping, Tuple
 
 
 def _as_tuple(iterable: Any) -> Tuple[Any, ...]:
@@ -192,22 +192,211 @@ class FinalBossDTO:
 
 
 @dataclass(frozen=True)
+class HazardBlueprintDTO:
+    id: str
+    name: str
+    description: str
+    base_damage: int
+    slow: float
+    duration: float
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "HazardBlueprintDTO":
+        return cls(
+            id=str(payload.get("id", "")),
+            name=str(payload.get("name", "")),
+            description=str(payload.get("description", "")),
+            base_damage=int(payload.get("base_damage", 0)),
+            slow=float(payload.get("slow", 0.0)),
+            duration=float(payload.get("duration", 0.0)),
+        )
+
+
+@dataclass(frozen=True)
+class BarricadeBlueprintDTO:
+    id: str
+    name: str
+    description: str
+    durability: int
+    salvage_reward: int
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "BarricadeBlueprintDTO":
+        return cls(
+            id=str(payload.get("id", "")),
+            name=str(payload.get("name", "")),
+            description=str(payload.get("description", "")),
+            durability=int(payload.get("durability", 0)),
+            salvage_reward=int(payload.get("salvage_reward", 0)),
+        )
+
+
+@dataclass(frozen=True)
+class ResourceCacheDTO:
+    id: str
+    name: str
+    description: str
+    base_amount: int
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "ResourceCacheDTO":
+        return cls(
+            id=str(payload.get("id", "")),
+            name=str(payload.get("name", "")),
+            description=str(payload.get("description", "")),
+            base_amount=int(payload.get("base_amount", 0)),
+        )
+
+
+@dataclass(frozen=True)
+class WeatherPatternDTO:
+    id: str
+    name: str
+    description: str
+    movement_modifier: float
+    vision_modifier: float
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "WeatherPatternDTO":
+        return cls(
+            id=str(payload.get("id", "")),
+            name=str(payload.get("name", "")),
+            description=str(payload.get("description", "")),
+            movement_modifier=float(payload.get("movement_modifier", 0.0)),
+            vision_modifier=float(payload.get("vision_modifier", 0.0)),
+        )
+
+
+@dataclass(frozen=True)
+class HazardScheduleDTO:
+    base_interval: float
+    interval_variance: float
+    damage_scale: float
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "HazardScheduleDTO":
+        return cls(
+            base_interval=float(payload.get("base_interval", 0.0)),
+            interval_variance=float(payload.get("interval_variance", 0.0)),
+            damage_scale=float(payload.get("damage_scale", 0.0)),
+        )
+
+
+@dataclass(frozen=True)
+class BarricadeScheduleDTO:
+    base_interval: float
+    interval_variance: float
+    reward_scale: float
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "BarricadeScheduleDTO":
+        return cls(
+            base_interval=float(payload.get("base_interval", 0.0)),
+            interval_variance=float(payload.get("interval_variance", 0.0)),
+            reward_scale=float(payload.get("reward_scale", 0.0)),
+        )
+
+
+@dataclass(frozen=True)
+class ResourceScheduleDTO:
+    base_interval: float
+    interval_variance: float
+    amount_scale: float
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "ResourceScheduleDTO":
+        return cls(
+            base_interval=float(payload.get("base_interval", 0.0)),
+            interval_variance=float(payload.get("interval_variance", 0.0)),
+            amount_scale=float(payload.get("amount_scale", 0.0)),
+        )
+
+
+@dataclass(frozen=True)
+class WeatherScheduleDTO:
+    base_interval: float
+    interval_variance: float
+    duration_range: Tuple[float, float]
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "WeatherScheduleDTO":
+        duration_payload = payload.get("duration_range", (0.0, 0.0))
+        return cls(
+            base_interval=float(payload.get("base_interval", 0.0)),
+            interval_variance=float(payload.get("interval_variance", 0.0)),
+            duration_range=(
+                float(duration_payload[0]),
+                float(duration_payload[1]) if len(duration_payload) > 1 else float(duration_payload[0]),
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class EnvironmentSchedulesDTO:
+    hazard: HazardScheduleDTO
+    barricade: BarricadeScheduleDTO
+    resource: ResourceScheduleDTO
+    weather: WeatherScheduleDTO
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "EnvironmentSchedulesDTO":
+        return cls(
+            hazard=HazardScheduleDTO.from_dict(payload.get("hazard", {})),
+            barricade=BarricadeScheduleDTO.from_dict(payload.get("barricade", {})),
+            resource=ResourceScheduleDTO.from_dict(payload.get("resource", {})),
+            weather=WeatherScheduleDTO.from_dict(payload.get("weather", {})),
+        )
+
+
+@dataclass(frozen=True)
+class EnvironmentPhaseDTO:
+    phase: int
+    biome: str
+    hazards: Tuple[HazardBlueprintDTO, ...]
+    barricades: Tuple[BarricadeBlueprintDTO, ...]
+    resource_caches: Tuple[ResourceCacheDTO, ...]
+    weather_patterns: Tuple[WeatherPatternDTO, ...]
+    schedules: EnvironmentSchedulesDTO
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "EnvironmentPhaseDTO":
+        return cls(
+            phase=int(payload.get("phase", 0)),
+            biome=str(payload.get("biome", "")),
+            hazards=tuple(HazardBlueprintDTO.from_dict(entry) for entry in payload.get("hazards", [])),
+            barricades=tuple(
+                BarricadeBlueprintDTO.from_dict(entry) for entry in payload.get("barricades", [])
+            ),
+            resource_caches=tuple(
+                ResourceCacheDTO.from_dict(entry) for entry in payload.get("resource_caches", [])
+            ),
+            weather_patterns=tuple(
+                WeatherPatternDTO.from_dict(entry) for entry in payload.get("weather_patterns", [])
+            ),
+            schedules=EnvironmentSchedulesDTO.from_dict(payload.get("schedules", {})),
+        )
+
+
+@dataclass(frozen=True)
 class BiomeContentDTO:
     id: str
     name: str
     description: str
     phases: Tuple[PhaseDefinitionDTO, ...]
+    environment: Tuple[EnvironmentPhaseDTO, ...]
     final_boss: FinalBossDTO | None
 
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "BiomeContentDTO":
         phases_payload = payload.get("phases", [])
         boss_payload = payload.get("final_boss")
+        environment_payload = payload.get("environment", [])
         return cls(
             id=str(payload.get("id", "")),
             name=str(payload.get("name", "")),
             description=str(payload.get("description", "")),
             phases=tuple(PhaseDefinitionDTO.from_dict(entry) for entry in phases_payload),
+            environment=tuple(EnvironmentPhaseDTO.from_dict(entry) for entry in environment_payload),
             final_boss=FinalBossDTO.from_dict(boss_payload) if boss_payload else None,
         )
 
@@ -221,10 +410,13 @@ class HunterDTO:
     starting_weapon: str
     starting_weapon_tier: int
     signature_glyph: str | None
+    starting_glyphs: Tuple[str, ...]
+    abilities: "HunterAbilitiesDTO"
 
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "HunterDTO":
         glyph = payload.get("signature_glyph")
+        glyphs_payload = payload.get("starting_glyphs", [])
         return cls(
             id=str(payload.get("id", "")),
             name=str(payload.get("name", "")),
@@ -233,7 +425,32 @@ class HunterDTO:
             starting_weapon=str(payload.get("starting_weapon", "")),
             starting_weapon_tier=int(payload.get("starting_weapon_tier", 1)),
             signature_glyph=str(glyph) if glyph not in (None, "") else None,
+            starting_glyphs=_string_tuple(glyphs_payload),
+            abilities=HunterAbilitiesDTO.from_dict(payload.get("abilities", {})),
         )
+
+
+@dataclass(frozen=True)
+class DashAbilityDTO:
+    cooldown: float
+    strength: float
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "DashAbilityDTO":
+        return cls(
+            cooldown=float(payload.get("cooldown", 0.0)),
+            strength=float(payload.get("strength", 0.0)),
+        )
+
+
+@dataclass(frozen=True)
+class HunterAbilitiesDTO:
+    dash: DashAbilityDTO | None
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "HunterAbilitiesDTO":
+        dash_payload = payload.get("dash")
+        return cls(dash=DashAbilityDTO.from_dict(dash_payload) if dash_payload else None)
 
 
 @dataclass(frozen=True)
@@ -282,11 +499,81 @@ class WeaponDefinitionDTO:
 
 
 @dataclass(frozen=True)
+class RelicModifierDTO:
+    max_health: int
+    damage_scale: float
+    defense_scale: float
+    hazard_resist: float
+    salvage_scale: float
+    soul_scale: float
+    lifesteal_bonus: float
+    regen_per_second: float
+    glyph_bonus: Dict[str, int]
+    salvage_bonus_flat: int
+    heal_on_pickup: int
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "RelicModifierDTO":
+        glyph_payload = payload.get("glyph_bonus", {})
+        if isinstance(glyph_payload, Mapping):
+            glyph_bonus = {str(key): int(value) for key, value in glyph_payload.items()}
+        else:
+            glyph_bonus = {}
+        return cls(
+            max_health=int(payload.get("max_health", 0)),
+            damage_scale=float(payload.get("damage_scale", 0.0)),
+            defense_scale=float(payload.get("defense_scale", 0.0)),
+            hazard_resist=float(payload.get("hazard_resist", 0.0)),
+            salvage_scale=float(payload.get("salvage_scale", 0.0)),
+            soul_scale=float(payload.get("soul_scale", 0.0)),
+            lifesteal_bonus=float(payload.get("lifesteal_bonus", 0.0)),
+            regen_per_second=float(payload.get("regen_per_second", 0.0)),
+            glyph_bonus=glyph_bonus,
+            salvage_bonus_flat=int(payload.get("salvage_bonus_flat", 0)),
+            heal_on_pickup=int(payload.get("heal_on_pickup", 0)),
+        )
+
+
+@dataclass(frozen=True)
+class RelicDefinitionDTO:
+    id: str
+    name: str
+    description: str
+    modifier: RelicModifierDTO
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "RelicDefinitionDTO":
+        return cls(
+            id=str(payload.get("id", "")),
+            name=str(payload.get("name", "")),
+            description=str(payload.get("description", "")),
+            modifier=RelicModifierDTO.from_dict(payload.get("modifier", {})),
+        )
+
+
+@dataclass(frozen=True)
+class ProgressionSettingsDTO:
+    glyph_set_size: int
+    max_upgrade_options: int
+    run_duration_seconds: int
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "ProgressionSettingsDTO":
+        return cls(
+            glyph_set_size=int(payload.get("glyph_set_size", 0)),
+            max_upgrade_options=int(payload.get("max_upgrade_options", 0)),
+            run_duration_seconds=int(payload.get("run_duration_seconds", 0)),
+        )
+
+
+@dataclass(frozen=True)
 class ContentBundleDTO:
     version: str
     biomes: Tuple[BiomeContentDTO, ...]
     hunters: Tuple[HunterDTO, ...]
     weapons: Tuple[WeaponDefinitionDTO, ...]
+    relics: Tuple[RelicDefinitionDTO, ...]
+    progression: ProgressionSettingsDTO
 
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "ContentBundleDTO":
@@ -295,20 +582,37 @@ class ContentBundleDTO:
             biomes=tuple(BiomeContentDTO.from_dict(entry) for entry in payload.get("biomes", [])),
             hunters=tuple(HunterDTO.from_dict(entry) for entry in payload.get("hunters", [])),
             weapons=tuple(WeaponDefinitionDTO.from_dict(entry) for entry in payload.get("weapons", [])),
+            relics=tuple(RelicDefinitionDTO.from_dict(entry) for entry in payload.get("relics", [])),
+            progression=ProgressionSettingsDTO.from_dict(payload.get("progression", {})),
         )
 
 
 __all__ = [
     "BiomeContentDTO",
+    "BarricadeBlueprintDTO",
+    "BarricadeScheduleDTO",
     "BossPhaseDTO",
     "ContentBundleDTO",
+    "DashAbilityDTO",
     "EnemyDefinitionDTO",
+    "EnvironmentPhaseDTO",
+    "EnvironmentSchedulesDTO",
     "FinalBossDTO",
+    "HazardBlueprintDTO",
+    "HazardScheduleDTO",
     "HunterDTO",
+    "HunterAbilitiesDTO",
     "MinibossDefinitionDTO",
     "PhaseBalanceDTO",
     "PhaseDefinitionDTO",
+    "ProgressionSettingsDTO",
+    "RelicDefinitionDTO",
+    "RelicModifierDTO",
+    "ResourceCacheDTO",
+    "ResourceScheduleDTO",
     "SpawnScheduleDTO",
     "WeaponDefinitionDTO",
     "WeaponTierDTO",
+    "WeatherPatternDTO",
+    "WeatherScheduleDTO",
 ]
