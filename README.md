@@ -43,6 +43,17 @@ See `docs/GIT_SETUP.md` for instructions on configuring Git so you can pull and 
   - `LAUNCHMVP.bat` launches the graphical MVP and logs to `logs/mvp_last_run.log`.
   - `RUN_TESTS.bat`, `RUN_INTERACTIVE.bat`, `RUN_PROTOTYPE.bat` provide one‑click flows.
 
+## Binary Assets & Git LFS
+
+- The repository now tracks production art, audio, and distribution archives with [Git LFS](https://git-lfs.com/) so binary
+  payloads can live alongside the source without bloating clone sizes.
+- After cloning, run `git lfs install` once on your machine and ensure future clones pull LFS objects automatically (`git lfs
+  pull`).
+- New binary additions matching the tracked extensions (`*.png`, `*.wav`, `*.zip`, etc.) will be stored as LFS pointers—commit
+  them normally and the tooling handles the heavy lifting.
+- GitHub Actions already fetches LFS content during CI runs, so build and packaging jobs will see the exact binary assets that
+  ship to QA and release channels.
+
 ## Repeatability Checks
 
 - Run the deterministic five-minute validation sweep: `python -m tools.repeatability_check --repeat 2 --duration 300`

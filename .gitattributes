@@ -1,36 +1,14 @@
-# Normalize text files and explicitly mark binary asset types so GitHub
-# can store uploaded binaries without trying to diff or merge them.
-* text=auto eol=lf
+* merge=ours
 
-*.py text eol=lf
-*.md text eol=lf
-*.yml text eol=lf
-*.yaml text eol=lf
-*.json text eol=lf
-*.texture.json text eol=lf
-*.toml text eol=lf
-
-*.png binary
-*.jpg binary
-*.jpeg binary
-*.gif binary
-*.bmp binary
-*.zip binary
-*.tar binary
-*.gz binary
-*.7z binary
-*.rar binary
-*.exe binary
-*.dll binary
-*.so binary
-*.dylib binary
-*.bin binary
-*.dat binary
-*.wav binary
-*.mp3 binary
-*.ogg binary
-*.flac binary
-*.mp4 binary
-*.mov binary
-*.avi binary
-*.webm binary
+# Track large binary assets with Git LFS so they can be stored in the repository
+# without bloating clone sizes. This allows the art and audio teams to check in
+# production-ready exports while keeping diffs lightweight.
+*.png filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.gif filter=lfs diff=lfs merge=lfs -text
+*.wav filter=lfs diff=lfs merge=lfs -text
+*.mp3 filter=lfs diff=lfs merge=lfs -text
+*.ogg filter=lfs diff=lfs merge=lfs -text
+*.zip filter=lfs diff=lfs merge=lfs -text
+*.bin filter=lfs diff=lfs merge=lfs -text
