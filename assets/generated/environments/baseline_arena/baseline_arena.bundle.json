@@ -1,0 +1,35 @@
+{
+  "asset_name": "baseline_arena",
+  "asset_type": "fbx",
+  "bundle": "baseline_arena.bundle.zip",
+  "bundle_sha256": "a8a442f5dae65a5fe21ec225b7bbb60ff46103a7070e56ce1f524341690a8cfa",
+  "bundle_version": "1.0",
+  "metadata": {
+    "extra": {
+      "category": "environments",
+      "notes": [
+        "Prototype arena tile used for importer smoke tests"
+      ],
+      "sidecar": true
+    },
+    "material_count": 1,
+    "mesh_count": 1,
+    "textures": [
+      "baseline_arena_albedo.png"
+    ],
+    "unit_scale_meters": 1.0
+  },
+  "resources": [
+    {
+      "path": "meshes/baseline_arena.fbx",
+      "sha256": "e1102b4571bdc8399e7245cb7d46a0150189c7163daac74ae7773da754028358",
+      "size": 289
+    },
+    {
+      "path": "textures/baseline_arena_albedo.png",
+      "sha256": "2a891f911961ce0e57bf74168d525b0f7492eda7c46d986fd1db7ac3effbc1dd",
+      "size": 78
+    }
+  ],
+  "source": "environments/baseline_arena.fbx"
+}
