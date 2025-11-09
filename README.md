@@ -59,6 +59,11 @@ See `docs/GIT_SETUP.md` for instructions on configuring Git so you can pull and 
 - Run the deterministic five-minute validation sweep: `python -m tools.repeatability_check --repeat 2 --duration 300`
 - Results are written to `logs/repeatability_<timestamp>.json` plus a Markdown summary for quick review.
 
+## Localization Support
+
+- Playable prototype ships with English, Spanish, German, and French catalogs under `assets/loc/`.
+- Use `python tools/extract_strings.py` to audit translator coverage and spot fallback usage.
+
 ## Roadmap & MVP
 
 - High‑level goals and milestones live in `docs/PRD.md` and `docs/ROADMAP.md`.

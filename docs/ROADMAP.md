@@ -27,9 +27,9 @@ This roadmap translates the PRD milestones into concrete, trackable tasks.
 
 - Polish & Launch Prep (8 weeks)
   - [ ] Performance audit and optimizations
-  - [ ] Localization review, add 2 additional languages
-  - [ ] QA test plan and regression matrix
-  - [ ] Marketing capture plan and press kit
+  - [x] Localization review, add 2 additional languages (`assets/loc/de.json`, `assets/loc/fr.json`)
+  - [x] QA test plan and regression matrix (`logs/QA_REGRESSION_MATRIX.md`)
+  - [x] Marketing capture plan and press kit outline (`docs/MARKETING_CAPTURE_PLAN.md`)
 
 - Early Access Launch
   - [ ] Steam page checklist and builds

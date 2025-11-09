@@ -13,11 +13,20 @@ assets/
   loc/
     en.json
     es.json
+    de.json
+    fr.json
     <language-code>.json
 ```
 
 The name of the file normally matches the language code (`en`, `es`, etc.). The
 file body is a JSON object with the following keys:
+
+Active catalogs:
+
+- English (`en`)
+- Spanish (`es`)
+- German (`de`, inherits `en`)
+- French (`fr`, inherits `en`)
 
 | Field      | Required | Description |
 | ---------- | -------- | ----------- |

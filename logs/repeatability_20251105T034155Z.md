@@ -2,6 +2,7 @@
 
 - Generated: 2025-11-05 03:41:55 UTC
 - Output JSON: `logs/repeatability_20251105T034155Z.json`
+- QA regression coverage: see `logs/QA_REGRESSION_MATRIX.md`
 - Simulation duration: 300.0s
 - Tick rate: 0.50s
 - Runs per seed: 2
