@@ -1,2 +1,4 @@
 __pycache__/
 *.pyc
+logs/perf/
+assets/audio/*.wav

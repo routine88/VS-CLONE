@@ -60,3 +60,8 @@ exclude = [
   "tests.*",
 ]
 
+[tool.pytest.ini_options]
+markers = [
+  "perf: performance regression benchmarks that report metrics for CI",
+]
+
