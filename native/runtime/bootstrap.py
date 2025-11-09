@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import logging
 import math
+from dataclasses import asdict
 from pathlib import Path
 from typing import List, Sequence, Tuple
 
@@ -12,9 +13,14 @@ from game.audio import AudioEngine
 from game.export import EngineFrameExporter
 from game.graphics import GraphicsEngine, SceneNode
 from game.graphics_assets import load_asset_manifest
+from native.client.audio import AudioFrameDTO
+from native.client.dto import RenderFrameDTO
 
+from .assets import AudioRegistry, SpriteRegistry
 from .importer import EngineFrameImporter
-from .loop import FrameBundle, FramePlaybackLoop, PlaybackMetrics
+from .loop import FramePlaybackLoop, PlaybackMetrics
+from .project import RendererProject
+from .stream import FrameBundleDTO, decode_bundle, iter_jsonl_lines
 
 LOGGER = logging.getLogger(__name__)
 ASSET_MANIFEST_PATH = Path("assets/graphics_assets/manifest.json")
@@ -111,6 +117,7 @@ def run_demo(
     else:
         bundles = tuple(bundle)
 
+    importer = EngineFrameImporter(logger=target_logger)
     sprite_registry = SpriteRegistry(manifest_path=ASSET_MANIFEST_PATH, logger=target_logger)
     audio_registry = AudioRegistry(manifest_path=DEFAULT_AUDIO_MANIFEST, logger=target_logger)
     project = RendererProject(
@@ -127,8 +134,17 @@ def run_demo(
         clock = fake_clock.time
         sleep = fake_clock.sleep
 
+    def _capture_frame(index: int, render: RenderFrameDTO, audio: AudioFrameDTO | None) -> None:
+        payload = {"render": asdict(render)}
+        if audio is not None:
+            payload["audio"] = asdict(audio)
+        importer.frame_bundle(payload)
+
     loop = FramePlaybackLoop(bundles, clock=clock, sleep=sleep, logger=target_logger)
-    metrics = loop.run()
+    metrics = loop.run(
+        project,
+        on_frame=_capture_frame,
+    )
 
     telemetry = project.telemetry
     target_logger.info(
