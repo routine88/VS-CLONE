@@ -4,30 +4,22 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Mapping
 
 from native.client.audio import AudioFrameDTO, MusicInstructionDTO
-from native.client.dto import RenderFrameDTO, RenderInstructionDTO
+from native.client.dto import RenderFrameDTO
+from native.engine.render import (
+    DEFAULT_RENDER_CONFIG,
+    AppliedRenderFrame,
+    RenderGraph,
+    RenderPipelineConfig,
+    load_render_pipeline_config,
+)
 
-from .assets import AudioRegistry, EffectHandle, MusicHandle, SpriteHandle, SpriteRegistry
+from .assets import AudioRegistry, EffectHandle, MusicHandle, SpriteRegistry
 
 LOGGER = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class AppliedRenderInstruction:
-    """Render instruction paired with the resolved sprite handle."""
-
-    instruction: RenderInstructionDTO
-    sprite: SpriteHandle
-
-
-@dataclass(frozen=True)
-class AppliedRenderFrame:
-    """Result produced when the render graph applies a frame."""
-
-    frame: RenderFrameDTO
-    instructions: tuple[AppliedRenderInstruction, ...]
 
 
 @dataclass(frozen=True)
@@ -85,35 +77,6 @@ class RendererWindow:
     def apply_frame(self, frame: RenderFrameDTO) -> None:
         self.viewport = frame.viewport
         self.last_time = frame.time
-
-
-class RenderGraph:
-    """Applies render instructions via the sprite registry."""
-
-    def __init__(self, registry: SpriteRegistry, *, logger: logging.Logger | None = None) -> None:
-        self._registry = registry
-        self._logger = logger or LOGGER
-
-    def apply(self, frame: RenderFrameDTO) -> tuple[AppliedRenderFrame, int]:
-        resolved: list[AppliedRenderInstruction] = []
-        missing = 0
-        for instruction in frame.instructions:
-            sprite = self._registry.resolve(instruction.sprite)
-            if sprite.manifest is None:
-                missing += 1
-                self._logger.debug(
-                    "Sprite %s missing from manifest (texture=%s)",
-                    instruction.sprite.id,
-                    instruction.sprite.texture,
-                )
-            resolved.append(
-                AppliedRenderInstruction(
-                    instruction=instruction,
-                    sprite=sprite,
-                )
-            )
-        applied = AppliedRenderFrame(frame=frame, instructions=tuple(resolved))
-        return applied, missing
 
 
 class AudioMixer:
@@ -182,12 +145,21 @@ class RendererProject:
         sprite_registry: SpriteRegistry,
         audio_registry: AudioRegistry,
         logger: logging.Logger | None = None,
+        render_config_path: Path | None = None,
+        pipeline_config: RenderPipelineConfig | None = None,
     ) -> None:
         self._logger = logger or LOGGER
         self._sprite_registry = sprite_registry
         self._audio_registry = audio_registry
         self._window = RendererWindow()
-        self._render_graph = RenderGraph(sprite_registry, logger=self._logger)
+        if pipeline_config is None:
+            config_path = Path(render_config_path or DEFAULT_RENDER_CONFIG)
+            pipeline_config = load_render_pipeline_config(config_path)
+        else:
+            config_path = Path(render_config_path or DEFAULT_RENDER_CONFIG)
+        self._render_config_path = config_path
+        self._pipeline_config = pipeline_config
+        self._render_graph = RenderGraph(pipeline_config, logger=self._logger)
         self._audio_mixer = AudioMixer(audio_registry, logger=self._logger)
         self._input_layer = InputLayer()
         self._telemetry = Telemetry()
@@ -208,6 +180,10 @@ class RendererProject:
     def audio_registry(self) -> AudioRegistry:
         return self._audio_registry
 
+    @property
+    def pipeline_config(self) -> RenderPipelineConfig:
+        return self._pipeline_config
+
     def apply_frame(
         self,
         render_frame: RenderFrameDTO,
@@ -216,7 +192,9 @@ class RendererProject:
         overrides: Mapping[str, object] | None = None,
     ) -> AppliedFrame:
         self._window.apply_frame(render_frame)
-        applied_render, missing_sprites = self._render_graph.apply(render_frame)
+        applied_render, missing_sprites = self._render_graph.apply(
+            render_frame, self._sprite_registry.resolve
+        )
         applied_audio, missing_effects, missing_music = self._audio_mixer.apply(audio_frame)
 
         override_payload = self._input_layer.apply(overrides)
@@ -241,12 +219,10 @@ __all__ = [
     "AppliedAudioFrame",
     "AppliedFrame",
     "AppliedRenderFrame",
-    "AppliedRenderInstruction",
     "AudioMixer",
     "InputLayer",
     "RendererProject",
     "RendererWindow",
-    "RenderGraph",
     "Telemetry",
 ]
 
