@@ -1,0 +1,12 @@
+{
+  "category": "environments",
+  "unit_scale_meters": 1.0,
+  "mesh_count": 1,
+  "material_count": 1,
+  "textures": {
+    "albedo": "textures/baseline_arena_albedo.png"
+  },
+  "notes": [
+    "Prototype arena tile used for importer smoke tests"
+  ]
+}

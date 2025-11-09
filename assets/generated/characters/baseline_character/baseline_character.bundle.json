@@ -1,0 +1,33 @@
+{
+  "asset_name": "baseline_character",
+  "asset_type": "gltf",
+  "bundle": "baseline_character.bundle.zip",
+  "bundle_sha256": "9e7d3fdabf0e0a51f6506fc6f91aa47b72cb0326d3e12bac32d439affdc2f9ba",
+  "bundle_version": "1.0",
+  "metadata": {
+    "extra": {
+      "animations": 0,
+      "default_scene": 0,
+      "skins": 0
+    },
+    "material_count": 1,
+    "mesh_count": 1,
+    "textures": [
+      "baseline_character_albedo.png"
+    ],
+    "unit_scale_meters": 1.0
+  },
+  "resources": [
+    {
+      "path": "meshes/baseline_character.gltf",
+      "sha256": "6b69c7ca72c24e2c7269a2f1324952abddbeeb1202c04275c4f49c19bacaf67a",
+      "size": 823
+    },
+    {
+      "path": "textures/baseline_character_albedo.png",
+      "sha256": "b1ff9c8ea3a780bad09b346c423d2d0e46815926879b18e841d928376a946640",
+      "size": 69
+    }
+  ],
+  "source": "characters/baseline_character.gltf"
+}
