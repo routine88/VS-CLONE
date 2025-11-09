@@ -1,6 +1,3 @@
-import logging
-from pathlib import Path
-
 import json
 import logging
 from pathlib import Path
@@ -12,6 +9,8 @@ from game.export import EngineFrameExporter
 from game.graphics import GraphicsEngine, SceneNode
 from game.graphics_assets import load_asset_manifest
 
+from native.client.audio import AudioFrameDTO
+from native.client.dto import RenderFrameDTO
 from native.runtime import (
     AudioRegistry,
     FramePlaybackLoop,
@@ -19,6 +18,7 @@ from native.runtime import (
     SpriteRegistry,
     build_placeholder_scene,
     iter_jsonl_lines,
+    run_demo,
 )
 
 ASSET_MANIFEST_PATH = Path("assets/graphics_assets/manifest.json")
@@ -125,12 +125,24 @@ def test_frame_playback_loop_applies_frames_and_overrides():
     captured: list[tuple[int, float]] = []
     metrics = loop.run(on_frame=lambda idx, render, audio: captured.append((idx, render.time)))
 
-    assert captured == [(0, 0.0), (1, 0.5)]
+    assert captured == [(0, 0.0), (1, 0.1), (2, 0.2)]
     assert fake.sleeps
-    assert fake.sleeps[-1] == pytest.approx(0.5, rel=1e-6)
-    assert fake.now() == pytest.approx(0.5, rel=1e-6)
-    assert metrics.frame_count == 2
+    assert fake.sleeps[-1] == pytest.approx(0.1, rel=1e-6)
+    assert fake.now() == pytest.approx(0.2, rel=1e-6)
+    assert metrics.frame_count == 3
     assert metrics.total_cpu_time >= 0.0
+
+    applied_frames: list = []
+
+    def override_callback(render: RenderFrameDTO, audio: AudioFrameDTO | None) -> dict[str, object] | None:
+        if render.time <= 0:
+            return None
+        overrides: dict[str, object] = {"time": render.time}
+        if render.messages:
+            overrides["messages"] = render.messages
+        if audio is not None:
+            overrides["audio_time"] = audio.time
+        return overrides
 
     loop.run(
         project,

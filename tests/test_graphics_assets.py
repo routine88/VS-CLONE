@@ -47,8 +47,12 @@ def test_manifest_application_registers_expected_sprites():
 
     health_orb = engine.sprite("sprites/ui/health_orb")
     dash_trail = engine.sprite("sprites/effects/dash_trail")
+    soul_counter = engine.sprite("sprites/ui/soul_counter")
+    boss_placeholder = engine.sprite("placeholders/boss")
 
     assert health_orb.texture == "sprites/ui/health_orb.texture.json"
     assert health_orb.size == (64, 64)
     assert dash_trail.texture == "sprites/effects/dash_trail.texture.json"
     assert dash_trail.size == (128, 64)
+    assert soul_counter.size == (160, 128)
+    assert boss_placeholder.size == (192, 192)

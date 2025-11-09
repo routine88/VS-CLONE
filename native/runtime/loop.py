@@ -6,7 +6,7 @@ import logging
 import time
 from dataclasses import dataclass
 from statistics import mean
-from typing import Callable, Iterable, Optional, Sequence, Tuple
+from typing import Callable, Iterable, Mapping, Optional, Sequence, Tuple
 
 from native.client.audio import AudioFrameDTO
 from native.client.dto import RenderFrameDTO
@@ -55,7 +55,14 @@ class FramePlaybackLoop:
     def frame_count(self) -> int:
         return len(self._frames)
 
-    def run(self, on_frame: OnFrameFn | None = None) -> PlaybackMetrics:
+    def run(
+        self,
+        project: RendererProject | None = None,
+        *,
+        on_frame: OnFrameFn | None = None,
+        input_override: InputOverrideFn | None = None,
+        on_applied: OnAppliedFn | None = None,
+    ) -> PlaybackMetrics:
         if not self._frames:
             self._logger.warning("No frames scheduled for playback")
             return PlaybackMetrics(
@@ -89,6 +96,20 @@ class FramePlaybackLoop:
 
             if on_frame is not None:
                 on_frame(index, render_frame, audio_frame)
+
+            applied: AppliedFrame | None = None
+            if project is not None:
+                overrides = (
+                    input_override(render_frame, audio_frame) if input_override is not None else None
+                )
+                applied = project.apply_frame(
+                    render_frame,
+                    audio_frame,
+                    overrides=overrides,
+                )
+
+            if applied is not None and on_applied is not None:
+                on_applied(index, applied)
 
             current_mark = time.perf_counter()
             frame_intervals.append(current_mark - previous_mark)

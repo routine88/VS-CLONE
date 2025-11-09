@@ -3,12 +3,38 @@
 from __future__ import annotations
 
 import random
-from typing import Iterable, List, Optional
+from dataclasses import dataclass
+from typing import Iterable, List, Optional, Sequence
 
 from . import config
 from .content import build_wave_descriptor, draw_relic, final_boss_phases, pick_miniboss
 from .localization import Translator, get_translator
 from .entities import Encounter, GlyphFamily, Player, UpgradeCard
+
+
+@dataclass(frozen=True)
+class DifficultyProfile:
+    name: str
+    interval_multiplier: float
+    density_multiplier: float
+
+
+@dataclass(frozen=True)
+class SpawnForecastEntry:
+    """Lightweight description of an upcoming spawn window."""
+
+    phase: int
+    wave_index: int
+    time: float
+    interval: float
+    max_density: int
+
+
+DIFFICULTY_PROFILES = {
+    "story": DifficultyProfile("story", interval_multiplier=1.15, density_multiplier=0.75),
+    "standard": DifficultyProfile("standard", interval_multiplier=1.0, density_multiplier=1.0),
+    "nightmare": DifficultyProfile("nightmare", interval_multiplier=0.85, density_multiplier=1.35),
+}
 
 
 class SpawnDirector:
@@ -18,6 +44,11 @@ class SpawnDirector:
         self.wave_counters = {phase: 0 for phase in config.SPAWN_PHASES}
         self._interval_scale = 1.0
         self._density_scale = 1.0
+        self._difficulty_interval_scale = 1.0
+        self._difficulty_density_scale = 1.0
+        self._event_interval_scale = 1.0
+        self._event_density_scale = 1.0
+        self._recompute_scales()
 
     def next_interval(self, phase: int) -> float:
         schedule = config.SPAWN_PHASES[phase]
@@ -31,13 +62,69 @@ class SpawnDirector:
         scaled = int(round(base * self._density_scale))
         return max(1, scaled)
 
-    def apply_event_modifiers(self, *, density_multiplier: float = 1.0) -> None:
+    def apply_difficulty_profile(self, profile: str) -> None:
+        """Apply a named difficulty profile to the spawn pacing."""
+
+        if profile not in DIFFICULTY_PROFILES:
+            raise KeyError(f"unknown difficulty profile '{profile}'")
+        settings = DIFFICULTY_PROFILES[profile]
+        self._difficulty_interval_scale = max(0.25, settings.interval_multiplier)
+        self._difficulty_density_scale = max(0.25, settings.density_multiplier)
+        self._recompute_scales()
+
+    def apply_event_modifiers(
+        self,
+        *,
+        density_multiplier: float = 1.0,
+        interval_multiplier: float | None = None,
+    ) -> None:
         """Adjust spawn pacing in response to seasonal events."""
 
         if density_multiplier <= 0:
             raise ValueError("density_multiplier must be positive")
-        self._density_scale = max(0.25, density_multiplier)
-        self._interval_scale = 1.0 / max(0.25, density_multiplier)
+        if interval_multiplier is not None and interval_multiplier <= 0:
+            raise ValueError("interval_multiplier must be positive")
+
+        self._event_density_scale = max(0.25, density_multiplier)
+        if interval_multiplier is None:
+            self._event_interval_scale = 1.0 / self._event_density_scale
+        else:
+            self._event_interval_scale = max(0.25, interval_multiplier)
+        self._recompute_scales()
+
+    def forecast(
+        self, phase: int, waves: int, *, start_time: float = 0.0
+    ) -> Sequence[SpawnForecastEntry]:
+        """Return a lookahead of upcoming spawn timings without mutating state."""
+
+        if waves <= 0:
+            return ()
+
+        schedule = config.SPAWN_PHASES[phase]
+        start_index = self.wave_counters[phase]
+        entries: List[SpawnForecastEntry] = []
+        current_time = start_time
+        for offset in range(waves):
+            wave_index = start_index + offset
+            interval = max(0.5, schedule.interval_for_wave(wave_index) * self._interval_scale)
+            spawn_time = current_time + interval
+            current_time = spawn_time
+            max_density = int(round(schedule.max_density * self._density_scale))
+            entries.append(
+                SpawnForecastEntry(
+                    phase=phase,
+                    wave_index=wave_index,
+                    time=spawn_time,
+                    interval=interval,
+                    max_density=max(1, max_density),
+                )
+            )
+
+        return tuple(entries)
+
+    def _recompute_scales(self) -> None:
+        self._interval_scale = self._difficulty_interval_scale * self._event_interval_scale
+        self._density_scale = self._difficulty_density_scale * self._event_density_scale
 
 
 class UpgradeDeck:

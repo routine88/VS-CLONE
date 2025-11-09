@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence
+from typing import Iterable, List, Optional, Sequence, Tuple
 
 from .audio import AudioEngine, AudioFrame
 from .graphics import Camera, GraphicsEngine, RenderFrame, SceneNode
 from .graphics_assets import load_asset_manifest
 from .mvp import MvpConfig, MvpFrameSnapshot, MvpReport, run_mvp_with_snapshots
+
+
+Vector2 = Tuple[float, float]
 
 
 @dataclass(frozen=True)
@@ -28,6 +31,18 @@ class MvpVisualSettings:
     player_scale: float = 1.0
     enemy_scale: float = 1.0
     enemy_row_height: float = -48.0
+    health_ui_sprite: str = "sprites/ui/health_orb"
+    experience_ui_sprite: str = "sprites/ui/experience_bar"
+    soul_ui_sprite: str = "sprites/ui/soul_counter"
+    dash_ready_effect_sprite: str = "sprites/effects/dash_trail"
+    level_up_effect_sprite: str = "sprites/effects/level_up_pulse"
+    ui_health_position: Vector2 = (96.0, 72.0)
+    ui_experience_position: Vector2 = (360.0, 72.0)
+    ui_soul_position: Vector2 = (1184.0, 72.0)
+    ui_scale: float = 1.0
+    ui_layer: str = "ui"
+    level_up_effect_layer: str = "ui"
+    level_up_effect_duration: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -152,6 +167,18 @@ class MvpVisualizer:
             },
         )
 
+        if snapshot.dash_ready:
+            effect_offset = -settings.player_scale * 24.0
+            yield SceneNode(
+                id=f"player_dash_ready_{snapshot.time:.2f}",
+                position=((snapshot.player_position * unit_scale) + effect_offset, lane_y),
+                layer=settings.player_layer,
+                sprite_id=settings.dash_ready_effect_sprite,
+                scale=settings.player_scale * 1.2,
+                opacity=0.45,
+                metadata={"kind": "vfx", "source": "dash_ready"},
+            )
+
         for index, enemy in enumerate(snapshot.enemies):
             enemy_y = lane_y + settings.enemy_row_height * (index % 3)
             yield SceneNode(
@@ -171,6 +198,10 @@ class MvpVisualizer:
                 },
             )
 
+        viewport = self.graphics.viewport
+        yield from self._build_ui_nodes(snapshot, viewport)
+        yield from self._build_level_up_effects(snapshot, viewport)
+
     def _messages_for_snapshot(self, snapshot: MvpFrameSnapshot) -> Sequence[str]:
         lines = list(snapshot.events)
         lines.append(
@@ -186,6 +217,100 @@ class MvpVisualizer:
             )
         )
         return tuple(lines)
+
+    def _build_ui_nodes(
+        self, snapshot: MvpFrameSnapshot, viewport: Tuple[int, int]
+    ) -> Iterable[SceneNode]:
+        settings = self.settings
+        health_ratio = 0.0
+        if snapshot.player_max_health > 0:
+            health_ratio = max(
+                0.0, min(1.0, snapshot.player_health / snapshot.player_max_health)
+            )
+
+        xp_ratio = 0.0
+        if snapshot.next_level_experience > 0:
+            xp_ratio = max(
+                0.0, min(1.0, snapshot.player_experience / snapshot.next_level_experience)
+            )
+
+        yield SceneNode(
+            id="ui.health",
+            position=self._ui_anchor(settings.ui_health_position, viewport),
+            layer=settings.ui_layer,
+            sprite_id=settings.health_ui_sprite,
+            scale=settings.ui_scale,
+            parallax=1.0,
+            metadata={
+                "kind": "ui.health",
+                "value": snapshot.player_health,
+                "max": snapshot.player_max_health,
+                "ratio": health_ratio,
+            },
+        )
+
+        yield SceneNode(
+            id="ui.experience",
+            position=self._ui_anchor(settings.ui_experience_position, viewport),
+            layer=settings.ui_layer,
+            sprite_id=settings.experience_ui_sprite,
+            scale=settings.ui_scale,
+            parallax=1.0,
+            metadata={
+                "kind": "ui.experience",
+                "value": snapshot.player_experience,
+                "next_level": snapshot.next_level_experience,
+                "level": snapshot.player_level,
+                "ratio": xp_ratio,
+            },
+        )
+
+        yield SceneNode(
+            id="ui.souls",
+            position=self._ui_anchor(settings.ui_soul_position, viewport),
+            layer=settings.ui_layer,
+            sprite_id=settings.soul_ui_sprite,
+            scale=settings.ui_scale,
+            parallax=1.0,
+            metadata={
+                "kind": "ui.collectible",
+                "soul_shards": snapshot.soul_shards,
+            },
+        )
+
+    def _build_level_up_effects(
+        self, snapshot: MvpFrameSnapshot, viewport: Tuple[int, int]
+    ) -> Iterable[SceneNode]:
+        if not snapshot.events:
+            return ()
+
+        if not any("level" in event.lower() for event in snapshot.events):
+            return ()
+
+        settings = self.settings
+        return (
+            SceneNode(
+                id=f"ui.level_up.{snapshot.time:.2f}",
+                position=self._ui_anchor(settings.ui_experience_position, viewport),
+                layer=settings.level_up_effect_layer,
+                sprite_id=settings.level_up_effect_sprite,
+                scale=settings.ui_scale * 1.1,
+                opacity=0.85,
+                parallax=1.0,
+                metadata={
+                    "kind": "vfx",
+                    "event": "level_up",
+                    "time": snapshot.time,
+                    "duration": settings.level_up_effect_duration,
+                },
+            ),
+        )
+
+    @staticmethod
+    def _ui_anchor(offset: Vector2, viewport: Tuple[int, int]) -> Vector2:
+        half_w = viewport[0] * 0.5
+        half_h = viewport[1] * 0.5
+        return (-half_w + offset[0], -half_h + offset[1])
 
 
 __all__ = [

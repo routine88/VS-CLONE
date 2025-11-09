@@ -2,7 +2,13 @@ import random
 
 from game import config
 from game.entities import GlyphFamily, Player, UpgradeCard, UpgradeType
-from game.systems import EncounterDirector, SpawnDirector, UpgradeDeck, resolve_experience_gain
+from game.systems import (
+    EncounterDirector,
+    SpawnDirector,
+    SpawnForecastEntry,
+    UpgradeDeck,
+    resolve_experience_gain,
+)
 
 
 def test_spawn_director_progression():
@@ -46,3 +52,20 @@ def test_encounter_director_cycles_waves_and_minibosses():
 
     wave = encounters[0].wave
     assert wave is not None and len(wave.enemies) > 0
+
+
+def test_spawn_director_forecast_and_difficulty_profiles():
+    director = SpawnDirector()
+    baseline = director.forecast(phase=1, waves=3)
+    assert isinstance(baseline, tuple)
+    assert all(isinstance(entry, SpawnForecastEntry) for entry in baseline)
+    assert all(baseline[i].time < baseline[i + 1].time for i in range(len(baseline) - 1))
+
+    director.apply_difficulty_profile("nightmare")
+    harder = director.forecast(phase=1, waves=1)[0]
+    assert harder.interval <= baseline[0].interval
+    assert harder.max_density >= baseline[0].max_density
+
+    director.apply_event_modifiers(density_multiplier=1.5)
+    boosted = director.forecast(phase=1, waves=1, start_time=harder.time)[0]
+    assert boosted.max_density >= harder.max_density

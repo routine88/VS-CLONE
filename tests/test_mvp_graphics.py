@@ -21,7 +21,11 @@ def test_mvp_visualizer_matches_simulation_report() -> None:
     assert len(result.frames) == len(result.audio_frames)
 
     first_frame = result.frames[0]
-    assert any(instr.metadata.get("kind") == "player" for instr in first_frame.instructions)
+    kinds = {instr.metadata.get("kind") for instr in first_frame.instructions}
+    assert "player" in kinds
+    assert "ui.health" in kinds
+    assert "ui.experience" in kinds
+    assert "ui.collectible" in kinds
     assert any("Health:" in message for message in first_frame.messages)
 
     assert any(
@@ -30,6 +34,12 @@ def test_mvp_visualizer_matches_simulation_report() -> None:
     ), "expected an enemy to appear in at least one frame"
 
     assert any(frame.effects for frame in result.audio_frames), "audio cues should be emitted"
+
+    assert any(
+        instr.metadata.get("event") == "level_up"
+        for frame in result.frames
+        for instr in frame.instructions
+    )
 
 
 def test_mvp_visualizer_tracks_snapshots() -> None:

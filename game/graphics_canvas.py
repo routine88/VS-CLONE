@@ -15,6 +15,7 @@ class CanvasDrawable:
     kind: str
     bounds: Tuple[float, float, float, float]
     color: str
+    opacity: float
     metadata: Mapping[str, object]
 
 
@@ -48,11 +49,13 @@ class CanvasTranslator:
             right = x + width * 0.5
             bottom = y + height * 0.5
             color = self.palette.get(kind, "#9aa1bd")
+            opacity = max(0.0, min(1.0, instruction.opacity))
             drawables.append(
                 CanvasDrawable(
                     kind=kind,
                     bounds=(left, top, right, bottom),
                     color=color,
+                    opacity=opacity,
                     metadata=metadata,
                 )
             )
