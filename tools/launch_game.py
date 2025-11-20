@@ -18,17 +18,16 @@ class LaunchError(RuntimeError):
 
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Launch Nightfall Survivors builds without manual setup.")
-    parser.add_argument(
-        "--seed",
-        type=int,
-        help="Optional RNG seed; defaults to the current UTC timestamp when omitted.",
+    parser = argparse.ArgumentParser(
+        description=(
+            "Launch Nightfall Survivors without optional live-ops/monetization dependencies."
+        )
     )
     parser.add_argument(
-        "--duration",
-        type=float,
-        default=300.0,
-        help="Override the session duration in seconds (default: 300).",
+        "--mode",
+        choices=("play", "mvp", "prototype", "interactive"),
+        default="play",
+        help="Which build to start (default: play – graphical MVP viewer).",
     )
     parser.add_argument("--tick", type=float, help="Override the MVP simulation tick rate (seconds).")
     parser.add_argument(
@@ -91,19 +90,40 @@ def _run_command(command: Sequence[str], *, log_path: Path, stream_output: bool)
 
 
 def _build_command(args: argparse.Namespace) -> Sequence[str]:
-    command: List[str] = [sys.executable, "-m", "game.mvp_viewer"]
-
-    seed = args.seed if args.seed is not None else int(datetime.utcnow().timestamp())
-    command.extend(["--seed", str(seed)])
-    command.extend(["--duration", str(args.duration)])
-
-    if args.tick is not None:
-        command.extend(["--tick", str(args.tick)])
-    if args.playback != 1.0:
-        command.extend(["--playback", str(args.playback)])
-    if args.no_loop:
-        command.append("--no-loop")
-    command.extend(["--log", str(args.log_path)])
+    command: List[str] = [sys.executable, "-m"]
+    if args.mode in {"play", "mvp"}:
+        command.append("game.mvp_viewer")
+        if args.seed is not None:
+            command.extend(["--seed", str(args.seed)])
+        if args.duration is not None:
+            command.extend(["--duration", str(args.duration)])
+        if args.tick is not None:
+            command.extend(["--tick", str(args.tick)])
+        if args.playback != 1.0:
+            command.extend(["--playback", str(args.playback)])
+        if args.no_loop:
+            command.append("--no-loop")
+        command.extend(["--log", str(args.log_path)])
+    elif args.mode == "prototype":
+        command.append("game.prototype")
+        if args.seed is not None:
+            command.extend(["--seed", str(args.seed)])
+        if args.duration is not None:
+            command.extend(["--duration", str(args.duration)])
+        if args.tick_step is not None:
+            command.extend(["--tick-step", str(args.tick_step)])
+        if args.summary:
+            command.append("--summary")
+        if args.export_transcript is not None:
+            export_path = args.export_transcript.expanduser().resolve()
+            export_path.parent.mkdir(parents=True, exist_ok=True)
+            command.extend(["--export", str(export_path)])
+    else:  # interactive
+        command.append("game.interactive")
+        if args.duration is not None:
+            command.extend(["--duration", str(args.duration)])
+        if args.fps is not None:
+            command.extend(["--fps", str(args.fps)])
     if args.extra_args:
         command.extend(args.extra_args)
     return command
