@@ -17,12 +17,16 @@ class LaunchError(RuntimeError):
 
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Launch Nightfall Survivors builds without manual setup.")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Launch Nightfall Survivors without optional live-ops/monetization dependencies."
+        )
+    )
     parser.add_argument(
         "--mode",
-        choices=("mvp", "prototype", "interactive"),
-        default="mvp",
-        help="Which build to start (default: mvp).",
+        choices=("play", "mvp", "prototype", "interactive"),
+        default="play",
+        help="Which build to start (default: play – graphical MVP viewer).",
     )
     parser.add_argument("--seed", type=int, help="Optional RNG seed to pass through when supported.")
     parser.add_argument("--duration", type=float, help="Override the session duration in seconds.")
@@ -96,7 +100,7 @@ def _run_command(command: Sequence[str], *, log_path: Path, stream_output: bool)
 
 def _build_command(args: argparse.Namespace) -> Sequence[str]:
     command: List[str] = [sys.executable, "-m"]
-    if args.mode == "mvp":
+    if args.mode in {"play", "mvp"}:
         command.append("game.mvp_viewer")
         if args.seed is not None:
             command.extend(["--seed", str(args.seed)])
